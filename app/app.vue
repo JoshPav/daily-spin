@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data: listens, pending, error, refresh } = useListens()
+const { data: listens, pending, error, refresh } = useListens();
 </script>
 
 <template>

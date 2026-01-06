@@ -4,6 +4,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   runtimeConfig: {
-    postgresUrl: process.env.POSTGRES_URL
-  }
-})
+    postgresUrl: process.env.POSTGRES_URL,
+  },
+});

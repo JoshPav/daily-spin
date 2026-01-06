@@ -10,7 +10,10 @@
     "postinstall": "nuxt prepare && prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "calculate-album": "bun scripts/calculateTodaysAlbum.ts",
+    "format": "biome check --write --unsafe .",
+    "lint": "biome check ."
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
@@ -23,6 +26,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
     "dotenv": "^17.2.3",
     "prisma": "^7.2.0"
   }
