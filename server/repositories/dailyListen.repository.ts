@@ -1,9 +1,11 @@
-import type { AlbumListen } from '@prisma/client';
+import type { AlbumListen, PrismaClient } from '@prisma/client';
 import prisma from '../clients/prisma';
 
 export class DailyListenRepository {
+  constructor(private prismaClient: PrismaClient = prisma) {}
+
   async getListens(userId: string, startDate: Date, endDate: Date) {
-    return await prisma.dailyListen.findMany({
+    return await this.prismaClient.dailyListen.findMany({
       where: {
         userId,
         date: {
@@ -24,7 +26,7 @@ export class DailyListenRepository {
     userId: string,
     todaysListens: Pick<AlbumListen, 'listenedInOrder' | 'albumId'>[],
   ) {
-    return prisma.dailyListen.create({
+    return this.prismaClient.dailyListen.create({
       data: {
         userId: userId,
         date: new Date(),

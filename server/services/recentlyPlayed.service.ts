@@ -1,6 +1,6 @@
 import type { SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApiClient } from '../clients/spotify';
-import { DailyListenRepository } from '../repositories/dailyListenRepository';
+import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
   areTracksInOrder,
@@ -22,6 +22,8 @@ type FinishedAlbum = {
 };
 
 type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
+
+const MIN_REQUIRED_TRACKS = 5;
 
 export class RecentlyPlayedService {
   constructor(
@@ -64,7 +66,11 @@ export class RecentlyPlayedService {
     );
 
     return recentlyPlayed.items
-      .filter((item) => isPlayedToday(item.played_at, today))
+      .filter(
+        (item) =>
+          isPlayedToday(item.played_at, today) &&
+          item.track.album.total_tracks >= MIN_REQUIRED_TRACKS,
+      )
       .sort(
         (a, b) =>
           new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
@@ -78,7 +84,8 @@ export class RecentlyPlayedService {
   }: GroupedTracks): ProcssedGroup => {
     const uniqueTracks = new Set([...tracks.map((track) => track.id)]);
 
-    const listenedInFull = uniqueTracks.size === totalTracks;
+    const listenedInFull =
+      uniqueTracks.size === totalTracks && totalTracks >= 5;
 
     if (!listenedInFull) {
       return {

@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  test-db:
+    image: postgres:16
+    restart: always
+    container_name: album-test-db
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: prisma
+      POSTGRES_DB: album_test
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U prisma']
+      interval: 5s
+      timeout: 5s
+      retries: 5

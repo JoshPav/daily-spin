@@ -18,10 +18,14 @@ logs
 .fleet
 .idea
 
+# Test coverage
+coverage
+
 # Local env files
 .env
 .env.*
 !.env.example
+!.env.test
 
 /app/generated/prisma
 .vercel

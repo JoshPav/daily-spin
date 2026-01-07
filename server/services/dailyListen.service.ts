@@ -1,6 +1,6 @@
 import { getSpotifyApiClient } from '../clients/spotify';
 import { mapDailyListens } from '../mappers/listenMapper';
-import { DailyListenRepository } from '../repositories/dailyListenRepository';
+import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
 
