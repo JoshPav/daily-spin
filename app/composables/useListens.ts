@@ -1,4 +1,4 @@
-import type { GetListensResponse } from '~/server/schema';
+import type { GetListensResponse } from '#shared/schema';
 
 export const useListens = (year?: number, month?: number) => {
   const currentDate = new Date();

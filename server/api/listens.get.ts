@@ -1,4 +1,4 @@
-import type { GetListensQueryParams, GetListensResponse } from '../schema';
+import type { GetListensQueryParams, GetListensResponse } from '#shared/schema';
 import { DailyListenService } from '../services/dailyListen.service';
 
 export default defineEventHandler<Promise<GetListensResponse>>(
