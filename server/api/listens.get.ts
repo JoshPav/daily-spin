@@ -1,6 +1,5 @@
-import { mapDailyListens } from '../mappers/listenMapper';
 import type { GetListensQueryParams, GetListensResponse } from '../schema';
-import prisma from '../utils/prisma';
+import { DailyListenService } from '../services/dailyListen.service';
 
 export default defineEventHandler<Promise<GetListensResponse>>(
   async (event) => {
@@ -26,22 +25,9 @@ export default defineEventHandler<Promise<GetListensResponse>>(
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
-    const listens = await prisma.dailyListen.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      include: {
-        albums: true,
-      },
-      orderBy: {
-        date: 'asc',
-      },
+    return new DailyListenService().getListensInRange(userId, {
+      start: startDate,
+      end: endDate,
     });
-
-    return listens.map(mapDailyListens);
   },
 );

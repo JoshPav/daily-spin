@@ -1,0 +1,59 @@
+import type { SimplifiedAlbum, Track } from '@spotify/web-api-ts-sdk';
+
+export const areTracksInOrder = (tracks: Track[]): boolean => {
+  let previousTrackNumber = 0;
+  let previousDiscNumber = 1;
+
+  for (const track of tracks) {
+    const currentDiscNumber = track.disc_number;
+    const currentTrackNumber = track.track_number;
+
+    if (currentTrackNumber === previousTrackNumber) {
+      // Played the same song again that's fine.
+      continue;
+    }
+
+    if (currentDiscNumber < previousDiscNumber) {
+      // Went backwards to a previous disc - not in order
+      return false;
+    }
+    if (currentDiscNumber > previousDiscNumber) {
+      // If we moved to a new disc, track numbers reset
+      previousTrackNumber = 0;
+      previousDiscNumber = currentDiscNumber;
+    }
+
+    // Check if track number is ascending on the current disc
+    if (currentTrackNumber !== previousTrackNumber + 1) {
+      return false;
+    }
+
+    previousTrackNumber = currentTrackNumber;
+  }
+
+  return true;
+};
+
+export type GroupedTracks = {
+  album: SimplifiedAlbum;
+  tracks: Track[];
+};
+
+export type AlbumMap = Map<string, GroupedTracks>;
+
+export const groupTracksByAlbum = (tracks: Track[]): AlbumMap => {
+  const albumMap = new Map<string, GroupedTracks>();
+
+  for (const track of tracks) {
+    const albumId = track.album.id;
+
+    if (!albumMap.has(track.album.id)) {
+      albumMap.set(albumId, { album: track.album, tracks: [] });
+    }
+
+    const albumData = albumMap.get(albumId);
+    albumData?.tracks.push(track);
+  }
+
+  return albumMap;
+};

@@ -5,5 +5,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     postgresUrl: process.env.POSTGRES_URL,
+    public: {
+      spotifyAccessToken: process.env.NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN,
+    },
   },
 });
