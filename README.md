@@ -1,75 +1,151 @@
-# Nuxt Minimal Starter
+# 🎵 Album Of The Day
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Track the albums you actually listen to — automatically.
 
-## Setup
+**Album History** connects to your Spotify account, polls your daily listening activity, and builds a personal history of the albums you’ve listened to over time.
 
-Make sure to install dependencies:
+---
+
+## ✨ Features
+
+* 🎧 **Daily Spotify polling**
+  Automatically tracks albums from your daily listening activity.
+
+* 📚 **Album listening history**
+  View a chronological history of all albums you’ve listened to.
+
+* 🔄 **Automatic updates**
+  Keeps your listening history up to date without manual input.
+
+* ☁️ **Cloud-hosted**
+  Deployed on **Vercel** for fast, reliable access.
+
+---
+
+## 🛠 Tech Stack
+
+* **Framework**: [Nuxt](https://nuxt.com/)
+* **Runtime**: **Node.js 24**
+* **Package Manager / Runner**: **Bun**
+* **Database ORM**: [Prisma](https://www.prisma.io/)
+* **Database**: PostgreSQL
+* **Deployment**: [Vercel](https://vercel.com/)
+* **External APIs**: Spotify Web API
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* **Node.js 24**
+* **Bun**
+* **Docker** (required for integration tests)
+* PostgreSQL (local development or Docker)
+* Spotify Developer account
+
+---
+
+### Installation
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
+# Install dependencies
 bun install
+
+# Generate Prisma client
+bunx prisma generate
+
+# Run database migrations
+bunx prisma migrate dev
 ```
 
-## Development Server
+---
 
-Start the development server on `http://localhost:3000`:
+### Environment Variables
+
+Create a `.env` file:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/album_history
+
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
+```
+
+---
+
+### Development
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
 bun run dev
 ```
 
-## Production
+App available at:
 
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+```
+http://localhost:3000
 ```
 
-Locally preview production build:
+---
+
+## 🧪 Testing
+
+This project includes **unit** and **integration** tests.
+
+### Unit Tests
+
+Run fast, isolated tests without external dependencies:
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+bun run test:unit
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+---
+
+### Integration Tests
+
+Integration tests spin up a **PostgreSQL Docker container** and run tests against a real database.
+
+```bash
+bun run test:integration
+```
+
+> ⚠️ **Docker is required** for integration tests.
+
+The test database is created and torn down automatically during the test run.
+
+---
+
+## 📦 Deployment
+
+The app is deployed on **Vercel**.
+
+### Deployment Notes
+
+* Ensure all environment variables are configured in the Vercel dashboard
+* Prisma migrations should be handled as part of CI or a dedicated migration step
+* Uses **Node 24 runtime** on Vercel
+
+---
+
+## 🔐 Spotify Permissions
+
+The app requests access to:
+
+* Recently played tracks
+* User listening history
+
+These permissions are used **only** to track album listens and are never shared.
+
+---
+
+## 📈 Roadmap
+
+* 📊 Listening insights & trends
+* 📆 Calendar-based album history
+* 🏷 Album tagging & notes
+* 📤 Export listening history
+
+---
+
