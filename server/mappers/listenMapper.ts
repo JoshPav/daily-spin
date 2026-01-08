@@ -1,11 +1,14 @@
 import type { Prisma } from '@prisma/client';
-import type { DailyListens } from '../schema';
+import type { DailyListens } from '#shared/schema';
 
 export const mapDailyListens = (
   dailyListens: Prisma.DailyListenGetPayload<{
     include: { albums: true };
   }>,
 ): DailyListens => ({
-  dayOfMonth: dailyListens.date.getDate(),
-  albums: dailyListens.albums.map((album) => album.albumId),
+  date: dailyListens.date.toISOString(),
+  albums: dailyListens.albums.map((album) => ({
+    albumId: album.albumId,
+    listenMetadata: { inOrder: album.listenedInOrder },
+  })),
 });

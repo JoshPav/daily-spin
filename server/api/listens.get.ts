@@ -5,25 +5,32 @@ export default defineEventHandler<Promise<GetListensResponse>>(
   async (event) => {
     const query = getQuery<GetListensQueryParams>(event);
 
-    const year = query.year
-      ? parseInt(query.year as string, 10)
-      : new Date().getFullYear();
-    const month = query.month
-      ? parseInt(query.month as string, 10)
-      : new Date().getMonth() + 1;
-
     const userId = 'cmk3492kb0000hah2069i2dmn'; // TODO: Get from session once auth is set up
 
-    if (month < 1 || month > 12) {
+    // Default to last 2 weeks if no range specified
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    const twoWeeksAgo = new Date(today);
+    twoWeeksAgo.setDate(today.getDate() - 14);
+    twoWeeksAgo.setHours(0, 0, 0, 0);
+
+    const startDate = query.startDate ? new Date(query.startDate) : twoWeeksAgo;
+    const endDate = query.endDate ? new Date(query.endDate) : today;
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       throw createError({
         statusCode: 400,
-        message: 'month must be between 1 and 12',
+        message: 'Invalid date format',
       });
     }
 
-    // Calculate start and end dates for the month
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    if (startDate > endDate) {
+      throw createError({
+        statusCode: 400,
+        message: 'startDate must be before endDate',
+      });
+    }
 
     return new DailyListenService().getListensInRange(userId, {
       start: startDate,

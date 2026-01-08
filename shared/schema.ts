@@ -1,11 +1,20 @@
+export type ListenMetadata = {
+  inOrder: boolean;
+};
+
+export type DailyAlbumListen = {
+  albumId: string;
+  listenMetadata: ListenMetadata;
+};
+
 export type DailyListens = {
-  dayOfMonth: number;
-  albums: string[];
+  date: string;
+  albums: DailyAlbumListen[];
 };
 
 export type GetListensQueryParams = {
-  year?: string;
-  month?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type GetListensResponse = DailyListens[];
