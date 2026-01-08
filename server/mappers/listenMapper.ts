@@ -7,8 +7,15 @@ export const mapDailyListens = (
   }>,
 ): DailyListens => ({
   date: dailyListens.date.toISOString(),
-  albums: dailyListens.albums.map((album) => ({
-    albumId: album.albumId,
-    listenMetadata: { inOrder: album.listenedInOrder },
-  })),
+  albums: dailyListens.albums.map(
+    ({ albumId, albumName, artistNames, imageUrl, listenedInOrder }) => ({
+      album: {
+        albumId,
+        albumName,
+        artistNames,
+        imageUrl,
+      },
+      listenMetadata: { inOrder: listenedInOrder },
+    }),
+  ),
 });

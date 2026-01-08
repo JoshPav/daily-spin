@@ -2,8 +2,15 @@ export type ListenMetadata = {
   inOrder: boolean;
 };
 
-export type DailyAlbumListen = {
+export type Album = {
   albumId: string;
+  albumName: string;
+  artistNames: string;
+  imageUrl: string;
+};
+
+export type DailyAlbumListen = {
+  album: Album;
   listenMetadata: ListenMetadata;
 };
 

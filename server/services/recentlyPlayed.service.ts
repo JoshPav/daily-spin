@@ -10,13 +10,15 @@ import {
 
 type UnfinishedAlbum = {
   albumId: string;
-  name: string;
+  albumName: string;
   listenedInFull: false;
 };
 
 type FinishedAlbum = {
   albumId: string;
-  name: string;
+  artistNames: string;
+  imageUrl: string;
+  albumName: string;
   listenedInFull: true;
   listenedInOrder: boolean;
 };
@@ -79,7 +81,13 @@ export class RecentlyPlayedService {
   };
 
   private processGroupedTracks = ({
-    album: { id: albumId, name, total_tracks: totalTracks },
+    album: {
+      id: albumId,
+      name: albumName,
+      total_tracks: totalTracks,
+      artists,
+      images,
+    },
     tracks,
   }: GroupedTracks): ProcssedGroup => {
     const uniqueTracks = new Set([...tracks.map((track) => track.id)]);
@@ -90,14 +98,16 @@ export class RecentlyPlayedService {
     if (!listenedInFull) {
       return {
         albumId,
-        name,
+        albumName,
         listenedInFull: false,
       };
     }
 
     return {
       albumId,
-      name,
+      albumName,
+      imageUrl: images[0]?.url,
+      artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
     };

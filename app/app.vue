@@ -1,33 +1,85 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 import { resetSeenMonths } from '~/composables/useDate';
+import type { DailyListens } from '~~/shared/schema';
 
-const { data: listens, pending, error, refresh } = useListens();
+const { data, pending, error, refresh } = useListens();
 
-// Fetch all albums when listens data changes
-watch(
-  listens,
-  async (newListens) => {
-    resetSeenMonths();
+function getNextNDays(startDate: Date, n: number): Date[] {
+  const days: Date[] = [];
 
-    if (newListens) {
-      // Collect all unique album IDs
-      const albumIds = new Set<string>();
-      for (const listen of newListens) {
-        for (const album of listen.albums) {
-          albumIds.add(album.albumId);
-        }
-      }
+  for (let i = 0; i < n; i++) {
+    const nextDay = new Date(startDate);
+    nextDay.setDate(startDate.getDate() + i);
+    days.push(nextDay);
+  }
 
-      // Fetch all albums in bulk
-      if (albumIds.size > 0) {
-        // await fetchAlbums(Array.from(albumIds));
-      }
-    }
-  },
-  { immediate: true },
-);
+  return days;
+}
 
+const listens = computed<DailyListens[]>(() => {
+  if (!data.value) {
+    return [];
+  }
+
+  const mostRecentListen = data.value.at(-1);
+
+  if (!mostRecentListen) {
+    return data.value;
+  }
+
+  const datesInFuture = getNextNDays(new Date(mostRecentListen.date), 7);
+
+  return [
+    ...data.value,
+    ...datesInFuture
+      .slice(1)
+      .map((date) => ({ date: date.toISOString(), albums: [] })),
+  ];
+});
+
+// Reset seen months when listens data changes
+watch(listens, async () => {
+  resetSeenMonths();
+});
+
+// Refs for scrolling
+const scrollContainer = ref<HTMLElement | null>(null);
+const todayItem = ref<HTMLElement | null>(null);
+const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+// Smooth scroll function
+const scrollToToday = () => {
+  const container = scrollContainer.value;
+  const item = todayItem.value;
+
+  console.log([item, container]);
+  if (container && item) {
+    console.log('scrolling');
+    const top = item.offsetTop - container.offsetTop;
+    container.scrollTo({
+      top: top - container.offsetHeight / 2 + item.offsetHeight / 2,
+      behavior: 'smooth', // smooth animated scroll
+    });
+  }
+};
+
+// Scroll after data loads
+watch(listens, async (newVal) => {
+  if (!newVal || newVal.length === 0) return;
+  await nextTick();
+  scrollToToday();
+});
+
+// Also scroll on page refresh
+onMounted(async () => {
+  if (listens.value && listens.value.length > 0) {
+    await nextTick();
+    scrollToToday();
+  }
+});
+
+// Fonts
 useHead({
   link: [
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -47,27 +99,34 @@ useHead({
     </header>
 
     <main class="main-content">
+      <!-- Loading / Error / Empty states outside scrollable area -->
       <div v-if="pending" class="loading">Loading...</div>
       <div v-else-if="error" class="error">Error: {{ error }}</div>
-      <div v-else-if="listens">
-        <div v-if="listens.length === 0" class="empty-state">
-          No listens yet for this month
+      <div v-else-if="listens && listens.length === 0" class="empty-state">
+        No listens yet for this month
+      </div>
+
+      <!-- Scrollable grid + button -->
+      <div v-else class="scroll-wrapper" >
+        <div class="day-container" ref="scrollContainer">
+          <DailyListens
+            v-for="day in listens"
+            :key="day.date"
+            :day-listens="day"
+            :ref="el => {
+              if (day.date.split('T')[0] === today) {
+                todayItem = (el as any)?.$el ?? el ?? null;
+              }
+            }"
+          />
         </div>
-        <div v-else>
-          <div class="day-container">
-            <DailyListens
-              v-for="day in listens"
-              :key="day.date"
-              :day-listens="day"
-            />
-          </div>
-          <button class="refresh-button" @click="refresh()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-            </svg>
-            Refresh
-          </button>
-        </div>
+
+        <button class="refresh-button" @click="refresh()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+          Refresh
+        </button>
       </div>
     </main>
 
@@ -131,6 +190,10 @@ body {
   max-width: 1800px;
   margin: 0 auto;
   padding: 0 24px;
+
+  height: calc(100vh - 120px); /* adjust for header/footer */
+  display: flex;
+  flex-direction: column;
 }
 
 .loading,
@@ -147,19 +210,29 @@ body {
   color: #f15e6c;
 }
 
+.scroll-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .day-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 24px;
-  margin: 32px auto;
+  margin: 32px 0; /* vertical margin only */
   max-width: calc(7 * 180px + 6 * 24px);
+
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .refresh-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 32px auto 0;
+  margin: 16px auto 0;
   padding: 12px 32px;
 
   background-color: #1db954;
@@ -206,4 +279,3 @@ body {
   }
 }
 </style>
-  
