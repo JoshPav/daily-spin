@@ -58,7 +58,6 @@ import { computed, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
 import { useAlbumModal } from '~/composables/useAlbumModal';
 import { useDate } from '~/composables/useDate';
-import Tooltip from './Tooltip.vue';
 
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;

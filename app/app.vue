@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { resetSeenMonths } from '~/composables/useDate';
 import type { DailyListens } from '~~/shared/schema';
 
