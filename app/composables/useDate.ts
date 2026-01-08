@@ -31,6 +31,13 @@ export const useDate = (dateString: string) => {
     );
   });
 
+  const isFuture = computed(() => {
+    const today = new Date().toISOString();
+    const listen = listenDate.value.toISOString();
+
+    return listen > today;
+  });
+
   // Check if this is the first occurrence of this month
   const monthKey = computed(
     () => `${listenDate.value.getFullYear()}-${listenDate.value.getMonth()}`,
@@ -66,5 +73,6 @@ export const useDate = (dateString: string) => {
     showMonthBanner,
     isNewYear,
     monthYearDisplay,
+    isFuture,
   };
 };

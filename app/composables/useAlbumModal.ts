@@ -1,6 +1,5 @@
-import type { Album } from '@spotify/web-api-ts-sdk';
 import { ref } from 'vue';
-import type { DailyAlbumListen } from '#shared/schema';
+import type { Album, DailyAlbumListen } from '#shared/schema';
 
 const isOpen = ref(false);
 
@@ -30,8 +29,8 @@ export const useAlbumModal = () => {
   };
 
   const viewTransitionName = computed(() => {
-    if (!album.value?.id || !date.value) return null;
-    return `album-${album.value.id}-${date.value}`;
+    if (!album.value?.albumId || !date.value) return null;
+    return `album-${album.value.albumId}-${date.value}`;
   });
 
   return {

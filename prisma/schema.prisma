@@ -32,6 +32,9 @@ model AlbumListen {
   id              String   @id @default(cuid())
   dailyListenId   String
   albumId         String
+  albumName       String
+  artistNames     String
+  imageUrl        String
   listenedInOrder Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

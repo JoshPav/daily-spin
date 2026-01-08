@@ -16,8 +16,8 @@
           : undefined"
         >
           <NuxtImg
-            v-if="album?.images?.[0]?.url"
-            :src="album.images[0].url"
+            v-if="album?.imageUrl"
+            :src="album?.imageUrl"
             alt="Album cover"
             class="album-image"
           />
@@ -25,17 +25,17 @@
 
         <!-- Album details -->
         <div v-if="album" class="album-details">
-          <h2 class="album-title">{{ album.name }}</h2>
-          <p class="artist-name">{{ album.artists?.map(a => a.name).join(', ') }}</p>
+          <h2 class="album-title">{{ album.albumName }}</h2>
+          <p class="artist-name">{{ album.artistNames }}</p>
 
           <div class="album-info">
             <div class="info-item">
               <span class="label">Release Date</span>
-              <span class="value">{{ formatDate(album.release_date) }}</span>
+              <!-- <span class="value">{{ formatDate(album.release_date) }}</span> -->
             </div>
             <div class="info-item">
               <span class="label">Total Tracks</span>
-              <span class="value">{{ album.total_tracks }}</span>
+              <!-- <span class="value">{{ album.total_tracks }}</span> -->
             </div>
             <div v-if="listenMetadata" class="info-item">
               <span class="label">Listened</span>
@@ -44,7 +44,7 @@
           </div>
 
           <!-- Track list -->
-          <div v-if="album.tracks?.items" class="track-list">
+          <!-- <div v-if="album.tracks?.items" class="track-list">
             <h3 class="track-list-title">Tracks</h3>
             <div
               v-for="track in album.tracks.items"
@@ -55,7 +55,7 @@
               <span class="track-name">{{ track.name }}</span>
               <span class="track-duration">{{ formatDuration(track.duration_ms) }}</span>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

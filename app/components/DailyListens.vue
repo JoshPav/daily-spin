@@ -1,7 +1,7 @@
 <template>
   <div
     class="album-cover"
-    :class="{ today: isToday, clickable: !!dayAlbum }"
+    :class="{ today: isToday, clickable: !!dayAlbum, future: isFuture }"
     :style="dayAlbum && viewTransitionName
           ? { viewTransitionName }
           : undefined"
@@ -13,7 +13,7 @@
     </div>
 
     <!-- Day number overlay -->
-    <div class="day-overlay">
+    <div :class="{ today: isToday }" class="day-overlay">
       {{ dayOfMonth }}
     </div>
 
@@ -29,14 +29,17 @@
       </Tooltip>
     </div>
 
-    <div v-if="!dayAlbum" class="empty no-listen">
-      <div class="empty-message">No Album Played</div>
+    <div v-if="!album" class="empty no-listen" :class="{ future: isFuture }">
+      <div class="empty-message">
+        <Tooltip v-if="!isFuture" text="No albums listened to this day">—</Tooltip>
+
+      </div>
     </div>
     <div v-else-if="pending" class="skeleton"></div>
     <div v-else-if="!albumArtworkSrc" class="empty no-artwork">
       <div class="album-info">
-        <div class="artist-name">{{ album?.artists?.[0]?.name || 'Unknown Artist' }}</div>
-        <div class="album-name">{{ album?.name || 'Unknown Album' }}</div>
+        <div class="artist-name">{{ album.artistNames || 'Unknown Artist' }}</div>
+        <div class="album-name">{{ album.albumName || 'Unknown Album' }}</div>
       </div>
     </div>
 
@@ -53,22 +56,22 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
-import { useAlbum } from '~/composables/useAlbum';
 import { useAlbumModal } from '~/composables/useAlbumModal';
 import { useDate } from '~/composables/useDate';
 
-const { dayListens } = defineProps<{
+const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
+  pending?: boolean;
 }>();
 
 const { open, viewTransitionName } = useAlbumModal();
 
 const handleClick = () => {
-  if (!dayAlbum || !album.value) return;
+  if (!album) return;
 
   open({
     date: dayListens.date,
-    album: album.value,
+    album,
     listenMetadata: dayAlbum.listenMetadata,
   });
 };
@@ -76,12 +79,14 @@ const handleClick = () => {
 // First album of the day
 const [dayAlbum] = dayListens.albums;
 
-const { data: album, pending } = useAlbum(dayAlbum?.albumId);
+// const { data: album, pending } = useAlbum(dayAlbum?.albumId);
+
+const album = dayAlbum?.album;
 
 // Track when the image finishes loading
 const imageLoaded = ref(false);
 
-const albumArtworkSrc = computed(() => album.value?.images?.[0]?.url);
+const albumArtworkSrc = computed(() => dayAlbum?.album.imageUrl);
 
 // Reset imageLoaded when artwork changes
 watch(albumArtworkSrc, () => {
@@ -93,9 +98,8 @@ const onImageLoad = () => {
 };
 
 // Date utilities
-const { dayOfMonth, monthYearDisplay, isToday, showMonthBanner } = useDate(
-  dayListens.date,
-);
+const { dayOfMonth, monthYearDisplay, isToday, showMonthBanner, isFuture } =
+  useDate(dayListens.date);
 </script>
 
 <style>
@@ -255,6 +259,10 @@ const { dayOfMonth, monthYearDisplay, isToday, showMonthBanner } = useDate(
 
 .empty.no-listen {
   background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+}
+
+.empty.future {
+  background: linear-gradient(135deg, #1c1c2a 0%, #12121f 100%);
 }
 
 .empty-message {

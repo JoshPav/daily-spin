@@ -24,17 +24,31 @@ export class DailyListenRepository {
 
   async saveListens(
     userId: string,
-    todaysListens: Pick<AlbumListen, 'listenedInOrder' | 'albumId'>[],
+    todaysListens: Pick<
+      AlbumListen,
+      'listenedInOrder' | 'albumId' | 'albumName' | 'imageUrl' | 'artistNames'
+    >[],
   ) {
     return this.prismaClient.dailyListen.create({
       data: {
         userId: userId,
         date: new Date(),
         albums: {
-          create: todaysListens.map(({ listenedInOrder, albumId }) => ({
-            albumId,
-            listenedInOrder,
-          })),
+          create: todaysListens.map(
+            ({
+              albumId,
+              albumName,
+              artistNames,
+              imageUrl,
+              listenedInOrder,
+            }) => ({
+              albumId,
+              albumName,
+              artistNames,
+              imageUrl,
+              listenedInOrder,
+            }),
+          ),
         },
       },
       include: {
