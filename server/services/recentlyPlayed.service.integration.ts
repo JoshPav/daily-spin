@@ -85,10 +85,18 @@ describe('RecentlyPlayedService Integration Tests', () => {
           expect.objectContaining({
             albumId: '7iX7uCkSNnkuIMwbjl8Jpf',
             listenedInOrder: false,
+            imageUrl:
+              'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            albumName: 'hickey',
+            artistNames: 'Royel Otis',
           }),
           expect.objectContaining({
             albumId: '4I5zzKYd2SKDgZ9DRf5LVk',
             listenedInOrder: true,
+            imageUrl:
+              'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            albumName: '"Heroes" (2017 Remaster)',
+            artistNames: 'David Bowie',
           }),
         ]),
       });

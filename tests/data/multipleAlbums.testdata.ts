@@ -936,6 +936,11 @@ export default {
               uri: 'spotify:artist:5b5bt4mZQpJMoCRbiQ7diH',
             },
           ],
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
@@ -990,6 +995,11 @@ export default {
           ],
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           name: 'hickey',
           release_date: '2025-08-22',
           release_date_precision: 'day',
@@ -1042,6 +1052,11 @@ export default {
           ],
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           name: 'hickey',
           release_date: '2025-08-22',
           release_date_precision: 'day',
@@ -1095,6 +1110,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1147,6 +1167,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1199,6 +1224,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1251,6 +1281,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1303,6 +1338,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1355,6 +1395,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1407,6 +1452,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1459,6 +1509,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1510,6 +1565,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1562,6 +1622,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/7iX7uCkSNnkuIMwbjl8Jpf',
           id: '7iX7uCkSNnkuIMwbjl8Jpf',
           name: 'hickey',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b2739ea7c8a96a35dc122fcbc621',
+            },
+          ],
           release_date: '2025-08-22',
           release_date_precision: 'day',
           total_tracks: 13,
@@ -1767,6 +1832,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -1818,6 +1888,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -1869,6 +1944,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -1920,6 +2000,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -1971,6 +2056,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2022,6 +2112,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2073,6 +2168,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2124,6 +2224,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2146,6 +2251,11 @@ export default {
         id: '7Jh1bpe76CNTCgdgAdBw4Z',
         is_local: false,
         name: '"Heroes" - 2017 Remaster',
+        images: [
+          {
+            url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+          },
+        ],
         popularity: 81,
         preview_url: null,
         track_number: 3,
@@ -2175,6 +2285,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2226,6 +2341,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
@@ -2277,6 +2397,11 @@ export default {
           href: 'https://api.spotify.com/v1/albums/4I5zzKYd2SKDgZ9DRf5LVk',
           id: '4I5zzKYd2SKDgZ9DRf5LVk',
           name: '"Heroes" (2017 Remaster)',
+          images: [
+            {
+              url: 'https://i.scdn.co/image/ab67616d0000b273204f41d52743c6a9efd62985',
+            },
+          ],
           release_date: '1977',
           release_date_precision: 'year',
           total_tracks: 10,
