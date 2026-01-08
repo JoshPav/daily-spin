@@ -34,7 +34,21 @@ export class DailyListenRepository {
         userId: userId,
         date: new Date(),
         albums: {
-          create: todaysListens,
+          create: todaysListens.map(
+            ({
+              albumId,
+              albumName,
+              artistNames,
+              imageUrl,
+              listenedInOrder,
+            }) => ({
+              albumId,
+              albumName,
+              artistNames,
+              imageUrl,
+              listenedInOrder,
+            }),
+          ),
         },
       },
       include: {
