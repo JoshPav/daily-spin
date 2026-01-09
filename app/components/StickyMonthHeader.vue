@@ -1,7 +1,7 @@
 <template>
   <Transition name="fade">
-    <div v-if="currentMonth" class="sticky-month-header">
-      {{ currentMonth }}
+    <div  class="sticky-month-header">
+      {{ formattedMonth }}
     </div>
   </Transition>
 </template>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { useCurrentMonth } from '~/composables/useCurrentMonth';
 
-const { currentMonth } = useCurrentMonth();
+const { formattedMonth } = useCurrentMonth();
 </script>
 
 <style scoped>

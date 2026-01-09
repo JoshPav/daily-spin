@@ -2,20 +2,20 @@
   <div
     ref="albumCoverEl"
     class="album-cover"
-    :class="{ today: isToday, clickable: !!dayAlbum, future: isFuture }"
-    :style="dayAlbum && viewTransitionName
+    :class="{ today: isToday(), clickable: hasAlbums, future: isFuture }"
+    :style="hasAlbums && viewTransitionName
           ? { viewTransitionName }
           : undefined"
     @click="handleClick"
   >
     <!-- Month banner (only on day 1) -->
-    <div v-if="showMonthBanner" class="month-banner">
-      {{ monthNameShort }}
+    <div v-if="day === 1" class="month-banner">
+      {{ formattedMonth }}
     </div>
 
     <!-- Day number overlay -->
     <div :class="{ today: isToday }" class="day-overlay">
-      {{ dayOfMonth }}
+      {{ day }}
     </div>
 
     <!-- Album count badge -->
@@ -23,34 +23,21 @@
       {{ dayListens.albums.length }}
     </div>
 
-    <!-- Play order icon -->
-    <div v-if="dayAlbum" class="icon-wrapper">
-      <Tooltip
-        :text="dayAlbum?.listenMetadata.inOrder ? 'Listened in order' : 'Listened on shuffle'"
-      >
-        <div class="order-icon">
-          <OrderedIcon v-if="dayAlbum?.listenMetadata.inOrder" />
-          <ShuffleIcon v-else />
-        </div>
-      </Tooltip>
-    </div>
-
-    <div v-if="!album" class="empty no-listen" :class="{ future: isFuture }">
+    <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
         <Tooltip v-if="!isFuture" text="No albums listened to this day">—</Tooltip>
 
       </div>
     </div>
     <div v-else-if="pending" class="skeleton"></div>
-    <div v-else-if="!albumArtworkSrc" class="empty no-artwork">
+    <div v-else-if="firstAlbum && !firstAlbum.album.imageUrl" class="empty no-artwork">
       <div class="album-info">
-        <div class="artist-name">{{ album.artistNames || 'Unknown Artist' }}</div>
-        <div class="album-name">{{ album.albumName || 'Unknown Album' }}</div>
+        <div class="artist-name">{{ firstAlbum.album.artistNames || 'Unknown Artist' }}</div>
+        <div class="album-name">{{ firstAlbum.album.albumName || 'Unknown Album' }}</div>
       </div>
     </div>
 
-    <!-- Render all albums with stacking effect -->
-    <template v-if="albumArtworkSrc">
+    <template v-if="hasAlbums">
       <NuxtImg
         v-for="(albumListen, index) in dayListens.albums.slice(0, 4)"
         :key="albumListen.album.albumId"
@@ -58,21 +45,17 @@
         :alt="`${albumListen.album.albumName} cover`"
         :class="['stacked-album', `stack-${index}`]"
         :style="{ zIndex: dayListens.albums.length - index }"
-        @load="onImageLoad"
       />
     </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { DailyListens } from '#shared/schema';
 import { useCurrentMonth } from '~/composables/useCurrentMonth';
 import { useDailyListensModal } from '~/composables/useDailyListensModal';
 import { useDate } from '~/composables/useDate';
-import { useMonthBanner } from '~/composables/useMonthBanner';
-import OrderedIcon from './Icons/OrderedIcon.vue';
-import ShuffleIcon from './Icons/ShuffleIcon.vue';
 import Tooltip from './common/Tooltip.vue';
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
@@ -81,44 +64,30 @@ const { dayListens, pending = false } = defineProps<{
 
 const { open, viewTransitionName } = useDailyListensModal();
 
+const hasAlbums = computed(() => dayListens.albums.length > 0);
+const firstAlbum = computed(() => dayListens.albums[0]);
+
 const handleClick = () => {
-  if (!album) return;
+  if (!hasAlbums.value) return;
 
   open({
     dailyListens: dayListens,
   });
 };
 
-// First album of the day
-const [dayAlbum] = dayListens.albums;
-
-// const { data: album, pending } = useAlbum(dayAlbum?.albumId);
-
-const album = dayAlbum?.album;
-
-// Track when the image finishes loading
-const imageLoaded = ref(false);
-
-const albumArtworkSrc = computed(() => dayAlbum?.album.imageUrl);
-
-// Reset imageLoaded when artwork changes
-watch(albumArtworkSrc, () => {
-  imageLoaded.value = false;
-});
-
-const onImageLoad = () => {
-  imageLoaded.value = true;
-};
-
 // Date utilities
-const { dayOfMonth, isToday, isFuture } = useDate(dayListens.date);
-const { showMonthBanner, monthYearDisplay, monthNameShort } = useMonthBanner(
-  dayListens.date,
-);
+const {
+  day,
+  date,
+  utils: { isToday, isFuture: calcIsFuture },
+  formatted: { formattedMonth },
+} = useDate(dayListens.date);
 
 // Sticky month header tracking
 const { setCurrentMonth } = useCurrentMonth();
 const albumCoverEl = ref<HTMLElement | null>(null);
+
+const isFuture = computed(() => calcIsFuture());
 
 // Track when this item enters the viewport
 onMounted(() => {
@@ -129,7 +98,7 @@ onMounted(() => {
       entries.forEach((entry) => {
         // When this item is in the middle/center portion of the viewport
         if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-          setCurrentMonth(monthYearDisplay.value);
+          setCurrentMonth(date.value);
         }
       });
     },
@@ -234,42 +203,6 @@ onMounted(() => {
   z-index: 4;
   pointer-events: none;
 }
-
-.icon-wrapper {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 10;
-}
-
-.order-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-
-  background-color: rgba(0, 0, 0, 0.7);
-  color: #1db954;
-
-  backdrop-filter: blur(4px);
-
-  cursor: help;
-
-  transition: all 0.2s ease;
-}
-
-.order-icon:hover {
-  background-color: rgba(0, 0, 0, 0.85);
-  transform: scale(1.1);
-}
-
-.order-icon svg {
-  display: block;
-}
-
 
 /* =========================
    Skeleton loading

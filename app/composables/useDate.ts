@@ -1,13 +1,17 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
-/**
- * Pure utility composable for working with dates
- * Provides basic date information and comparison utilities
- */
+// Shared state to track which months we've seen
+const seenMonths = ref<Set<string>>(new Set());
+
+// Reset function to clear the state (useful when data refreshes)
+export const resetSeenMonths = () => {
+  seenMonths.value = new Set();
+};
+
 export const useDate = (dateString: string) => {
   const date = computed(() => new Date(dateString));
 
-  const dayOfMonth = computed(() => date.value.getDate());
+  const day = computed(() => date.value.getDate());
   const month = computed(() => date.value.getMonth());
   const year = computed(() => date.value.getFullYear());
 
@@ -17,7 +21,7 @@ export const useDate = (dateString: string) => {
       .toUpperCase();
   });
 
-  const isToday = computed(() => {
+  const isToday = () => {
     const today = new Date();
     const listen = date.value;
     return (
@@ -25,27 +29,52 @@ export const useDate = (dateString: string) => {
       today.getMonth() === listen.getMonth() &&
       today.getFullYear() === listen.getFullYear()
     );
+  };
+
+  const isFuture = () => {
+    const today = new Date().toISOString();
+    const listen = date.value.toISOString();
+
+    return listen > today;
+  };
+
+  // Check if this is the first occurrence of this month
+  const monthKey = computed(
+    () => `${date.value.getFullYear()}-${date.value.getMonth()}`,
+  );
+
+  const showMonthBanner = computed(() => {
+    const key = monthKey.value;
+    const isFirst = !seenMonths.value.has(key);
+
+    if (isFirst) {
+      seenMonths.value.add(key);
+    }
+
+    return isFirst;
   });
 
-  const isFuture = computed(() => {
-    const today = new Date();
-    const listen = date.value;
+  const isNewYear = computed(() => {
+    return date.value.getMonth() === 0; // January
+  });
 
-    // Reset time to midnight for accurate date comparison
-    today.setHours(0, 0, 0, 0);
-    const listenDate = new Date(listen);
-    listenDate.setHours(0, 0, 0, 0);
-
-    return listenDate > today;
+  const monthYearDisplay = computed(() => {
+    return isNewYear.value
+      ? `${formattedMonth.value} ${year.value}`
+      : formattedMonth.value;
   });
 
   return {
     date,
-    dayOfMonth,
+    day,
     month,
     year,
-    formattedMonth,
-    isToday,
-    isFuture,
+    formatted: {
+      formattedMonth,
+    },
+    utils: {
+      isFuture,
+      isToday,
+    },
   };
 };

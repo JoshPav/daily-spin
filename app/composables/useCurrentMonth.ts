@@ -1,15 +1,22 @@
 import { ref } from 'vue';
 
 // Shared state for the currently visible month
-const currentMonth = ref<string>('');
+const currentMonth = ref<Date>(new Date());
 
 export const useCurrentMonth = () => {
-  const setCurrentMonth = (monthYearDisplay: string) => {
-    currentMonth.value = monthYearDisplay;
+  const setCurrentMonth = (date: Date) => {
+    currentMonth.value = date;
   };
 
+  const formattedMonth = computed(() =>
+    currentMonth.value.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    }),
+  );
+
   return {
-    currentMonth,
+    formattedMonth,
     setCurrentMonth,
   };
 };

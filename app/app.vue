@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue';
-import { resetSeenMonths } from '~/composables/useMonthBanner';
 import type { DailyListens } from '~~/shared/schema';
 
 const { data, pending, error, refresh } = useListens();
@@ -38,11 +37,6 @@ const listens = computed<DailyListens[]>(() => {
   ];
 });
 
-// Reset seen months when listens data changes
-watch(listens, async () => {
-  resetSeenMonths();
-});
-
 // Refs for scrolling
 const scrollContainer = ref<HTMLElement | null>(null);
 const todayItem = ref<HTMLElement | null>(null);
@@ -62,15 +56,10 @@ const scrollToToday = () => {
   }
 };
 
-// Scroll after data loads
-watch(listens, async (newVal) => {
-  if (!newVal || newVal.length === 0) return;
-  await nextTick();
-  scrollToToday();
-});
-
 // Also scroll on page refresh
 onMounted(async () => {
+  console.log('here2');
+
   if (listens.value && listens.value.length > 0) {
     await nextTick();
     scrollToToday();
