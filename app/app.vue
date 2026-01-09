@@ -2,8 +2,6 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { resetSeenMonths } from '~/composables/useMonthBanner';
 import type { DailyListens } from '~~/shared/schema';
-import DailyListensModal from './components/DailyListensModal.vue';
-import StickyMonthHeader from './components/StickyMonthHeader.vue';
 
 const { data, pending, error, refresh } = useListens();
 
@@ -55,13 +53,11 @@ const scrollToToday = () => {
   const container = scrollContainer.value;
   const item = todayItem.value;
 
-  console.log([item, container]);
   if (container && item) {
-    console.log('scrolling');
     const top = item.offsetTop - container.offsetTop;
     container.scrollTo({
       top: top - container.offsetHeight / 2 + item.offsetHeight / 2,
-      behavior: 'smooth', // smooth animated scroll
+      behavior: 'smooth',
     });
   }
 };

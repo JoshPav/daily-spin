@@ -67,14 +67,13 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
+import { useCurrentMonth } from '~/composables/useCurrentMonth';
 import { useDailyListensModal } from '~/composables/useDailyListensModal';
 import { useDate } from '~/composables/useDate';
 import { useMonthBanner } from '~/composables/useMonthBanner';
-import { useCurrentMonth } from '~/composables/useCurrentMonth';
 import OrderedIcon from './Icons/OrderedIcon.vue';
-import ShuffleIcon from './Icons/OrderedIcon.vue';
+import ShuffleIcon from './Icons/ShuffleIcon.vue';
 import Tooltip from './common/Tooltip.vue';
-
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
   pending?: boolean;
@@ -113,7 +112,9 @@ const onImageLoad = () => {
 
 // Date utilities
 const { dayOfMonth, isToday, isFuture } = useDate(dayListens.date);
-const { showMonthBanner, monthYearDisplay, monthNameShort } = useMonthBanner(dayListens.date);
+const { showMonthBanner, monthYearDisplay, monthNameShort } = useMonthBanner(
+  dayListens.date,
+);
 
 // Sticky month header tracking
 const { setCurrentMonth } = useCurrentMonth();
@@ -135,7 +136,7 @@ onMounted(() => {
     {
       threshold: [0.3, 0.5, 0.7],
       rootMargin: '-40% 0px -40% 0px', // Focus on center 20% of viewport
-    }
+    },
   );
 
   observer.observe(albumCoverEl.value);
