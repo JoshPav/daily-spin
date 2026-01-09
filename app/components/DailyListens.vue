@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="albumCoverEl"
     class="album-cover"
     :class="{ today: isToday, clickable: !!dayAlbum, future: isFuture }"
     :style="dayAlbum && viewTransitionName
@@ -9,7 +10,7 @@
   >
     <!-- Month banner (only on day 1) -->
     <div v-if="showMonthBanner" class="month-banner">
-      {{ monthYearDisplay }}
+      {{ monthNameShort }}
     </div>
 
     <!-- Day number overlay -->
@@ -64,10 +65,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
 import { useDailyListensModal } from '~/composables/useDailyListensModal';
 import { useDate } from '~/composables/useDate';
+import { useMonthBanner } from '~/composables/useMonthBanner';
+import { useCurrentMonth } from '~/composables/useCurrentMonth';
+import OrderedIcon from './Icons/OrderedIcon.vue';
+import ShuffleIcon from './Icons/OrderedIcon.vue';
+import Tooltip from './common/Tooltip.vue';
 
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
@@ -106,8 +112,40 @@ const onImageLoad = () => {
 };
 
 // Date utilities
-const { dayOfMonth, monthYearDisplay, isToday, showMonthBanner, isFuture } =
-  useDate(dayListens.date);
+const { dayOfMonth, isToday, isFuture } = useDate(dayListens.date);
+const { showMonthBanner, monthYearDisplay, monthNameShort } = useMonthBanner(dayListens.date);
+
+// Sticky month header tracking
+const { setCurrentMonth } = useCurrentMonth();
+const albumCoverEl = ref<HTMLElement | null>(null);
+
+// Track when this item enters the viewport
+onMounted(() => {
+  if (!albumCoverEl.value) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        // When this item is in the middle/center portion of the viewport
+        if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+          setCurrentMonth(monthYearDisplay.value);
+        }
+      });
+    },
+    {
+      threshold: [0.3, 0.5, 0.7],
+      rootMargin: '-40% 0px -40% 0px', // Focus on center 20% of viewport
+    }
+  );
+
+  observer.observe(albumCoverEl.value);
+
+  onUnmounted(() => {
+    if (albumCoverEl.value) {
+      observer.unobserve(albumCoverEl.value);
+    }
+  });
+});
 </script>
 
 <style>

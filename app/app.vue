@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue';
-import { resetSeenMonths } from '~/composables/useDate';
+import { resetSeenMonths } from '~/composables/useMonthBanner';
 import type { DailyListens } from '~~/shared/schema';
 import DailyListensModal from './components/DailyListensModal.vue';
+import StickyMonthHeader from './components/StickyMonthHeader.vue';
 
 const { data, pending, error, refresh } = useListens();
 
@@ -110,6 +111,7 @@ useHead({
       <!-- Scrollable grid + button -->
       <div v-else class="scroll-wrapper" >
         <div class="day-container" ref="scrollContainer">
+          <StickyMonthHeader />
           <DailyListens
             v-for="day in listens"
             :key="day.date"
@@ -222,12 +224,13 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 24px;
-  margin: 32px 0; /* vertical margin only */
+  margin: 0 0 32px 0;
   width: 100%;
 
   flex-grow: 1;
   overflow-y: auto;
   padding-right: 8px;
+  padding-top: 40px; /* Space for month banners that stick out above */
 }
 
 .refresh-button {
@@ -281,7 +284,8 @@ body {
 
   .day-container {
     gap: 16px;
-    margin: 16px 0;
+    margin: 0 0 16px 0;
+    padding-top: 40px;
   }
 }
 </style>
