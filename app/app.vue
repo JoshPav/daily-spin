@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { resetSeenMonths } from '~/composables/useDate';
 import type { DailyListens } from '~~/shared/schema';
+import DailyListensModal from './components/DailyListensModal.vue';
 
 const { data, pending, error, refresh } = useListens();
 
@@ -131,7 +132,7 @@ useHead({
     </main>
 
     <Teleport to="body">
-      <AlbumModal />
+      <DailyListensModal />
     </Teleport>
   </div>
 </template>
@@ -219,10 +220,10 @@ body {
 
 .day-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 24px;
   margin: 32px 0; /* vertical margin only */
-  max-width: calc(7 * 180px + 6 * 24px);
+  width: 100%;
 
   flex-grow: 1;
   overflow-y: auto;
@@ -274,9 +275,13 @@ body {
     font-size: 32px;
   }
 
+  .main-content {
+    padding: 0 16px;
+  }
+
   .day-container {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
+    margin: 16px 0;
   }
 }
 </style>
