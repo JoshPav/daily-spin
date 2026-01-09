@@ -47,6 +47,10 @@ export class RecentlyPlayedService {
   private getTodaysFullListens = async () => {
     const todaysTracks = await this.getTodaysPlays();
 
+    if (!todaysTracks.length) {
+      return [];
+    }
+
     const groupedTracks = groupTracksByAlbum(todaysTracks);
 
     const processed = Array.from(groupedTracks.values()).map(
@@ -59,25 +63,28 @@ export class RecentlyPlayedService {
   private getTodaysPlays = async (): Promise<Track[]> => {
     const today = new Date();
 
-    const recentlyPlayed = await this.spotifyApi.player.getRecentlyPlayedTracks(
-      50,
-      {
-        type: 'after',
-        timestamp: getStartOfDayTimestamp(today),
-      },
-    );
+    try {
+      const recentlyPlayed =
+        await this.spotifyApi.player.getRecentlyPlayedTracks(50, {
+          type: 'after',
+          timestamp: getStartOfDayTimestamp(today),
+        });
 
-    return recentlyPlayed.items
-      .filter(
-        (item) =>
-          isPlayedToday(item.played_at, today) &&
-          item.track.album.total_tracks >= MIN_REQUIRED_TRACKS,
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
-      )
-      .map((play) => play.track);
+      return recentlyPlayed.items
+        .filter(
+          (item) =>
+            isPlayedToday(item.played_at, today) &&
+            item.track.album.total_tracks >= MIN_REQUIRED_TRACKS,
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
+        )
+        .map((play) => play.track);
+    } catch (err) {
+      console.error('An error occured fetching recently played songs', { err });
+      return [];
+    }
   };
 
   private processGroupedTracks = ({
