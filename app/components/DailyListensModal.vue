@@ -27,7 +27,6 @@
 
 <script setup lang="ts">
 import { onUnmounted, watch } from 'vue';
-import { useDailyListensModal } from '~/composables/useDailyListensModal';
 
 const { isOpen, dailyListens, viewTransitionName, close } =
   useDailyListensModal();

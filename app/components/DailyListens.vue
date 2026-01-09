@@ -53,9 +53,6 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { DailyListens } from '#shared/schema';
-import { useCurrentMonth } from '~/composables/useCurrentMonth';
-import { useDailyListensModal } from '~/composables/useDailyListensModal';
-import { useDate } from '~/composables/useDate';
 import Tooltip from './common/Tooltip.vue';
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;

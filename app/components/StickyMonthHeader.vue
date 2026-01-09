@@ -7,8 +7,6 @@
 </template>
 
 <script setup lang="ts">
-import { useCurrentMonth } from '~/composables/useCurrentMonth';
-
 const { formattedMonth } = useCurrentMonth();
 </script>
 

@@ -29,7 +29,6 @@
 <script setup lang="ts" generic="T">
 import CarouselNavButtons from './CarouselNavButtons.vue';
 import CarouselIndicators from './CarouselIndicators.vue';
-import { useCarousel } from '~/composables/useCarousel';
 
 const props = defineProps<{
   items: T[];
