@@ -58,8 +58,6 @@ const scrollToToday = () => {
 
 // Also scroll on page refresh
 onMounted(async () => {
-  console.log('here2');
-
   if (listens.value && listens.value.length > 0) {
     await nextTick();
     scrollToToday();
