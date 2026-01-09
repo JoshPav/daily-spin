@@ -19,8 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import CaretIcon from '../Icons/CaretIcon.vue';
-
 const emit = defineEmits<{
   prev: [];
   next: [];

@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 export const useCarousel = <T>(
   items: T[],
@@ -14,6 +14,7 @@ export const useCarousel = <T>(
   const touchEndY = ref(0);
   const isSwiping = ref(false);
 
+  // biome-ignore lint/style/noNonNullAssertion: Item will always exist
   const currentItem = computed(() => items[currentIndex.value]!);
 
   const prev = () => {

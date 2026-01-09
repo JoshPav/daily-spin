@@ -27,9 +27,6 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import CarouselNavButtons from './CarouselNavButtons.vue';
-import CarouselIndicators from './CarouselIndicators.vue';
-
 const props = defineProps<{
   items: T[];
   loop?: boolean;

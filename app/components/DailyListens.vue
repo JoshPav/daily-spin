@@ -53,7 +53,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { DailyListens } from '#shared/schema';
-import Tooltip from './common/Tooltip.vue';
+
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
   pending?: boolean;

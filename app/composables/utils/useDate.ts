@@ -43,7 +43,7 @@ export const useDate = (dateString: string) => {
     () => `${date.value.getFullYear()}-${date.value.getMonth()}`,
   );
 
-  const showMonthBanner = computed(() => {
+  const _showMonthBanner = computed(() => {
     const key = monthKey.value;
     const isFirst = !seenMonths.value.has(key);
 
@@ -58,7 +58,7 @@ export const useDate = (dateString: string) => {
     return date.value.getMonth() === 0; // January
   });
 
-  const monthYearDisplay = computed(() => {
+  const _monthYearDisplay = computed(() => {
     return isNewYear.value
       ? `${formattedMonth.value} ${year.value}`
       : formattedMonth.value;

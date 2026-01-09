@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 import type { DailyListens } from '~~/shared/schema';
 
 const { data, pending, error, refresh } = useListens();

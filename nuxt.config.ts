@@ -14,8 +14,6 @@ export default defineNuxtConfig({
   modules: ['@nuxt/image'],
 
   imports: {
-    dirs: [
-      'composables/**',
-    ],
+    dirs: ['composables/**'],
   },
 });
