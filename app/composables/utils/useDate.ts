@@ -9,41 +9,41 @@ export const resetSeenMonths = () => {
 };
 
 export const useDate = (dateString: string) => {
-  const listenDate = computed(() => new Date(dateString));
+  const date = computed(() => new Date(dateString));
 
-  const dayOfMonth = computed(() => listenDate.value.getDate());
+  const day = computed(() => date.value.getDate());
+  const month = computed(() => date.value.getMonth());
+  const year = computed(() => date.value.getFullYear());
 
-  const year = computed(() => listenDate.value.getFullYear());
-
-  const monthName = computed(() => {
-    return listenDate.value
+  const formattedMonth = computed(() => {
+    return date.value
       .toLocaleDateString('en-US', { month: 'short' })
       .toUpperCase();
   });
 
-  const isToday = computed(() => {
+  const isToday = () => {
     const today = new Date();
-    const listen = listenDate.value;
+    const listen = date.value;
     return (
       today.getDate() === listen.getDate() &&
       today.getMonth() === listen.getMonth() &&
       today.getFullYear() === listen.getFullYear()
     );
-  });
+  };
 
-  const isFuture = computed(() => {
+  const isFuture = () => {
     const today = new Date().toISOString();
-    const listen = listenDate.value.toISOString();
+    const listen = date.value.toISOString();
 
     return listen > today;
-  });
+  };
 
   // Check if this is the first occurrence of this month
   const monthKey = computed(
-    () => `${listenDate.value.getFullYear()}-${listenDate.value.getMonth()}`,
+    () => `${date.value.getFullYear()}-${date.value.getMonth()}`,
   );
 
-  const showMonthBanner = computed(() => {
+  const _showMonthBanner = computed(() => {
     const key = monthKey.value;
     const isFirst = !seenMonths.value.has(key);
 
@@ -55,24 +55,26 @@ export const useDate = (dateString: string) => {
   });
 
   const isNewYear = computed(() => {
-    return listenDate.value.getMonth() === 0; // January
+    return date.value.getMonth() === 0; // January
   });
 
-  const monthYearDisplay = computed(() => {
+  const _monthYearDisplay = computed(() => {
     return isNewYear.value
-      ? `${monthName.value} ${year.value}`
-      : monthName.value;
+      ? `${formattedMonth.value} ${year.value}`
+      : formattedMonth.value;
   });
 
   return {
-    listenDate,
-    dayOfMonth,
-    monthName,
+    date,
+    day,
+    month,
     year,
-    isToday,
-    showMonthBanner,
-    isNewYear,
-    monthYearDisplay,
-    isFuture,
+    formatted: {
+      formattedMonth,
+    },
+    utils: {
+      isFuture,
+      isToday,
+    },
   };
 };

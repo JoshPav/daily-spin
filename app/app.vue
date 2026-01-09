@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
-import { resetSeenMonths } from '~/composables/useDate';
+import { nextTick, onMounted, ref } from 'vue';
 import type { DailyListens } from '~~/shared/schema';
 
 const { data, pending, error, refresh } = useListens();
@@ -38,11 +37,6 @@ const listens = computed<DailyListens[]>(() => {
   ];
 });
 
-// Reset seen months when listens data changes
-watch(listens, async () => {
-  resetSeenMonths();
-});
-
 // Refs for scrolling
 const scrollContainer = ref<HTMLElement | null>(null);
 const todayItem = ref<HTMLElement | null>(null);
@@ -53,23 +47,14 @@ const scrollToToday = () => {
   const container = scrollContainer.value;
   const item = todayItem.value;
 
-  console.log([item, container]);
   if (container && item) {
-    console.log('scrolling');
     const top = item.offsetTop - container.offsetTop;
     container.scrollTo({
       top: top - container.offsetHeight / 2 + item.offsetHeight / 2,
-      behavior: 'smooth', // smooth animated scroll
+      behavior: 'smooth',
     });
   }
 };
-
-// Scroll after data loads
-watch(listens, async (newVal) => {
-  if (!newVal || newVal.length === 0) return;
-  await nextTick();
-  scrollToToday();
-});
 
 // Also scroll on page refresh
 onMounted(async () => {
@@ -109,6 +94,7 @@ useHead({
       <!-- Scrollable grid + button -->
       <div v-else class="scroll-wrapper" >
         <div class="day-container" ref="scrollContainer">
+          <StickyMonthHeader />
           <DailyListens
             v-for="day in listens"
             :key="day.date"
@@ -131,7 +117,7 @@ useHead({
     </main>
 
     <Teleport to="body">
-      <AlbumModal />
+      <DailyListensModal />
     </Teleport>
   </div>
 </template>
@@ -219,14 +205,15 @@ body {
 
 .day-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 24px;
-  margin: 32px 0; /* vertical margin only */
-  max-width: calc(7 * 180px + 6 * 24px);
+  margin: 0 0 32px 0;
+  width: 100%;
 
   flex-grow: 1;
   overflow-y: auto;
   padding-right: 8px;
+  padding-top: 40px; /* Space for month banners that stick out above */
 }
 
 .refresh-button {
@@ -274,9 +261,14 @@ body {
     font-size: 32px;
   }
 
+  .main-content {
+    padding: 0 16px;
+  }
+
   .day-container {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
+    margin: 0 0 16px 0;
+    padding-top: 40px;
   }
 }
 </style>

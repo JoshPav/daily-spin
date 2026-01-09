@@ -12,4 +12,10 @@ export default defineNuxtConfig({
   },
 
   modules: ['@nuxt/image'],
+  components: {
+    dirs: [{ path: '~/components', pathPrefix: false }],
+  },
+  imports: {
+    dirs: ['composables/**'],
+  },
 });
