@@ -1,6 +1,7 @@
 import type { SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
+import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
   areTracksInOrder,
@@ -113,7 +114,7 @@ export class RecentlyPlayedService {
     return {
       albumId,
       albumName,
-      imageUrl: images[0]?.url,
+      imageUrl: getAlbumArtwork(images),
       artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
