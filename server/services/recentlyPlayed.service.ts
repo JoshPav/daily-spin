@@ -22,6 +22,7 @@ type FinishedAlbum = {
   albumName: string;
   listenedInFull: true;
   listenedInOrder: boolean;
+  listenMethod: 'spotify';
 };
 
 type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
@@ -118,6 +119,7 @@ export class RecentlyPlayedService {
       artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
+      listenMethod: 'spotify',
     };
   };
 }

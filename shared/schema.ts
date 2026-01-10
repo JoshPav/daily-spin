@@ -1,5 +1,6 @@
 export type ListenMetadata = {
   inOrder: boolean;
+  listenMethod: ListenMethod;
 };
 
 export type Album = {
@@ -28,5 +29,20 @@ export type GetListensResponse = DailyListens[];
 
 export type GetListens = {
   query: GetListensQueryParams;
+  params: never;
+  body: never;
   response: GetListensResponse;
+};
+
+export type ListenMethod = 'spotify' | 'vinyl';
+
+export type AddAlbumListenBody = DailyAlbumListen & {
+  date: string;
+};
+
+export type AddListen = {
+  query: never;
+  params: never;
+  body: AddAlbumListenBody;
+  response: never;
 };

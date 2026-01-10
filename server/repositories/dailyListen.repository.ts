@@ -26,22 +26,28 @@ export class DailyListenRepository {
     userId: string,
     todaysListens: Pick<
       AlbumListen,
-      'listenedInOrder' | 'albumId' | 'albumName' | 'imageUrl' | 'artistNames'
+      | 'listenedInOrder'
+      | 'albumId'
+      | 'albumName'
+      | 'imageUrl'
+      | 'artistNames'
+      | 'listenMethod'
     >[],
+    date?: Date,
   ) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    const dateOfListens = date || new Date();
+    dateOfListens.setUTCHours(0, 0, 0, 0);
 
     return this.prismaClient.dailyListen.upsert({
       where: {
         userId_date: {
           userId,
-          date: today,
+          date: dateOfListens,
         },
       },
       create: {
         userId,
-        date: today,
+        date: dateOfListens,
         albums: {
           create: todaysListens.map(
             ({

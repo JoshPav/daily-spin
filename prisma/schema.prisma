@@ -29,19 +29,25 @@ model DailyListen {
 }
 
 model AlbumListen {
-  id              String   @id @default(cuid())
+  id              String       @id @default(cuid())
   dailyListenId   String
   albumId         String
   albumName       String
   artistNames     String
   imageUrl        String
-  listenedInOrder Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  listenedInOrder Boolean      @default(false)
+  listenMethod    ListenMethod @default(SPOTIFY)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
 
   @@unique([dailyListenId, albumId])
   @@index([dailyListenId])
   @@index([albumId])
+}
+
+enum ListenMethod {
+  SPOTIFY @map("spotify")
+  VINYL   @map("vinyl")
 }
