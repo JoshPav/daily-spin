@@ -41,6 +41,7 @@ model AlbumListen {
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
 
+  @@unique([dailyListenId, albumId])
   @@index([dailyListenId])
   @@index([albumId])
 }

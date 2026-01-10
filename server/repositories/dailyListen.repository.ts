@@ -29,10 +29,19 @@ export class DailyListenRepository {
       'listenedInOrder' | 'albumId' | 'albumName' | 'imageUrl' | 'artistNames'
     >[],
   ) {
-    return this.prismaClient.dailyListen.create({
-      data: {
-        userId: userId,
-        date: new Date(),
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    return this.prismaClient.dailyListen.upsert({
+      where: {
+        userId_date: {
+          userId,
+          date: today,
+        },
+      },
+      create: {
+        userId,
+        date: today,
         albums: {
           create: todaysListens.map(
             ({
@@ -49,6 +58,28 @@ export class DailyListenRepository {
               listenedInOrder,
             }),
           ),
+        },
+      },
+      update: {
+        albums: {
+          createMany: {
+            data: todaysListens.map(
+              ({
+                albumId,
+                albumName,
+                artistNames,
+                imageUrl,
+                listenedInOrder,
+              }) => ({
+                albumId,
+                albumName,
+                artistNames,
+                imageUrl,
+                listenedInOrder,
+              }),
+            ),
+            skipDuplicates: true,
+          },
         },
       },
       include: {
