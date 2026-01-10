@@ -5,7 +5,12 @@ export default defineEventHandler<Promise<GetListensResponse>>(
   async (event) => {
     const query = getQuery<GetListensQueryParams>(event);
 
-    const userId = 'cmk5y2in70000edh296qasr6s'; // TODO: Get from session once auth is set up
+    const userId = process.env.USER_ID;
+
+    // TODO: Get from session once auth is set up
+    if (!userId) {
+      throw new Error('No userId');
+    }
 
     // Default to last 2 weeks if no range specified
     const today = new Date();
