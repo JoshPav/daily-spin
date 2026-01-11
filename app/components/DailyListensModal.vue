@@ -1,32 +1,18 @@
 <template>
-  <div v-if="isOpen" class="modal-backdrop" @click="handleBackdropClick">
-    <div class="modal-content" @click.stop>
-      <button class="close-button" @click="close">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-        </svg>
-      </button>
+  <Modal :isOpen="isOpen" @close="close" :title="modalHeader" :modalSubheading="modalSubheading">
 
-      <!-- Date header -->
-      <div v-if="dailyListens" class="modal-header">
-        <h1 class="date-title">{{ formatDate(dailyListens.date) }}</h1>
-        <p v-if="dailyListens.albums.length > 1" class="album-count-text">
-          {{ dailyListens.albums.length }} albums listened
-        </p>
-      </div>
-
-      <!-- Albums carousel -->
+    <template #body>
       <AlbumCarousel
         v-if="dailyListens"
         :albums="dailyListens.albums"
         :view-transition-name="viewTransitionName"
       />
-    </div>
-  </div>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, watch } from 'vue';
+import { formatDate } from '~/utils/dateUtils';
 
 const { isOpen, dailyListens, viewTransitionName, close } =
   useDailyListensModal();
@@ -35,38 +21,18 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const handleBackdropClick = () => {
-  close();
-};
+const modalHeader = computed(() =>
+  dailyListens.value ? formatDate(new Date(dailyListens.value.date)) : '',
+);
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+const modalSubheading = computed(() => {
+  const albumCount = dailyListens.value?.albums.length;
 
-// Escape key handler
-const handleEscapeKey = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && isOpen.value) {
-    close();
+  if (!albumCount || albumCount <= 1) {
+    return undefined;
   }
-};
 
-// Add/remove event listener when modal opens/closes
-watch(isOpen, (newValue) => {
-  if (newValue) {
-    window.addEventListener('keydown', handleEscapeKey);
-  } else {
-    window.removeEventListener('keydown', handleEscapeKey);
-  }
-});
-
-// Cleanup on unmount
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleEscapeKey);
+  return `${albumCount} albums listened`;
 });
 </script>
 

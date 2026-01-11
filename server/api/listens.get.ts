@@ -1,16 +1,12 @@
 import type { GetListensQueryParams, GetListensResponse } from '#shared/schema';
 import { DailyListenService } from '../services/dailyListen.service';
+import { getUserId } from '../utils/auth.utils';
 
 export default defineEventHandler<Promise<GetListensResponse>>(
   async (event) => {
     const query = getQuery<GetListensQueryParams>(event);
 
-    const userId = process.env.USER_ID;
-
-    // TODO: Get from session once auth is set up
-    if (!userId) {
-      throw new Error('No userId');
-    }
+    const userId = getUserId();
 
     // Default to last 2 weeks if no range specified
     const today = new Date();

@@ -1,4 +1,4 @@
-import type { DailyListens } from '#shared/schema';
+import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { mapDailyListens } from '../mappers/listenMapper';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
@@ -7,6 +7,35 @@ import { RecentlyPlayedService } from './recentlyPlayed.service';
 
 export class DailyListenService {
   constructor(private dailyListenRepo = new DailyListenRepository()) {}
+
+  async addAlbumListen(
+    userId: string,
+    {
+      date,
+      album: { albumId, albumName, artistNames, imageUrl },
+      listenMetadata: {
+        inOrder: listenedInOrder = true,
+        listenMethod = 'spotify',
+      },
+    }: AddAlbumListenBody,
+  ) {
+    const dateOfListens = new Date(date);
+
+    this.dailyListenRepo.saveListens(
+      userId,
+      [
+        {
+          albumId,
+          albumName,
+          artistNames,
+          imageUrl,
+          listenedInOrder,
+          listenMethod,
+        },
+      ],
+      dateOfListens,
+    );
+  }
 
   async getListensInRange(userId: string, range: { start: Date; end: Date }) {
     const listens = await this.dailyListenRepo.getListens(

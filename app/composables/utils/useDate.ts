@@ -1,12 +1,4 @@
-import { computed, ref } from 'vue';
-
-// Shared state to track which months we've seen
-const seenMonths = ref<Set<string>>(new Set());
-
-// Reset function to clear the state (useful when data refreshes)
-export const resetSeenMonths = () => {
-  seenMonths.value = new Set();
-};
+import { computed } from 'vue';
 
 export const useDate = (dateString: string) => {
   const date = computed(() => new Date(dateString));
@@ -37,32 +29,6 @@ export const useDate = (dateString: string) => {
 
     return listen > today;
   };
-
-  // Check if this is the first occurrence of this month
-  const monthKey = computed(
-    () => `${date.value.getFullYear()}-${date.value.getMonth()}`,
-  );
-
-  const _showMonthBanner = computed(() => {
-    const key = monthKey.value;
-    const isFirst = !seenMonths.value.has(key);
-
-    if (isFirst) {
-      seenMonths.value.add(key);
-    }
-
-    return isFirst;
-  });
-
-  const isNewYear = computed(() => {
-    return date.value.getMonth() === 0; // January
-  });
-
-  const _monthYearDisplay = computed(() => {
-    return isNewYear.value
-      ? `${formattedMonth.value} ${year.value}`
-      : formattedMonth.value;
-  });
 
   return {
     date,

@@ -25,8 +25,10 @@
 
     <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
-        <Tooltip v-if="!isFuture" text="No albums listened to this day">—</Tooltip>
-
+        <button v-if="isToday()" class="add-album-button" @click.stop="() => openAddModal({ date })">
+          <PlusCircleIcon class="icon" />
+        </button>
+        <Tooltip v-else-if="!isFuture" text="No albums listened to this day">—</Tooltip>
       </div>
     </div>
     <div v-else-if="pending" class="skeleton"></div>
@@ -60,6 +62,7 @@ const { dayListens, pending = false } = defineProps<{
 }>();
 
 const { open, viewTransitionName } = useDailyListensModal();
+const { open: openAddModal } = useAddAlbumListenModal();
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
 const firstAlbum = computed(() => dayListens.albums[0]);
@@ -253,6 +256,35 @@ onMounted(() => {
   letter-spacing: 0.05em;
   color: #666;
   text-transform: uppercase;
+}
+
+.add-album-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  color: #1db954;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.2s ease;
+}
+
+.add-album-button .icon {
+  width: 36px;
+  height: 36px;
+}
+
+.add-album-button:hover {
+  color: #1ed760;
+  transform: scale(1.1);
+}
+
+.add-album-button:active {
+  transform: scale(1.05);
 }
 
 .empty.no-artwork {
