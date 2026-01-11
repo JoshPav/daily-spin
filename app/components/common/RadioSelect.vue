@@ -3,13 +3,16 @@
     <legend class="radio-legend">{{ label }}</legend>
 
     <div class="radio-options">
-      <label class="radio-card" v-for="{ text, value, icon } in options">
-      <input v-model="currentValue" type="radio" :name="value" :value="value" />
-      <div class="radio-card-content">
-        <component v-if="icon" :is="icon" />
-        <span>{{ text }}</span>
-      </div>
-    </label>
+      <label class="radio-card" v-for="{ text, value, icon } in options" :key="value">
+        <input v-model="currentValue" type="radio" :name="value" :value="value" />
+        <div class="radio-card-content">
+          <template v-if="icon">
+            <component v-if="isComponent(icon)" :is="icon" class="icon" />
+            <UIcon v-else :name="icon" class="icon" />
+          </template>
+          <span>{{ text }}</span>
+        </div>
+      </label>
     </div>
   </fieldset>
 </template>
@@ -18,7 +21,7 @@
 import type { Component } from 'vue';
 
 export type RadioOption<T> = {
-  icon?: Component;
+  icon?: string | Component;
   value: T;
   text: string;
 };
@@ -26,6 +29,11 @@ export type RadioOption<T> = {
 const currentValue = defineModel<T>();
 
 defineProps<{ label: string; options: RadioOption<T>[] }>();
+
+// Type guard to check if icon is a Component
+const isComponent = (icon: string | Component): icon is Component => {
+  return typeof icon === 'function' || typeof icon === 'object';
+};
 </script>
 
 <style>
@@ -91,14 +99,14 @@ defineProps<{ label: string; options: RadioOption<T>[] }>();
   background-color: #1a1a1a;
 }
 
-.radio-card-content svg {
+.radio-card-content .icon {
   width: 32px;
   height: 32px;
   color: #b3b3b3;
   transition: color 0.2s ease;
 }
 
-.radio-card input[type='radio']:checked + .radio-card-content svg {
+.radio-card input[type='radio']:checked + .radio-card-content .icon {
   color: #1db954;
 }
 
@@ -122,7 +130,7 @@ defineProps<{ label: string; options: RadioOption<T>[] }>();
     gap: 6px;
   }
 
-  .radio-card-content svg {
+  .radio-card-content .icon {
     width: 24px;
     height: 24px;
   }
