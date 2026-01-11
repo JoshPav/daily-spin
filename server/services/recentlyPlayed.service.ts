@@ -1,5 +1,4 @@
 import type { SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
-import { getAlbumArtists } from '#shared/utils/albumUtils';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
@@ -117,7 +116,7 @@ export class RecentlyPlayedService {
       albumId,
       albumName,
       imageUrl: getAlbumArtwork(images),
-      artistNames: getAlbumArtists(artists),
+      artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
       listenMethod: 'spotify',
