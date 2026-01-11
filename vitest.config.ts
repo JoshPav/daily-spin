@@ -6,12 +6,33 @@ import { defineConfig } from 'vitest/config';
 // Load test environment variables
 config({ path: '.env.test' });
 
+const aliasConfig = {
+  alias: [
+    { find: /^~~/, replacement: fileURLToPath(new URL('./', import.meta.url)) },
+    {
+      find: /^~/,
+      replacement: fileURLToPath(new URL('./app', import.meta.url)),
+    },
+    {
+      find: /^@\//,
+      replacement: fileURLToPath(new URL('./app/', import.meta.url)),
+    },
+    {
+      find: '#shared/schema',
+      replacement: fileURLToPath(new URL('./shared/schema', import.meta.url)),
+    },
+  ],
+};
+
 export default defineConfig({
   plugins: [vue()],
-  resolve: {
-    alias: {
-      '~': fileURLToPath(new URL('./', import.meta.url)),
-      '@': fileURLToPath(new URL('./', import.meta.url)),
+  resolve: aliasConfig,
+  optimizeDeps: {
+    include: ['@faker-js/faker', '@vue/test-utils'],
+  },
+  server: {
+    fs: {
+      allow: [fileURLToPath(new URL('.', import.meta.url))],
     },
   },
   test: {
@@ -23,6 +44,7 @@ export default defineConfig({
     },
     projects: [
       {
+        resolve: aliasConfig,
         test: {
           name: 'unit',
           environment: 'happy-dom',
@@ -31,6 +53,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: aliasConfig,
         test: {
           name: 'integration',
           environment: 'node',

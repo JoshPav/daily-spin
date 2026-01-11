@@ -9,7 +9,8 @@ export default defineNuxtConfig({
       spotifyAccessToken: process.env.NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN,
     },
   },
-  modules: ['@nuxt/image'],
+  css: ['~/assets/css/main.css'],
+  modules: ['@nuxt/image', '@nuxt/ui'],
   components: {
     dirs: [{ path: '~/components', pathPrefix: false }],
   },

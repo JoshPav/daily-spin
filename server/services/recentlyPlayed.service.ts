@@ -1,4 +1,5 @@
-import type { SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
+import type { ListenTime } from '@prisma/client';
+import type { PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
@@ -6,6 +7,7 @@ import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
   areTracksInOrder,
   type GroupedTracks,
+  getTrackListenTime,
   groupTracksByAlbum,
 } from '../utils/tracks.utils';
 
@@ -23,6 +25,7 @@ type FinishedAlbum = {
   listenedInFull: true;
   listenedInOrder: boolean;
   listenMethod: 'spotify';
+  listenTime: ListenTime;
 };
 
 type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
@@ -35,7 +38,7 @@ export class RecentlyPlayedService {
     private dailyListenRepo = new DailyListenRepository(),
   ) {}
 
-  processTodaysListens = async (userId: string) => {
+  async processTodaysListens(userId: string) {
     const todaysListens = await this.getTodaysFullListens();
 
     if (!todaysListens.length) {
@@ -44,9 +47,9 @@ export class RecentlyPlayedService {
     }
 
     return this.dailyListenRepo.saveListens(userId, todaysListens);
-  };
+  }
 
-  private getTodaysFullListens = async () => {
+  private async getTodaysFullListens() {
     const todaysTracks = await this.getTodaysPlays();
 
     if (!todaysTracks.length) {
@@ -60,9 +63,9 @@ export class RecentlyPlayedService {
     );
 
     return processed.filter((group) => group.listenedInFull);
-  };
+  }
 
-  private getTodaysPlays = async (): Promise<Track[]> => {
+  private async getTodaysPlays(): Promise<PlayHistory[]> {
     const today = new Date();
 
     try {
@@ -81,15 +84,14 @@ export class RecentlyPlayedService {
         .sort(
           (a, b) =>
             new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
-        )
-        .map((play) => play.track);
+        );
     } catch (err) {
       console.error('An error occured fetching recently played songs', { err });
       return [];
     }
-  };
+  }
 
-  private processGroupedTracks = ({
+  private processGroupedTracks({
     album: {
       id: albumId,
       name: albumName,
@@ -98,8 +100,8 @@ export class RecentlyPlayedService {
       images,
     },
     tracks,
-  }: GroupedTracks): ProcssedGroup => {
-    const uniqueTracks = new Set([...tracks.map((track) => track.id)]);
+  }: GroupedTracks): ProcssedGroup {
+    const uniqueTracks = new Set([...tracks.map(({ track }) => track.id)]);
 
     const listenedInFull =
       uniqueTracks.size === totalTracks && totalTracks >= 5;
@@ -120,6 +122,7 @@ export class RecentlyPlayedService {
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
       listenMethod: 'spotify',
+      listenTime: getTrackListenTime(tracks[0].played_at),
     };
-  };
+  }
 }

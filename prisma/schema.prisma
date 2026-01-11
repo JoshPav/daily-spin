@@ -36,7 +36,8 @@ model AlbumListen {
   artistNames     String
   imageUrl        String
   listenedInOrder Boolean      @default(false)
-  listenMethod    ListenMethod @default(SPOTIFY)
+  listenMethod    ListenMethod @default(spotify)
+  listenTime      ListenTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -48,7 +49,14 @@ model AlbumListen {
 }
 
 enum ListenMethod {
-  SPOTIFY  @map("spotify")
-  VINYL    @map("vinyl")
-  STREAMED @map("streamed")
+  spotify
+  vinyl
+  streamed
+}
+
+enum ListenTime {
+  morning
+  noon
+  evening
+  night
 }

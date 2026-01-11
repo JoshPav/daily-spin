@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  /* Brand Colors - Spotify Green */
+  --color-spotify-brand-green: oklch(0.62 0.17 145); /* #1db954 */
+  --color-spotify-brand-green-hover: oklch(0.65 0.18 145); /* #1ed760 */
+
+  /* Primary Color Scale - Based on Spotify Green */
+  --color-primary-50: oklch(0.97 0.01 145);
+  --color-primary-100: oklch(0.94 0.02 145);
+  --color-primary-200: oklch(0.88 0.04 145);
+  --color-primary-300: oklch(0.79 0.08 145);
+  --color-primary-400: oklch(0.69 0.14 145);
+  --color-primary-500: var(--color-spotify-brand-green);
+  --color-primary-600: oklch(0.56 0.15 145);
+  --color-primary-700: oklch(0.46 0.12 145);
+  --color-primary-800: oklch(0.37 0.09 145);
+  --color-primary-900: oklch(0.31 0.07 145);
+  --color-primary-950: oklch(0.19 0.04 145);
+
+  /* Coral/Red - Secondary/Error Color */
+  --color-secondary-50: oklch(0.97 0.02 15);
+  --color-secondary-100: oklch(0.94 0.04 15);
+  --color-secondary-200: oklch(0.89 0.08 15);
+  --color-secondary-300: oklch(0.81 0.13 15);
+  --color-secondary-400: oklch(0.72 0.16 15);
+  --color-secondary-500: oklch(0.65 0.17 15); /* #f15e6c */
+  --color-secondary-600: oklch(0.58 0.15 15);
+  --color-secondary-700: oklch(0.48 0.12 15);
+  --color-secondary-800: oklch(0.4 0.09 15);
+  --color-secondary-900: oklch(0.34 0.07 15);
+  --color-secondary-950: oklch(0.21 0.04 15);
+
+  /* Neutral Grays - Based on your background colors */
+  --color-neutral-50: oklch(0.98 0 0);
+  --color-neutral-100: oklch(0.95 0 0);
+  --color-neutral-200: oklch(0.88 0 0);
+  --color-neutral-300: oklch(0.75 0 0); /* #b3b3b3 */
+  --color-neutral-400: oklch(0.6 0 0);
+  --color-neutral-500: oklch(0.45 0 0);
+  --color-neutral-600: oklch(0.35 0 0); /* #333333 */
+  --color-neutral-700: oklch(0.25 0 0); /* #282828 */
+  --color-neutral-800: oklch(0.16 0 0); /* #121212 */
+  --color-neutral-900: oklch(0.12 0 0);
+  --color-neutral-950: oklch(0.08 0 0);
+}
+
+:root {
+  /* Semantic colors - map to your color palette */
+  --ui-primary: var(--color-primary-500);
+  --ui-secondary: var(--color-secondary-500);
+  --ui-error: var(--color-secondary-500);
+
+  /* Background layers */
+  --ui-bg: oklch(0.16 0 0); /* #121212 - main background */
+  --ui-bg-elevated: oklch(0.25 0 0); /* #282828 - cards/elevated surfaces */
+  --ui-bg-muted: oklch(0.35 0 0); /* #333333 - subtle backgrounds */
+  --ui-bg-accented: var(--color-primary-950);
+  --ui-bg-inverted: oklch(1 0 0); /* white */
+
+  /* Text colors */
+  --ui-text: oklch(1 0 0); /* #ffffff - primary text */
+  --ui-text-highlighted: oklch(1 0 0);
+  --ui-text-muted: oklch(0.75 0 0); /* #b3b3b3 - secondary text */
+  --ui-text-dimmed: oklch(0.6 0 0);
+  --ui-text-toned: oklch(0.45 0 0);
+  --ui-text-inverted: oklch(0.16 0 0);
+
+  /* Border colors */
+  --ui-border: oklch(0.35 0 0);
+  --ui-border-muted: oklch(0.25 0 0);
+  --ui-border-accented: var(--color-primary-500);
+  --ui-border-inverted: oklch(0.88 0 0);
+
+  /* Border radius */
+  --ui-radius: 8px;
+
+  /* Container width */
+  --ui-container: 1800px;
+
+  /* Header height */
+  --ui-header-height: 120px;
+}

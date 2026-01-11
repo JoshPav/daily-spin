@@ -12,7 +12,9 @@
 
           <AlbumPreview  :album="selectedAlbum" />
 
-          <RadioSelect label="Listen Method" :options="radioOptions" v-model="listenMethod" />
+          <RadioSelect label="Listen Method" :options="listenMethodOptions" v-model="listenMethod" />
+
+          <RadioSelect label="Time of Day" :options="listenTimeOptions" v-model="listenTime" />
 
           <Button variant="primary" @click="logAlbumListen" :loading="saving">
             Save Listen
@@ -24,21 +26,24 @@
 </template>
 
 <script lang="ts" setup>
-import type { ListenMethod } from '#shared/schema';
+import { h } from 'vue';
+import type { ListenMethod, ListenTime } from '#shared/schema';
 import { formatDate } from '~/utils/dateUtils';
-import SpotifyIcon from './common/Icons/SpotifyIcon.vue';
-import StreamIcon from './common/Icons/StreamIcon.vue';
-import VinylIcon from './common/Icons/VinylIcon.vue';
+import SpotifyIconSvg from './common/Icons/SpotifyIcon.vue';
 import type { RadioOption } from './common/RadioSelect.vue';
 
 const { close, dateOfListen, isOpen } = useAddAlbumListenModal();
 
-const { selectedAlbum, listenMethod, saving, logAlbumListen } = useLogAlbum({
-  date: dateOfListen,
-  onSuccess: close,
-});
+const { selectedAlbum, listenMethod, listenTime, saving, logAlbumListen } =
+  useLogAlbum({
+    date: dateOfListen,
+    onSuccess: close,
+  });
 
-const radioOptions: RadioOption<ListenMethod>[] = [
+// Wrap Vue components in h() function
+const SpotifyIcon = () => h(SpotifyIconSvg);
+
+const listenMethodOptions: RadioOption<ListenMethod>[] = [
   {
     text: 'Spotify',
     value: 'spotify',
@@ -47,12 +52,35 @@ const radioOptions: RadioOption<ListenMethod>[] = [
   {
     text: 'Vinyl',
     value: 'vinyl',
-    icon: VinylIcon,
+    icon: 'i-lucide-disc-3',
   },
   {
     text: 'Streamed',
     value: 'streamed',
-    icon: StreamIcon,
+    icon: 'i-lucide-audio-lines',
+  },
+];
+
+const listenTimeOptions: RadioOption<ListenTime>[] = [
+  {
+    text: 'Morning',
+    value: 'morning',
+    icon: 'i-lucide-sunrise',
+  },
+  {
+    text: 'Afternoon',
+    value: 'noon',
+    icon: 'i-lucide-sun',
+  },
+  {
+    text: 'Evening',
+    value: 'evening',
+    icon: 'i-lucide-sunset',
+  },
+  {
+    text: 'Night',
+    value: 'night',
+    icon: 'i-lucide-moon-star',
   },
 ];
 

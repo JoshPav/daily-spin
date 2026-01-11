@@ -101,6 +101,10 @@ describe('useLogAlbum', () => {
     });
 
     it('should call API with correct payload', async () => {
+      // Mock the current time to be 10:00 AM (morning)
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2024-01-15T10:00:00Z'));
+
       const testDate = new Date('2024-01-15');
       const date = ref(testDate);
       const { selectedAlbum, logAlbumListen } = useLogAlbum({ date });
@@ -121,9 +125,12 @@ describe('useLogAlbum', () => {
           listenMetadata: {
             inOrder: true,
             listenMethod: 'spotify',
+            listenTime: 'morning',
           },
         },
       });
+
+      vi.useRealTimers();
     });
 
     it('should set saving to true while loading', async () => {

@@ -1,10 +1,11 @@
-import type { SimplifiedAlbum, Track } from '@spotify/web-api-ts-sdk';
+import { ListenTime } from '@prisma/client';
+import type { PlayHistory, SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 
-export const areTracksInOrder = (tracks: Track[]): boolean => {
+export const areTracksInOrder = (tracks: PlayHistory[]): boolean => {
   let previousTrackNumber = 0;
   let previousDiscNumber = 1;
 
-  for (const track of tracks) {
+  for (const { track } of tracks) {
     const currentDiscNumber = track.disc_number;
     const currentTrackNumber = track.track_number;
 
@@ -36,15 +37,16 @@ export const areTracksInOrder = (tracks: Track[]): boolean => {
 
 export type GroupedTracks = {
   album: SimplifiedAlbum;
-  tracks: Track[];
+  tracks: PlayHistory[];
 };
 
 export type AlbumMap = Map<string, GroupedTracks>;
 
-export const groupTracksByAlbum = (tracks: Track[]): AlbumMap => {
+export const groupTracksByAlbum = (tracks: PlayHistory[]): AlbumMap => {
   const albumMap = new Map<string, GroupedTracks>();
 
-  for (const track of tracks) {
+  for (const play of tracks) {
+    const { track } = play;
     const albumId = track.album.id;
 
     if (!albumMap.has(track.album.id)) {
@@ -52,8 +54,40 @@ export const groupTracksByAlbum = (tracks: Track[]): AlbumMap => {
     }
 
     const albumData = albumMap.get(albumId);
-    albumData?.tracks.push(track);
+    albumData?.tracks.push(play);
   }
 
   return albumMap;
+};
+
+type HourRange = { start: number; end: number };
+
+const TIME_RANGES: Record<ListenTime, HourRange> = {
+  [ListenTime.morning]: { start: 5, end: 12 },
+  [ListenTime.noon]: { start: 12, end: 18 },
+  [ListenTime.evening]: { start: 18, end: 22 },
+  [ListenTime.night]: { start: 22, end: 5 },
+};
+
+const inHourRange =
+  (hour: number) =>
+  ({ start, end }: HourRange) =>
+    hour >= start && hour < end;
+
+export const getTrackListenTime = (playedAt: string): ListenTime => {
+  const inRange = inHourRange(new Date(playedAt).getHours());
+
+  if (inRange(TIME_RANGES[ListenTime.morning])) {
+    return ListenTime.morning;
+  }
+
+  if (inRange(TIME_RANGES[ListenTime.noon])) {
+    return ListenTime.noon;
+  }
+
+  if (inRange(TIME_RANGES[ListenTime.evening])) {
+    return ListenTime.evening;
+  }
+
+  return ListenTime.night;
 };

@@ -78,49 +78,51 @@ useHead({
 </script>
 
 <template>
-  <div class="app-container">
-    <header class="header">
-      <h1 class="title">Album of the Day</h1>
-    </header>
+  <UApp>
+    <div class="app-container">
+      <header class="header">
+        <h1 class="title">Album of the Day</h1>
+      </header>
 
-    <main class="main-content">
-      <!-- Loading / Error / Empty states outside scrollable area -->
-      <div v-if="pending" class="loading">Loading...</div>
-      <div v-else-if="error" class="error">Error: {{ error }}</div>
-      <div v-else-if="listens && listens.length === 0" class="empty-state">
-        No listens yet for this month
-      </div>
-
-      <!-- Scrollable grid + button -->
-      <div v-else class="scroll-wrapper" >
-        <div class="day-container" ref="scrollContainer">
-          <StickyMonthHeader />
-          <DailyListens
-            v-for="day in listens"
-            :key="day.date"
-            :day-listens="day"
-            :ref="el => {
-              if (day.date.split('T')[0] === today) {
-                todayItem = (el as any)?.$el ?? el ?? null;
-              }
-            }"
-          />
+      <main class="main-content">
+        <!-- Loading / Error / Empty states outside scrollable area -->
+        <div v-if="pending" class="loading">Loading...</div>
+        <div v-else-if="error" class="error">Error: {{ error }}</div>
+        <div v-else-if="listens && listens.length === 0" class="empty-state">
+          No listens yet for this month
         </div>
 
-        <button class="refresh-button" @click="refresh()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-          </svg>
-          Refresh
-        </button>
-      </div>
-    </main>
+        <!-- Scrollable grid + button -->
+        <div v-else class="scroll-wrapper" >
+          <div class="day-container" ref="scrollContainer">
+            <StickyMonthHeader />
+            <DailyListens
+              v-for="day in listens"
+              :key="day.date"
+              :day-listens="day"
+              :ref="el => {
+                if (day.date.split('T')[0] === today) {
+                  todayItem = (el as any)?.$el ?? el ?? null;
+                }
+              }"
+            />
+          </div>
 
-    <Teleport to="body">
-      <DailyListensModal />
-      <LogAlbumModal />
-    </Teleport>
-  </div>
+          <button class="refresh-button" @click="refresh()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </main>
+
+      <Teleport to="body">
+        <DailyListensModal />
+        <LogAlbumModal />
+      </Teleport>
+    </div>
+  </UApp>
 </template>
 
 <style>
@@ -207,6 +209,7 @@ body {
 .day-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-auto-rows: min-content;
   gap: 24px;
   margin: 0 0 32px 0;
   width: 100%;

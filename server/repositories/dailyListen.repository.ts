@@ -32,6 +32,7 @@ export class DailyListenRepository {
       | 'imageUrl'
       | 'artistNames'
       | 'listenMethod'
+      | 'listenTime'
     >[],
     date?: Date,
   ) {
@@ -56,12 +57,14 @@ export class DailyListenRepository {
               artistNames,
               imageUrl,
               listenedInOrder,
+              listenTime,
             }) => ({
               albumId,
               albumName,
               artistNames,
               imageUrl,
               listenedInOrder,
+              listenTime,
             }),
           ),
         },
@@ -76,12 +79,16 @@ export class DailyListenRepository {
                 artistNames,
                 imageUrl,
                 listenedInOrder,
+                listenMethod,
+                listenTime,
               }) => ({
                 albumId,
                 albumName,
                 artistNames,
                 imageUrl,
                 listenedInOrder,
+                listenMethod,
+                listenTime,
               }),
             ),
             skipDuplicates: true,

@@ -24,6 +24,16 @@
       "quoteStyle": "single"
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true,
+      "cssModules": false,
+      "allowWrongLineComments": true
+    },
+    "formatter": {
+      "enabled": true
+    }
+  },
   "overrides": [
     {
       "includes": ["**/*.vue"],
@@ -32,6 +42,14 @@
           "correctness": {
             "noUnusedVariables": "off"
           }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.css"],
+      "css": {
+        "parser": {
+          "allowWrongLineComments": true
         }
       }
     }

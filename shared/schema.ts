@@ -1,6 +1,7 @@
 export type ListenMetadata = {
   inOrder: boolean;
   listenMethod: ListenMethod;
+  listenTime: ListenTime | null;
 };
 
 export type Album = {
@@ -35,6 +36,8 @@ export type GetListens = {
 };
 
 export type ListenMethod = 'spotify' | 'vinyl' | 'streamed';
+
+export type ListenTime = 'morning' | 'noon' | 'evening' | 'night';
 
 export type AddAlbumListenBody = DailyAlbumListen & {
   date: string;
