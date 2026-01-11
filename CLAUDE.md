@@ -220,6 +220,8 @@ This section tracks planned features and their implementation status.
   - CSS varaibles are hardcoded everywhere. We should define variables centrally and reference these
 - **Nuxt UI migration**
   - Replace custom components with Nuxt UI components
+- **Dates**
+  - Add modern date library to tidy up formatting logic
 
 ### Planned Features
 
