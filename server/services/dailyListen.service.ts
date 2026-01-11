@@ -16,6 +16,7 @@ export class DailyListenService {
       listenMetadata: {
         inOrder: listenedInOrder = true,
         listenMethod = 'spotify',
+        listenTime,
       },
     }: AddAlbumListenBody,
   ) {
@@ -31,6 +32,7 @@ export class DailyListenService {
           imageUrl,
           listenedInOrder,
           listenMethod,
+          listenTime,
         },
       ],
       dateOfListens,
