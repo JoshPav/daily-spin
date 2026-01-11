@@ -1,10 +1,11 @@
 import type { SearchResults } from '@spotify/web-api-ts-sdk';
+import { ref } from 'vue';
 
 const SEARCH_LIMIT = 3;
 
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
 
-export const useAlbumSearch = () => {
+export const useSpotifyAlbumSearch = () => {
   const config = useRuntimeConfig();
   const token = config.public.spotifyAccessToken;
   const searchQuery = ref('');

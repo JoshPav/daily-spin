@@ -1,3 +1,5 @@
+import { computed, ref } from 'vue';
+
 const dateOfListen = ref<Date | undefined>();
 
 type OpenModalPayload = {

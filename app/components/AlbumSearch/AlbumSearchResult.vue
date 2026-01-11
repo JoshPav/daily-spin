@@ -19,8 +19,6 @@
 </template>
 
 <script lang="ts" setup>
-import { getAlbumArtists } from '#shared/utils/albumUtils';
-
 const { album } = defineProps<{ album: SearchResult; selected: boolean }>();
 
 const emit = defineEmits<{

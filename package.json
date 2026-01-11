@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "calculate-album": "bun scripts/calculateTodaysAlbum.ts",
     "format": "biome check --write --unsafe .",
-    "lint": "biome check .",
+    "lint": "tsc --noEmit && biome check .",
     "test:db:up": "docker compose up -d --wait",
     "test:db:down": "docker compose down -v",
     "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",

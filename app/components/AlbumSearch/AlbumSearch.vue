@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchResult } from '~/composables/api/useAlbumSearch';
+import type { SearchResult } from '~/composables/api/useSpotifyAlbumSearch';
 
 const props = defineProps<{
   modelValue: SearchResult | undefined;
@@ -39,7 +39,7 @@ const emit = defineEmits<{
   'update:modelValue': [album: SearchResult | undefined];
 }>();
 
-const { searchResults, loading, search } = useAlbumSearch();
+const { searchResults, loading, search } = useSpotifyAlbumSearch();
 
 const searchInput = ref('');
 const isFocused = ref(false);

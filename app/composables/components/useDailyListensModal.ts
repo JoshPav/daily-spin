@@ -1,7 +1,6 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { DailyListens } from '#shared/schema';
 
-const isOpen = ref(false);
 const dailyListens = ref<DailyListens | null>(null);
 
 type OpenModalPayload = {
@@ -11,14 +10,12 @@ type OpenModalPayload = {
 export const useDailyListensModal = () => {
   const open = (payload: OpenModalPayload) => {
     dailyListens.value = payload.dailyListens;
-    isOpen.value = true;
   };
 
+  const isOpen = computed(() => !!dailyListens.value);
+
   const close = () => {
-    isOpen.value = false;
-    setTimeout(() => {
-      dailyListens.value = null;
-    }, 300);
+    dailyListens.value = null;
   };
 
   const viewTransitionName = computed(() => {

@@ -16,8 +16,6 @@
 </template>
 
 <script lang="ts" setup>
-import { getAlbumArtists } from '#shared/utils/albumUtils';
-
 defineProps<{ album: SearchResult }>();
 </script>
 

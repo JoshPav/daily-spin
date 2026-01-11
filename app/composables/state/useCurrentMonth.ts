@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 // Shared state for the currently visible month
 const currentMonth = ref<Date>(new Date());

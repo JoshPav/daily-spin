@@ -24,12 +24,12 @@
 </template>
 
 <script lang="ts" setup>
+import type { ListenMethod } from '#shared/schema';
 import { formatDate } from '~/utils/dateUtils';
-import type { RadioOption } from './common/RadioSelect.vue';
 import SpotifyIcon from './common/Icons/SpotifyIcon.vue';
 import StreamIcon from './common/Icons/StreamIcon.vue';
 import VinylIcon from './common/Icons/VinylIcon.vue';
-import type { ListenMethod } from '#shared/schema';
+import type { RadioOption } from './common/RadioSelect.vue';
 
 const { close, dateOfListen, isOpen } = useAddAlbumListenModal();
 

@@ -3,7 +3,7 @@ import { DailyListenService } from '../services/dailyListen.service';
 import { getUserId } from '../utils/auth.utils';
 
 export default defineEventHandler(async (event) => {
-  const service = new DailyListenService();
+  const _service = new DailyListenService();
   const userId = getUserId();
 
   const body = await readBody<AddAlbumListenBody>(event);

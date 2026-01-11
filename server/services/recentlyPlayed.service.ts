@@ -1,4 +1,5 @@
 import type { SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
+import { getAlbumArtists } from '#shared/utils/albumUtils';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
@@ -8,7 +9,6 @@ import {
   type GroupedTracks,
   groupTracksByAlbum,
 } from '../utils/tracks.utils';
-import { getAlbumArtists } from '#shared/utils/albumUtils';
 
 type UnfinishedAlbum = {
   albumId: string;
