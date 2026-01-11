@@ -17,7 +17,7 @@ const {
   company: { name: companyName },
 } = faker;
 
-export const simplifiedAlbum = createFactory<SimplifiedAlbum>({
+export const simplifiedAlbum = createFactory<SimplifiedAlbum>(() => ({
   album_group: 'album',
   album_type: 'album',
   artists: [],
@@ -64,9 +64,9 @@ export const simplifiedAlbum = createFactory<SimplifiedAlbum>({
   total_tracks: int({ min: 8, max: 15 }),
   type: 'album',
   uri: `spotify:album:${uuid()}`,
-});
+}));
 
-export const simplifiedArtist = createFactory<SimplifiedArtist>({
+export const simplifiedArtist = createFactory<SimplifiedArtist>(() => ({
   external_urls: {
     spotify: url(),
   },
@@ -75,9 +75,9 @@ export const simplifiedArtist = createFactory<SimplifiedArtist>({
   name: artist(),
   type: 'artist',
   uri: `spotify:artist:${uuid()}`,
-});
+}));
 
-export const track = createFactory<Track>({
+export const track = createFactory<Track>(() => ({
   album: simplifiedAlbum(),
   artists: [simplifiedArtist()],
   available_markets: ['US', 'GB', 'CA'],
@@ -103,11 +103,11 @@ export const track = createFactory<Track>({
   track_number: int({ min: 1, max: 15 }),
   type: 'track',
   uri: `spotify:track:${uuid()}`,
-});
+}));
 
-export const context = createFactory<Context>({
+export const context = createFactory<Context>(() => ({
   href: url(),
   external_urls: { spotify: url() },
   type: 'context',
   uri: `spotify:context:${uuid()}`,
-});
+}));

@@ -215,6 +215,12 @@ This section tracks planned features and their implementation status.
 - **Listen metadata**: Tracks whether albums were listened in order and time of day (morning/noon/evening/night)
 - **Calendar view**: Display listening history in a calendar format
 
+### Tech debt
+- **CSS Tidy Up**
+  - CSS varaibles are hardcoded everywhere. We should define variables centrally and reference these
+- **Nuxt UI migration**
+  - Replace custom components with Nuxt UI components
+
 ### Planned Features
 
 - **Spotify API integration** (blocked by [Spotify developer forum issue](https://community.spotify.com/t5/Spotify-for-Developers/Unable-to-create-app/td-p/7283365/page/7))
@@ -240,6 +246,14 @@ _When a feature is fully implemented, move it from this section to "Current Feat
 
 ## Development Workflow
 
+### Git Commit Policy
+
+**CRITICAL**: NEVER create git commits without explicit user approval. Always ask the user before committing changes, even if they requested a commit earlier. This applies to all commits, including:
+- Feature implementation commits
+- Bug fix commits
+- Incremental step commits
+- Any other code changes
+
 ### Starting a New Feature
 
 Before implementing any new feature, follow this workflow:
@@ -260,9 +274,10 @@ Before implementing any new feature, follow this workflow:
    - Explore the codebase and understand existing patterns
    - Identify which files need to be modified
    - Design the implementation approach
+   - Write the plan to a file in `.claude/plans/` directory (e.g., `.claude/plans/feature-name-plan.md`)
    - Get user approval on the plan before writing code
 
-   In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review.
+   In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review. All plans should be saved to `.claude/plans/` for easy reference.
 
 3. **Wait for user direction**: After creating the plan, WAIT for the user to specify which parts to implement. Do not automatically start implementing the entire plan.
 
@@ -270,9 +285,9 @@ Before implementing any new feature, follow this workflow:
 
 5. **Test**: Add unit and/or integration tests as appropriate
 
-6. **Commit after each step**: After completing each step of the plan, create a commit with a clear message describing what was implemented. This provides incremental progress tracking and makes it easier to review changes.
+6. **Ask before committing**: After completing each step of the plan, ASK the user for permission before creating a commit. Never commit without explicit approval.
 
-7. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan
+7. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan (only after user approval)
 
 8. **Update the roadmap**:
    - If the feature is fully implemented: Remove it from the Roadmap section and add it to the Features list

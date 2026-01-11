@@ -1,4 +1,4 @@
-import type { ListenTime } from '@prisma/client';
+import { ListenTime } from '@prisma/client';
 import type { PlayHistory, SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 
 export const areTracksInOrder = (tracks: PlayHistory[]): boolean => {
@@ -63,10 +63,10 @@ export const groupTracksByAlbum = (tracks: PlayHistory[]): AlbumMap => {
 type HourRange = { start: number; end: number };
 
 const TIME_RANGES: Record<ListenTime, HourRange> = {
-  morning: { start: 5, end: 12 },
-  noon: { start: 12, end: 18 },
-  evening: { start: 18, end: 22 },
-  night: { start: 22, end: 5 },
+  [ListenTime.morning]: { start: 5, end: 12 },
+  [ListenTime.noon]: { start: 12, end: 18 },
+  [ListenTime.evening]: { start: 18, end: 22 },
+  [ListenTime.night]: { start: 22, end: 5 },
 };
 
 const inHourRange =
@@ -77,17 +77,17 @@ const inHourRange =
 export const getTrackListenTime = (playedAt: string): ListenTime => {
   const inRange = inHourRange(new Date(playedAt).getHours());
 
-  if (inRange(TIME_RANGES.morning)) {
-    return 'morning';
+  if (inRange(TIME_RANGES[ListenTime.morning])) {
+    return ListenTime.morning;
   }
 
-  if (inRange(TIME_RANGES.noon)) {
-    return 'noon';
+  if (inRange(TIME_RANGES[ListenTime.noon])) {
+    return ListenTime.noon;
   }
 
-  if (inRange(TIME_RANGES.evening)) {
-    return 'evening';
+  if (inRange(TIME_RANGES[ListenTime.evening])) {
+    return ListenTime.evening;
   }
 
-  return 'night';
+  return ListenTime.night;
 };

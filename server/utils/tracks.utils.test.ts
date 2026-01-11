@@ -1,15 +1,15 @@
 import type { PlayHistory } from '@spotify/web-api-ts-sdk';
 import { describe, expect, it } from 'vitest';
 import {
+  context,
+  simplifiedAlbum,
+  track,
+} from '~~/tests/factories/spotify.factory';
+import {
   areTracksInOrder,
   getTrackListenTime,
   groupTracksByAlbum,
 } from './tracks.utils';
-import {
-  track,
-  simplifiedAlbum,
-  context,
-} from '~~/tests/factories/spotify.factory';
 
 describe('tracks.utils', () => {
   describe('areTracksInOrder', () => {

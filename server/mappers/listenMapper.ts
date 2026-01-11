@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import type { DailyListens } from '#shared/schema';
 
 export const mapDailyListens = (
@@ -23,7 +23,11 @@ export const mapDailyListens = (
         artistNames,
         imageUrl,
       },
-      listenMetadata: { inOrder: listenedInOrder, listenMethod, listenTime },
+      listenMetadata: {
+        inOrder: listenedInOrder,
+        listenMethod,
+        listenTime,
+      },
     }),
   ),
 });

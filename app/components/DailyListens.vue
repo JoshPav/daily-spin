@@ -23,7 +23,7 @@
       {{ dayListens.albums.length }}
     </div>
 
-    <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
+    <div v-if="isToday()" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
         <button v-if="isToday()" class="add-album-button" @click.stop="() => openAddModal({ date })">
           <PlusCircleIcon class="icon" />
@@ -39,7 +39,7 @@
       </div>
     </div>
 
-    <template v-if="hasAlbums">
+    <template v-if="!isToday()">
       <NuxtImg
         v-for="(albumListen, index) in dayListens.albums.slice(0, 4)"
         :key="albumListen.album.albumId"
