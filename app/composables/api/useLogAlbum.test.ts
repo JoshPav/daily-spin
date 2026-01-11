@@ -1,7 +1,7 @@
+import type { SimplifiedArtist } from '@spotify/web-api-ts-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useLogAlbum } from './useLogAlbum';
-import type { SimplifiedArtist } from '@spotify/web-api-ts-sdk';
 
 const mockSearchResult = {
   id: 'test-album-id',
