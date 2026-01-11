@@ -217,11 +217,6 @@ This section tracks planned features and their implementation status.
 
 ### Planned Features
 
-- **Listening time tracking**: Track total listening time for each album
-  - Store the total minutes/hours spent listening to each album
-  - Display listening duration in the UI
-  - Calculate based on track durations from Spotify API
-
 - **Spotify API integration** (blocked by [Spotify developer forum issue](https://community.spotify.com/t5/Spotify-for-Developers/Unable-to-create-app/td-p/7283365/page/7))
   - Setup login screen which uses BetterAuth (or similar) to authenticate users and store required info
   - Use Spotify auth flow to generate tokens when making requests (instead of current env var workaround)
