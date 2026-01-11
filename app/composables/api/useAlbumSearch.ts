@@ -1,5 +1,5 @@
 import type { SearchResults } from '@spotify/web-api-ts-sdk';
-import mockData from '../../../tests/data/searchResults.testdata';
+
 const SEARCH_LIMIT = 3;
 
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
@@ -24,15 +24,14 @@ export const useAlbumSearch = () => {
     error.value = null;
 
     try {
-      const data = mockData;
-      // const data = await $fetch<SearchResults<['album']>>(
-      //   `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=${SEARCH_LIMIT}`,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //   },
-      // );
+      const data = await $fetch<SearchResults<['album']>>(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=${SEARCH_LIMIT}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       searchResults.value = data.albums?.items || [];
     } catch (err) {
