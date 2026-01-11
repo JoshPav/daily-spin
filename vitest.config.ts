@@ -9,9 +9,18 @@ config({ path: '.env.test' });
 const aliasConfig = {
   alias: [
     { find: /^~~/, replacement: fileURLToPath(new URL('./', import.meta.url)) },
-    { find: /^~/, replacement: fileURLToPath(new URL('./app', import.meta.url)) },
-    { find: /^@\//, replacement: fileURLToPath(new URL('./app/', import.meta.url)) },
-    { find: '#shared/schema', replacement: fileURLToPath(new URL('./shared/schema', import.meta.url)) },
+    {
+      find: /^~/,
+      replacement: fileURLToPath(new URL('./app', import.meta.url)),
+    },
+    {
+      find: /^@\//,
+      replacement: fileURLToPath(new URL('./app/', import.meta.url)),
+    },
+    {
+      find: '#shared/schema',
+      replacement: fileURLToPath(new URL('./shared/schema', import.meta.url)),
+    },
   ],
 };
 

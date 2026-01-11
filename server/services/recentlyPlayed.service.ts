@@ -1,4 +1,4 @@
-import { ListenMethod, type ListenTime } from '@prisma/client';
+import type { ListenTime } from '@prisma/client';
 import type { PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
