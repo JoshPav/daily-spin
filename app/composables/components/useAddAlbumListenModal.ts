@@ -1,16 +1,23 @@
-const isOpen = ref(false);
+const dateOfListen = ref<Date | undefined>();
+
+type OpenModalPayload = {
+  date: Date;
+};
 
 export const useAddAlbumListenModal = () => {
-  const open = () => {
-    isOpen.value = true;
+  const isOpen = computed(() => !!dateOfListen.value);
+
+  const open = ({ date }: OpenModalPayload) => {
+    dateOfListen.value = date;
   };
 
   const close = () => {
-    isOpen.value = false;
+    dateOfListen.value = undefined;
   };
 
   return {
     isOpen,
+    dateOfListen,
     open,
     close,
   };

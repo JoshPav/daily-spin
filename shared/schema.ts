@@ -34,7 +34,7 @@ export type GetListens = {
   response: GetListensResponse;
 };
 
-export type ListenMethod = 'spotify' | 'vinyl';
+export type ListenMethod = 'spotify' | 'vinyl' | 'streamed';
 
 export type AddAlbumListenBody = DailyAlbumListen & {
   date: string;

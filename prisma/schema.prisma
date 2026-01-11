@@ -48,6 +48,7 @@ model AlbumListen {
 }
 
 enum ListenMethod {
-  SPOTIFY @map("spotify")
-  VINYL   @map("vinyl")
+  SPOTIFY  @map("spotify")
+  VINYL    @map("vinyl")
+  STREAMED @map("streamed")
 }

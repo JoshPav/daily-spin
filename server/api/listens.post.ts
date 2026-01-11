@@ -8,5 +8,6 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<AddAlbumListenBody>(event);
 
-  await service.addAlbumListen(userId, body);
+  console.log({ body, userId });
+  // await service.addAlbumListen(userId, body);
 });

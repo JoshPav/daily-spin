@@ -7,11 +7,15 @@
         </svg>
       </button>
 
-      <div  class="modal-header">
-        <h1 class="modal-title">{{ title }}</h1>
-        <slot name="headerContent" />
-      </div>
-
+      <slot name="headerContent">
+        <div class="modal-header">
+          <h1 class="modal-title">{{ title }}</h1>
+          <p v-if="modalSubheading" class="modal-subheading">
+            {{ modalSubheading}}
+          </p>
+        </div>
+      </slot>
+      
 
       <slot name="body" />
         
@@ -22,7 +26,11 @@
 <script setup lang="ts">
 import { onUnmounted, watch } from 'vue';
 
-const { isOpen, title } = defineProps<{ isOpen: boolean; title: string }>();
+const { isOpen, title, modalSubheading } = defineProps<{
+  isOpen: boolean;
+  title: string;
+  modalSubheading?: string;
+}>();
 
 const emit = defineEmits<{
   close: [];
@@ -116,9 +124,19 @@ onUnmounted(() => {
 }
 
 .modal-header {
-  margin-bottom: 32px;
+  margin-bottom: 12px;
   padding-bottom: 24px;
   border-bottom: 2px solid #282828;
+}
+
+.modal-subheading {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b3b3b3;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .modal-title {

@@ -25,7 +25,7 @@
 
     <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
-        <button v-if="isToday()" class="add-album-button" @click.stop="openAddModal">
+        <button v-if="isToday()" class="add-album-button" @click.stop="() => openAddModal({ date })">
           <PlusCircleIcon class="icon" />
         </button>
         <Tooltip v-else-if="!isFuture" text="No albums listened to this day">—</Tooltip>

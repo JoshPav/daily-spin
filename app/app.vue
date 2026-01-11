@@ -118,7 +118,7 @@ useHead({
 
     <Teleport to="body">
       <DailyListensModal />
-      <AddAlbumListenModal />
+      <LogAlbumModal />
     </Teleport>
   </div>
 </template>

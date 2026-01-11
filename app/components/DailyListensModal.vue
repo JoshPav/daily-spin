@@ -1,11 +1,5 @@
 <template>
-  <Modal :isOpen="isOpen" @close="close" :title="modalHeader">
-
-  <template #headerContent v-if="dailyListens && dailyListens?.albums.length > 1" >
-      <p  class="album-count-text">
-          {{ dailyListens.albums.length }} albums listened
-        </p>
-    </template>
+  <Modal :isOpen="isOpen" @close="close" :title="modalHeader" :modalSubheading="modalSubheading">
 
     <template #body>
       <AlbumCarousel
@@ -18,6 +12,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatDate } from '~/utils/dateUtils';
+
 const { isOpen, dailyListens, viewTransitionName, close } =
   useDailyListensModal();
 
@@ -25,18 +21,19 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
-
 const modalHeader = computed(() =>
-  dailyListens.value ? formatDate(dailyListens.value.date) : '',
+  dailyListens.value ? formatDate(new Date(dailyListens.value.date)) : '',
 );
+
+const modalSubheading = computed(() => {
+  const albumCount = dailyListens.value?.albums.length;
+
+  if (!albumCount || albumCount <= 1) {
+    return undefined;
+  }
+
+  return `${albumCount} albums listened`;
+});
 </script>
 
 <style scoped>

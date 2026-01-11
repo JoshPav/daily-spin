@@ -8,6 +8,7 @@ import {
   type GroupedTracks,
   groupTracksByAlbum,
 } from '../utils/tracks.utils';
+import { getAlbumArtists } from '#shared/utils/albumUtils';
 
 type UnfinishedAlbum = {
   albumId: string;
@@ -116,7 +117,7 @@ export class RecentlyPlayedService {
       albumId,
       albumName,
       imageUrl: getAlbumArtwork(images),
-      artistNames: artists.map((a) => a.name).join(', '),
+      artistNames: getAlbumArtists(artists),
       listenedInFull,
       listenedInOrder: areTracksInOrder(tracks),
       listenMethod: 'spotify',
