@@ -204,16 +204,57 @@ export const user = createFactory<YourType>({
 - Easy to override specific fields while keeping realistic defaults
 - Deep merging support via lodash.merge for complex nested objects
 
+## Roadmap
+
+This section tracks planned features and their implementation status.
+
+### Current Features
+
+- **Automatic album tracking**: Hourly CRON job detects full album listens from Spotify recently played
+- **Manual album logging**: UI for manually logging albums (Spotify/vinyl/streamed)
+- **Listen metadata**: Tracks whether albums were listened in order and time of day (morning/noon/evening/night)
+- **Calendar view**: Display listening history in a calendar format
+
+### Planned Features
+
+- **Listening time tracking**: Track total listening time for each album
+  - Store the total minutes/hours spent listening to each album
+  - Display listening duration in the UI
+  - Calculate based on track durations from Spotify API
+
+- **Spotify API integration** (blocked by [Spotify developer forum issue](https://community.spotify.com/t5/Spotify-for-Developers/Unable-to-create-app/td-p/7283365/page/7))
+  - Setup login screen which uses BetterAuth (or similar) to authenticate users and store required info
+  - Use Spotify auth flow to generate tokens when making requests (instead of current env var workaround)
+
+- **Bulk Upload**: Import historical listening data
+  - User can upload their Spotify data from the "Download your data" tool (https://support.spotify.com/uk/article/understanding-your-data/)
+  - Process the data to extract historic album listens
+  - Data won't be stored permanently, only processed
+
+- **Future Listens**: Plan ahead for albums to listen to
+  - Can assign albums to days in the future as a placeholder of what to listen to
+  - Can be assigned manually
+  - Automated CRON job to assign future days based on Spotify suggestions
+  - Linked playlist that has today's album in it. Playlist auto-updated by CRON job
+
+- **Song of the day**: Track favorite songs from daily albums
+  - User can choose their favourite song of that day's album
+  - Linked playlist that has the user's favourite song from each day of the year
+
+_When a feature is fully implemented, move it from this section to "Current Features" above. If partially implemented, update the description to reflect what's complete and what remains._
+
 ## Development Workflow
 
 ### Starting a New Feature
 
 Before implementing any new feature, follow this workflow:
 
-1. **Create a feature branch** with a descriptive name:
-   ```bash
-   git checkout -b feature-name
-   ```
+1. **Check for or create a feature branch**:
+   - Check if a branch already exists for this feature
+   - If not, create a feature branch with a descriptive name:
+     ```bash
+     git checkout -b feature-name
+     ```
 
    Branch naming conventions:
    - Use kebab-case (lowercase with hyphens)
@@ -228,11 +269,19 @@ Before implementing any new feature, follow this workflow:
 
    In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review.
 
-3. **Implement the feature**: After the plan is approved, implement following the planned approach
+3. **Wait for user direction**: After creating the plan, WAIT for the user to specify which parts to implement. Do not automatically start implementing the entire plan.
 
-4. **Test**: Add unit and/or integration tests as appropriate
+4. **Implement selected parts**: Implement only the parts the user asks you to work on
 
-5. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan
+5. **Test**: Add unit and/or integration tests as appropriate
+
+6. **Commit after each step**: After completing each step of the plan, create a commit with a clear message describing what was implemented. This provides incremental progress tracking and makes it easier to review changes.
+
+7. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan
+
+8. **Update the roadmap**:
+   - If the feature is fully implemented: Remove it from the Roadmap section and add it to the Features list
+   - If only partially implemented: Update the roadmap item to reflect what's still left to do
 
 This workflow ensures features are well-thought-out before implementation and reduces the need for major refactoring.
 
