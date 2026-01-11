@@ -33,11 +33,12 @@ describe('useDailyListensModal', () => {
       date: '2024-01-15',
       albums: [
         {
-          albumId: 'test-id',
-          albumName: 'Test Album',
-          artistNames: 'Test Artist',
-          imageUrl: 'https://example.com/image.jpg',
-          listened: true,
+          album: {
+            albumId: 'test-id',
+            albumName: 'Test Album',
+            artistNames: 'Test Artist',
+            imageUrl: 'https://example.com/image.jpg',
+          },
           listenMetadata: {
             inOrder: true,
             listenMethod: 'spotify',
