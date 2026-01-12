@@ -1,16 +1,5 @@
 import { RecentlyPlayedService } from '../services/recentlyPlayed.service';
-
-// export default defineEventHandler(async () => {
-//   const recentlyPlayedService = new RecentlyPlayedService();
-
-//   const userId = process.env.USER_ID;
-
-//   if (!userId) {
-//     return;
-//   }
-
-//   await recentlyPlayedService.processTodaysListens(userId);
-// });
+import { UserService } from '../services/user.service';
 
 export default defineTask({
   meta: {
@@ -20,15 +9,20 @@ export default defineTask({
   run: async () => {
     console.log('Running DB migration task...');
 
-    const recentlyPlayedService = new RecentlyPlayedService();
+    const usersToProcess =
+      await new UserService().fetchUsersForRecentlyPlayedProcessing();
 
-    const userId = process.env.USER_ID;
-
-    if (!userId) {
-      return { result: 'no-op' };
+    if (!usersToProcess.length) {
+      return { result: 'No users to process' };
     }
 
-    await recentlyPlayedService.processTodaysListens(userId);
+    console.info(`Found ${usersToProcess.length} to process...`);
+
+    const recentlyPlayedService = new RecentlyPlayedService();
+
+    await Promise.all(
+      usersToProcess.map(recentlyPlayedService.processTodaysListens),
+    );
 
     return { result: 'Finished processing' };
   },

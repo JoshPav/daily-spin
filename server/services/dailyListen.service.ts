@@ -2,11 +2,15 @@ import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { mapDailyListens } from '../mappers/listenMapper';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
+import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
 
 export class DailyListenService {
-  constructor(private dailyListenRepo = new DailyListenRepository()) {}
+  constructor(
+    private dailyListenRepo = new DailyListenRepository(),
+    private userRepo = new UserRepository(),
+  ) {}
 
   async addAlbumListen(
     userId: string,
@@ -59,11 +63,20 @@ export class DailyListenService {
       console.info("Missing today's data, attempting to calculate it...");
       const service = new RecentlyPlayedService(getSpotifyApiClient());
 
-      const todaysListens = await service.processTodaysListens(userId);
+      const user = await this.userRepo.getUser(userId);
 
-      if (todaysListens) {
-        console.info('Found data for today, appending to results...');
-        listens.push(todaysListens);
+      if (user) {
+        const todaysListens = await service.processTodaysListens({
+          id: user.id,
+          auth: user.accounts[0],
+        });
+
+        if (todaysListens) {
+          console.info('Found data for today, appending to results...');
+          listens.push(todaysListens);
+        } else {
+          console.info('No data found for data');
+        }
       }
     }
 

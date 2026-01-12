@@ -1,5 +1,5 @@
 import type { ListenTime } from '@prisma/client';
-import type { PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { type PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApiClient } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
@@ -10,6 +10,7 @@ import {
   getTrackListenTime,
   groupTracksByAlbum,
 } from '../utils/tracks.utils';
+import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {
   albumId: string;
@@ -38,8 +39,8 @@ export class RecentlyPlayedService {
     private dailyListenRepo = new DailyListenRepository(),
   ) {}
 
-  async processTodaysListens(userId: string) {
-    const todaysListens = await this.getTodaysFullListens();
+  async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
+    const todaysListens = await this.getTodaysFullListens(auth);
 
     if (!todaysListens.length) {
       console.debug('No finished albums found today.');
@@ -49,8 +50,8 @@ export class RecentlyPlayedService {
     return this.dailyListenRepo.saveListens(userId, todaysListens);
   }
 
-  private async getTodaysFullListens() {
-    const todaysTracks = await this.getTodaysPlays();
+  private async getTodaysFullListens(auth: AuthDetails) {
+    const todaysTracks = await this.getTodaysPlays(auth);
 
     if (!todaysTracks.length) {
       return [];
@@ -65,15 +66,27 @@ export class RecentlyPlayedService {
     return processed.filter((group) => group.listenedInFull);
   }
 
-  private async getTodaysPlays(): Promise<PlayHistory[]> {
+  private async getTodaysPlays(auth: AuthDetails): Promise<PlayHistory[]> {
     const today = new Date();
 
     try {
-      const recentlyPlayed =
-        await this.spotifyApi.player.getRecentlyPlayedTracks(50, {
+      const spotifyApi = SpotifyApi.withAccessToken(
+        process.env.SPOTIFY_CLIENT_ID as string,
+        {
+          access_token: auth.accessToken!,
+          token_type: 'Bearer',
+          expires_in: 3600,
+          refresh_token: auth.refreshToken!,
+        },
+      );
+
+      const recentlyPlayed = await spotifyApi.player.getRecentlyPlayedTracks(
+        50,
+        {
           type: 'after',
           timestamp: getStartOfDayTimestamp(today),
-        });
+        },
+      );
 
       return recentlyPlayed.items
         .filter(

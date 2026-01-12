@@ -27,6 +27,11 @@ export const auth = betterAuth({
     spotify: {
       clientId: spotifyClientID,
       clientSecret: spotifyClientSecret,
+      scope: [
+        'user-read-recently-played',
+        'playlist-modify-public',
+        'playlist-modify-private',
+      ],
       redirectURI: 'http://127.0.0.1:3000/api/auth/callback/spotify',
     },
   },

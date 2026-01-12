@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
+import { signOut } from '~/lib/auth-client';
 
 const { loggedIn, user } = useAuth();
 
@@ -11,6 +12,9 @@ const menuItems = ref<DropdownMenuItem[]>([
   {
     label: 'Sign out',
     icon: 'i-heroicons-arrow-right-on-rectangle',
+    onSelect: () => {
+      signOut();
+    },
   },
 ]);
 

@@ -11,8 +11,9 @@ export const useAuth = () => {
     if (!data) {
       return undefined;
     }
-    const { name, image } = data.user;
+    const { id, name, image } = data.user;
     return {
+      id,
       name,
       image: image || undefined,
       initial: name[0]?.toUpperCase(),
