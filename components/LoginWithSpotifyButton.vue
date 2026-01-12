@@ -1,5 +1,5 @@
 <template>
-  <UButton v-on:click="onClick" :icon="SpotifyIcon" color="primary" variant="solid" label="Sign in with Spotify"
+  <UButton v-on:click="onClick" :icon="SpotifyIcon" color="primary" variant="solid" label="Get started"
         class="text-white font-semibold px-4 py-2 rounded-sm" :loading="loading" />
 </template>
 

@@ -53,7 +53,7 @@ const avatarSrc = computed(() => {
         }" />
       </UDropdownMenu>
       <!-- Needed to prevent UHeader from rendering the Drawer by default -->
-      <span v-else aria-hidden="true"></span>
+       <LoginWithSpotifyButton v-else />
     </template>
   </UHeader>
 </template>
