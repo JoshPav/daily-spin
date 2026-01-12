@@ -22,8 +22,8 @@ export type DailyListens = {
 };
 
 export type GetListensQueryParams = {
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
 };
 
 export type GetListensResponse = DailyListens[];

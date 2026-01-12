@@ -12,8 +12,9 @@ const menuItems = ref<DropdownMenuItem[]>([
   {
     label: 'Sign out',
     icon: 'i-heroicons-arrow-right-on-rectangle',
-    onSelect: () => {
-      signOut();
+    onSelect: async () => {
+      await signOut();
+      navigateTo('/login');
     },
   },
 ]);
