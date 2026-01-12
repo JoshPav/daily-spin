@@ -1,28 +1,26 @@
 <template>
   <div class="min-h-screen bg-black text-white">
-    <!-- Hero Section with Parallax Background -->
-    <div class="relative border-b-8 border-gray-800 overflow-hidden">
-      <!-- Parallax Background Image -->
+    <div class="relative border-b-8 border-gray-800 overflow-hidden min-h-screen sm:min-h-[120vh] flex items-center">
       <div
-        class="absolute inset-0 z-0"
+        class="absolute inset-0 z-0 perspective-hero"
         :style="{ transform: `translateY(${scrollY * 0.5}px)` }"
       >
         <img
           :src="showcaseImage"
           alt="Album calendar showcase"
-          class="w-full h-full object-cover opacity-40"
+          class="w-full h-full object-cover opacity-40 showcase-hero-transform"
         />
-        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
+        <div class="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black"></div>
       </div>
 
       <!-- Hero Content -->
-      <UContainer class="relative z-10 py-32 sm:py-40">
+      <UContainer class="relative z-10 py-32">
         <div class="text-center space-y-6 max-w-3xl mx-auto">
           <h1 class="text-4xl sm:text-6xl font-black tracking-tight">
-            Track every album you listen to
+            Capture your listening, effortlessly
           </h1>
           <p class="text-xl sm:text-2xl text-gray-300">
-            Automatically capture your Spotify listening history and visualize your musical journey
+            Automatically capture your listening history and visualize your musical journey
           </p>
           <div class="pt-6">
             <div class="inline-block scale-125">
@@ -33,98 +31,24 @@
       </UContainer>
     </div>
 
-    <!-- Feature 1: Automatic Tracking -->
-    <div class="border-b-8 border-gray-800">
-      <UContainer class="py-16 sm:py-24">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div class="space-y-4">
-            <h2 class="text-3xl sm:text-5xl font-bold">
-              Your listening history, automatically tracked
-            </h2>
-            <p class="text-lg sm:text-xl text-gray-400">
-              Connect your Spotify account and every album you listen to is automatically logged. No manual entry, no hassle.
-            </p>
-          </div>
-          <div class="relative">
-            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg overflow-hidden border border-gray-700">
-              <img
-                :src="showcaseImage"
-                alt="Automatic tracking showcase"
-                class="w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </UContainer>
-    </div>
+    <LandingPageFeature 
+      heading="Set it and Forget it" 
+      description="Once connected, the app quietly tracks every album you finish on Spotify. Your daily listens are neatly compiled with playback details — no effort required."  
+      :image-src="featureTodaysListens" 
+    />
 
-    <!-- Feature 2: Calendar View -->
-    <div class="border-b-8 border-gray-800">
-      <UContainer class="py-16 sm:py-24">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div class="relative order-2 md:order-1">
-            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg overflow-hidden border border-gray-700">
-              <img
-                :src="showcaseImage"
-                alt="Calendar view showcase"
-                class="w-full h-auto"
-              />
-            </div>
-          </div>
-          <div class="space-y-4 order-1 md:order-2">
-            <h2 class="text-3xl sm:text-5xl font-bold">
-              See your musical journey unfold
-            </h2>
-            <p class="text-lg sm:text-xl text-gray-400">
-              Beautiful calendar layout shows your listening history at a glance. Discover patterns in your music taste over time.
-            </p>
-          </div>
-        </div>
-      </UContainer>
-    </div>
+    <LandingPageFeature 
+      heading="Set the vibe for the days ahead" 
+      description="Plan out your listening mood in advance and let the app queue up the perfect album each morning."  
+      :image-src="featureTodaysAlbum"
+      :reversed="true"
+    />
 
-    <!-- Feature 3: Rich Insights -->
-    <div class="border-b-8 border-gray-800">
-      <UContainer class="py-16 sm:py-24">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div class="space-y-4">
-            <h2 class="text-3xl sm:text-5xl font-bold">
-              Track listening habits and metadata
-            </h2>
-            <p class="text-lg sm:text-xl text-gray-400">
-              See if you listened in order, what time of day, and more. Manually log vinyl records and other sources too.
-            </p>
-          </div>
-          <div class="relative">
-            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-8 border border-gray-700">
-              <div class="space-y-6">
-                <div class="flex items-center gap-4">
-                  <UIcon name="i-heroicons-clock" class="w-8 h-8 text-green-400 flex-shrink-0" />
-                  <div>
-                    <div class="font-semibold text-lg">Listen time tracking</div>
-                    <div class="text-gray-400">Morning, noon, evening, or night</div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <UIcon name="i-heroicons-list-bullet" class="w-8 h-8 text-green-400 flex-shrink-0" />
-                  <div>
-                    <div class="font-semibold text-lg">In-order detection</div>
-                    <div class="text-gray-400">Did you listen to the full album in sequence?</div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <UIcon name="i-heroicons-musical-note" class="w-8 h-8 text-green-400 flex-shrink-0" />
-                  <div>
-                    <div class="font-semibold text-lg">Multiple sources</div>
-                    <div class="text-gray-400">Spotify, vinyl, or other streaming services</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </UContainer>
-    </div>
+    <LandingPageFeature 
+      heading="Collect the gems from your year" 
+      description="Select the song that hit hardest each day and turn your year of listening into a curated mixtape." 
+      :image-src="featureSongOfTheDay" 
+    />
 
     <!-- Final CTA -->
     <div class="py-20">
@@ -149,6 +73,9 @@
 
 <script lang="ts" setup>
 import showcaseImage from '~/assets/img/showcase.png';
+import featureTodaysListens from '~/assets/img/feature-todays-listens.png';
+import featureTodaysAlbum from '~/assets/img/feature-todays-album.png';
+import featureSongOfTheDay from '~/assets/img/feature-song-of-the-day.png';
 
 // Page meta
 definePageMeta({
@@ -170,3 +97,21 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 </script>
+
+<style scoped>
+.perspective-hero {
+  perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+.showcase-hero-transform {
+  transform: rotateY(-20deg) rotateX(20deg) scale(1.5);
+  transform-origin: center center;
+}
+
+@media (min-width: 768px) {
+  .showcase-hero-transform {
+    transform: rotateY(-20deg) rotateX(20deg) scale(1.5) translateX(-15%);
+  }
+}
+</style>

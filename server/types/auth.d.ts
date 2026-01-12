@@ -9,7 +9,9 @@ declare module 'h3' {
      * The full session object from BetterAuth.
      * Guaranteed to be set by auth middleware for all /api/* routes (except /api/auth/*).
      */
-    session: Awaited<ReturnType<typeof import('~/lib/auth').auth.api.getSession>>;
+    session: Awaited<
+      ReturnType<typeof import('~/lib/auth').auth.api.getSession>
+    >;
   }
 }
 

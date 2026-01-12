@@ -10,19 +10,24 @@ export const useAuth = () => {
       return undefined;
     }
 
-    const { id, name, image } = sessionData.value.user;
+    const { id, name, image, email } = sessionData.value.user;
+
+    const firstInitial = /^[0-9]/.test(name[0] || '') ? email[0] : name[0];
+
+    console.log({ firstInitial, name, email });
 
     return {
       id,
       name,
       image: image || undefined,
-      initial: name[0]?.toUpperCase(),
+      initial: firstInitial?.toUpperCase(),
     };
   });
 
   return {
     loggedIn: computed(() => !!user.value),
     user,
+    loading: computed(() => session.value.isPending),
     token: computed(() => session.value?.data?.session.token),
   };
 };

@@ -29,31 +29,23 @@ const menuItems = ref<DropdownMenuItem[]>([
     },
   },
 ]);
-
-const avatarAlt = computed(() => {
-  return user.value?.name || user.value?.initial || 'User';
-});
-
-const avatarSrc = computed(() => {
-  return user.value?.image;
-});
 </script>
 
 <template>
   <UHeader title="Album of the Day">
     <template #toggle>
+
       <UDropdownMenu
         v-if="loggedIn"
         :items="menuItems"
       >
         <UButton variant="ghost" :avatar="{
-          src: avatarSrc,
+          src: user?.image,
           size: 'sm',
-          alt: avatarAlt
+          alt: user?.initial
         }" />
       </UDropdownMenu>
-      <!-- Needed to prevent UHeader from rendering the Drawer by default -->
-       <LoginWithSpotifyButton v-else />
+      <LoginWithSpotifyButton v-else label="Sign in"  />
     </template>
   </UHeader>
 </template>

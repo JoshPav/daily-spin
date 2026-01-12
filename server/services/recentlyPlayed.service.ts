@@ -35,7 +35,7 @@ const MIN_REQUIRED_TRACKS = 5;
 
 export class RecentlyPlayedService {
   constructor(
-    private spotifyApi: SpotifyApi = getSpotifyApiClient(),
+    _spotifyApi: SpotifyApi = getSpotifyApiClient(),
     private dailyListenRepo = new DailyListenRepository(),
   ) {}
 
