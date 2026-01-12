@@ -114,9 +114,6 @@ prisma/
 
 Required runtime config (nuxt.config.ts runtimeConfig):
 - `POSTGRES_URL`: PostgreSQL connection string
-- `SPOTIFY_ACCESS_TOKEN`: Server-side Spotify API token
-- `NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN`: Client-side Spotify API token (for album search)
-- `USER_ID`: The user ID to track (single-user app for now)
 - `DISABLE_AUTO_FETCH`: Set to 'true' to disable automatic fetching of today's listens
 
 Test environment variables go in `.env.test`.

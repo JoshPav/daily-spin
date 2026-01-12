@@ -12,8 +12,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
       const goingToLogin = isNavigatingTo(to, Route.LANDING_PAGE);
 
-      console.log({ loggedIn, goingToLogin, to });
-
       if (goingToLogin && loggedIn) {
         return navigateTo(Route.DASHBOARD);
       }

@@ -29,7 +29,6 @@
           label="Listened"
           :text="albumListen.listenMetadata.inOrder ? 'Ordered' : 'Shuffled'"
           :icon="albumListen.listenMetadata.inOrder ? 'i-lucide-list-ordered' : 'i-lucide-shuffle'"
-          :tooltip="`Hello`"
         />
 
         <ListenInfoItem

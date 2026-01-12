@@ -8,10 +8,6 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     postgresUrl: process.env.POSTGRES_URL,
-    spotifyAccessToken: process.env.SPOTIFY_ACCESS_TOKEN,
-    public: {
-      spotifyAccessToken: process.env.NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN,
-    },
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/image', '@nuxt/ui'],
