@@ -1,17 +1,17 @@
 import { useSession } from '~/lib/auth-client';
 
 export const useAuth = () => {
-  // Use BetterAuth's useSession which handles SSR automatically
   const session = useSession();
 
-  const loggedIn = computed(() => !!session.value?.data);
+  const sessionData = computed(() => session.value.data);
 
   const user = computed(() => {
-    const data = session.value?.data;
-    if (!data) {
+    if (!sessionData.value) {
       return undefined;
     }
-    const { id, name, image } = data.user;
+
+    const { id, name, image } = sessionData.value.user;
+
     return {
       id,
       name,
@@ -21,7 +21,7 @@ export const useAuth = () => {
   });
 
   return {
-    loggedIn,
+    loggedIn: computed(() => !!user.value),
     user,
     token: computed(() => session.value?.data?.session.token),
   };

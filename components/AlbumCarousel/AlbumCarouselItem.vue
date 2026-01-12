@@ -65,8 +65,6 @@ const { albumListen } = defineProps<{
 const listenTime = computed(() => albumListen.listenMetadata.listenTime);
 const listenMethod = computed(() => albumListen.listenMetadata.listenMethod);
 
-console.log({ listenMethod, listenTime });
-
 const SpotifyIcon = () => h(SpotifyIconSvg);
 
 const listenMethodMap: Record<

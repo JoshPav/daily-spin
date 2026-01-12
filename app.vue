@@ -1,6 +1,6 @@
-<template> 
+<template>
   <UApp>
-    
+
     <Header />
 
     <UMain>

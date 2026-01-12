@@ -27,7 +27,6 @@ export const useLogAlbum = ({
   };
 
   const logAlbumListen = async () => {
-    console.log({ date });
     if (!selectedAlbum.value || !date.value) return;
 
     saving.value = true;
