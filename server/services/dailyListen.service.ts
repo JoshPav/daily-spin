@@ -1,7 +1,9 @@
 import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
-import { getSpotifyApiClient } from '../clients/spotify';
 import { mapDailyListens } from '../mappers/listenMapper';
-import { DailyListenRepository } from '../repositories/dailyListen.repository';
+import {
+  type AlbumListen,
+  DailyListenRepository,
+} from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
@@ -12,35 +14,33 @@ export class DailyListenService {
     private userRepo = new UserRepository(),
   ) {}
 
-  async addAlbumListen(
-    userId: string,
-    {
-      date,
-      album: { albumId, albumName, artistNames, imageUrl },
-      listenMetadata: {
-        inOrder: listenedInOrder = true,
-        listenMethod = 'spotify',
-        listenTime,
-      },
-    }: AddAlbumListenBody,
-  ) {
-    const dateOfListens = new Date(date);
+  async addAlbumListen(userId: string, body: AddAlbumListenBody) {
+    const dateOfListens = new Date(body.date);
 
     this.dailyListenRepo.saveListens(
       userId,
-      [
-        {
-          albumId,
-          albumName,
-          artistNames,
-          imageUrl,
-          listenedInOrder,
-          listenMethod,
-          listenTime,
-        },
-      ],
+      [this.mapAddAlbumBody(body)],
       dateOfListens,
     );
+  }
+
+  private mapAddAlbumBody({
+    album: { albumId, albumName, artistNames, imageUrl },
+    listenMetadata: {
+      inOrder: listenedInOrder = true,
+      listenMethod = 'spotify',
+      listenTime,
+    },
+  }: AddAlbumListenBody): AlbumListen {
+    return {
+      albumId,
+      albumName,
+      artistNames,
+      imageUrl,
+      listenedInOrder,
+      listenMethod,
+      listenTime,
+    };
   }
 
   async getListensInRange(userId: string, range: { start: Date; end: Date }) {
@@ -61,7 +61,7 @@ export class DailyListenService {
     ) {
       // If today is in desired range and we don't have it yet, lets try calc that.
       console.info("Missing today's data, attempting to calculate it...");
-      const service = new RecentlyPlayedService(getSpotifyApiClient());
+      const service = new RecentlyPlayedService();
 
       const user = await this.userRepo.getUser(userId);
 

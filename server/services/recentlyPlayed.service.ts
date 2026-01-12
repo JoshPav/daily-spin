@@ -1,6 +1,6 @@
 import type { ListenTime } from '@prisma/client';
-import { type PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { getSpotifyApiClient } from '../clients/spotify';
+import type { PlayHistory } from '@spotify/web-api-ts-sdk';
+import { getSpotifyClientForUser } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
@@ -34,10 +34,7 @@ type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
 const MIN_REQUIRED_TRACKS = 5;
 
 export class RecentlyPlayedService {
-  constructor(
-    _spotifyApi: SpotifyApi = getSpotifyApiClient(),
-    private dailyListenRepo = new DailyListenRepository(),
-  ) {}
+  constructor(private dailyListenRepo = new DailyListenRepository()) {}
 
   async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
     const todaysListens = await this.getTodaysFullListens(auth);
@@ -70,15 +67,7 @@ export class RecentlyPlayedService {
     const today = new Date();
 
     try {
-      const spotifyApi = SpotifyApi.withAccessToken(
-        process.env.SPOTIFY_CLIENT_ID as string,
-        {
-          access_token: auth.accessToken!,
-          token_type: 'Bearer',
-          expires_in: 3600,
-          refresh_token: auth.refreshToken!,
-        },
-      );
+      const spotifyApi = getSpotifyClientForUser(auth);
 
       const recentlyPlayed = await spotifyApi.player.getRecentlyPlayedTracks(
         50,

@@ -72,10 +72,10 @@
 </template>
 
 <script lang="ts" setup>
-import showcaseImage from '~/assets/img/showcase.png';
-import featureTodaysListens from '~/assets/img/feature-todays-listens.png';
-import featureTodaysAlbum from '~/assets/img/feature-todays-album.png';
 import featureSongOfTheDay from '~/assets/img/feature-song-of-the-day.png';
+import featureTodaysAlbum from '~/assets/img/feature-todays-album.png';
+import featureTodaysListens from '~/assets/img/feature-todays-listens.png';
+import showcaseImage from '~/assets/img/showcase.png';
 
 // Page meta
 definePageMeta({

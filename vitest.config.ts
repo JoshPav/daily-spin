@@ -11,11 +11,11 @@ const aliasConfig = {
     { find: /^~~/, replacement: fileURLToPath(new URL('./', import.meta.url)) },
     {
       find: /^~/,
-      replacement: fileURLToPath(new URL('./app', import.meta.url)),
+      replacement: fileURLToPath(new URL('./', import.meta.url)),
     },
     {
       find: /^@\//,
-      replacement: fileURLToPath(new URL('./app/', import.meta.url)),
+      replacement: fileURLToPath(new URL('./', import.meta.url)),
     },
     {
       find: '#shared/schema',

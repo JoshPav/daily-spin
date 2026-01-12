@@ -1,5 +1,19 @@
-import type { AlbumListen, PrismaClient } from '@prisma/client';
+import type {
+  AlbumListen as PrismaAlbumListen,
+  PrismaClient,
+} from '@prisma/client';
 import prisma from '../clients/prisma';
+
+export type AlbumListen = Pick<
+  PrismaAlbumListen,
+  | 'listenedInOrder'
+  | 'albumId'
+  | 'albumName'
+  | 'imageUrl'
+  | 'artistNames'
+  | 'listenMethod'
+  | 'listenTime'
+>;
 
 export class DailyListenRepository {
   constructor(private prismaClient: PrismaClient = prisma) {}
@@ -22,20 +36,7 @@ export class DailyListenRepository {
     });
   }
 
-  async saveListens(
-    userId: string,
-    todaysListens: Pick<
-      AlbumListen,
-      | 'listenedInOrder'
-      | 'albumId'
-      | 'albumName'
-      | 'imageUrl'
-      | 'artistNames'
-      | 'listenMethod'
-      | 'listenTime'
-    >[],
-    date?: Date,
-  ) {
+  async saveListens(userId: string, todaysListens: AlbumListen[], date?: Date) {
     const dateOfListens = date || new Date();
     dateOfListens.setUTCHours(0, 0, 0, 0);
 
