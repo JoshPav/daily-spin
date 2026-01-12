@@ -14,8 +14,6 @@ export const useAuth = () => {
 
     const firstInitial = /^[0-9]/.test(name[0] || '') ? email[0] : name[0];
 
-    console.log({ firstInitial, name, email });
-
     return {
       id,
       name,

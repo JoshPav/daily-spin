@@ -105,9 +105,12 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
+  height: 100vh;
+  overflow: hidden;
   background-color: #121212;
   color: #ffffff;
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -131,9 +134,10 @@ body {
 }
 
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #121212;
-  padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -154,10 +158,11 @@ body {
   max-width: 1800px;
   margin: 0 auto;
   padding: 0 24px;
-
-  height: calc(100vh - 120px); /* adjust for header/footer */
+  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .loading,
@@ -178,7 +183,9 @@ body {
   display: flex;
   align-items: center;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .day-container {
@@ -186,13 +193,9 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   grid-auto-rows: min-content;
   gap: 24px;
-  margin: 0 0 32px 0;
   width: 100%;
-
-  flex-grow: 1;
   overflow-y: auto;
-  padding-right: 8px;
-  padding-top: 40px; /* Space for month banners that stick out above */
+  padding: 40px 8px 32px 0; /* Space for month banners that stick out above */
 }
 
 .refresh-button {
@@ -246,8 +249,7 @@ body {
 
   .day-container {
     gap: 16px;
-    margin: 0 0 16px 0;
-    padding-top: 40px;
+    padding: 40px 8px 16px 0;
   }
 }
 </style>

@@ -3,45 +3,65 @@ import type { DropdownMenuItem } from '@nuxt/ui';
 import { signOut } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
 
-const { loggedIn, user } = useAuth();
+const { loggedIn, user, loading } = useAuth();
 const router = useRouter();
 
-const menuItems = ref<DropdownMenuItem[]>([
-  {
-    label: 'Import',
-    icon: 'i-lucide-import',
-    disabled: true,
-  },
-  {
-    label: 'Preferences',
-    icon: 'i-lucide-settings',
-    disabled: true,
-  },
-  {
-    label: 'Sign out',
-    icon: 'i-lucide-log-out',
-    onSelect: async () => {
-      await signOut({
-        fetchOptions: {
-          onSuccess: async () => void router.push(Route.LANDING_PAGE),
-        },
-      });
+const menuItems = computed<DropdownMenuItem[]>(() => [
+  [
+    {
+      type: 'label',
+      label: user.value?.name,
+      avatar: {
+        src: user.value?.image,
+        alt: user.value?.initial,
+      },
     },
-  },
+  ],
+  [
+    {
+      label: 'Bulk import',
+      icon: 'i-lucide-import',
+      class: 'hover:cursor-pointer',
+      disabled: true,
+    },
+    {
+      label: 'Preferences',
+      icon: 'i-lucide-settings',
+      class: 'hover:cursor-pointer',
+      disabled: true,
+    },
+  ],
+  [
+    {
+      label: 'Sign out',
+      icon: 'i-lucide-log-out',
+      class: 'hover:cursor-pointer',
+      onSelect: async () => {
+        await signOut({
+          fetchOptions: {
+            onSuccess: async () => void router.push(Route.LANDING_PAGE),
+          },
+        });
+      },
+    },
+  ],
 ]);
 </script>
 
 <template>
   <UHeader title="Album of the Day">
     <template #toggle>
-
+      <USkeleton v-if="loading" class="h-8 w-8 rounded-full mr-1.5"/>
       <UDropdownMenu
-        v-if="loggedIn"
+        v-else-if="loggedIn"
+        size="xl"
+        :arrow="true"
         :items="menuItems"
+        :content="{ align: 'end' }"
       >
-        <UButton variant="ghost" :avatar="{
+        <UButton class="hover:cursor-pointer" variant="ghost" :avatar="{
           src: user?.image,
-          size: 'sm',
+          size: 'md',
           alt: user?.initial
         }" />
       </UDropdownMenu>

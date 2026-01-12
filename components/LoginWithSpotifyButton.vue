@@ -11,6 +11,7 @@
 </template>
 
 <script lang="ts" setup>
+import SpotifyIcon from '~/components/common/Icons/SpotifyIcon.vue';
 import { signIn } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
 
