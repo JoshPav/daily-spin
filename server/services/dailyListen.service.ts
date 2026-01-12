@@ -48,6 +48,8 @@ export class DailyListenService {
 
     const shouldAutoFetch = process.env.DISABLE_AUTO_FETCH !== 'true';
 
+    console.log({ listens: JSON.stringify(listens) });
+
     if (
       shouldAutoFetch &&
       dateInRange(new Date(), range) &&

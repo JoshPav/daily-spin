@@ -222,6 +222,8 @@ This section tracks planned features and their implementation status.
   - Replace custom components with Nuxt UI components
 - **Dates**
   - Add modern date library to tidy up formatting logic
+- **dotenv**
+  - Used in lots of places, where is the central spot
 
 ### Planned Features
 

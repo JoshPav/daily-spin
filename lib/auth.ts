@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 // If your Prisma file is located elsewhere, you can change the path
 import { config } from 'dotenv';
-import prisma from '../clients/prisma';
+import prisma from '../server/clients/prisma';
 
 config({ path: '.env.local' });
 
@@ -17,12 +17,19 @@ if (!spotifyClientID || !spotifyClientSecret) {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'sqlite', // or "mysql", "postgresql", ...etc
+    provider: 'postgresql',
   }),
+  session: {
+    cookieCache: {
+      enabled: true,
+      strategy: 'jwt',
+    },
+  },
   socialProviders: {
     spotify: {
       clientId: spotifyClientID,
       clientSecret: spotifyClientSecret,
+      redirectURI: 'http://127.0.0.1:3000/api/auth/callback/spotify',
     },
   },
 });
