@@ -80,5 +80,6 @@
   --ui-container: 1800px;
 
   /* Header height */
-  --ui-header-height: 120px;
+  --ui-header-height: --spacing(16);
+
 }

@@ -9,6 +9,14 @@
 import SpotifyIcon from '~/components/common/Icons/SpotifyIcon.vue';
 import { authClient } from '~/lib/auth-client';
 
+// Check if user is already logged in
+const { loggedIn } = await useAuth();
+
+// Redirect to home page if already authenticated
+if (loggedIn.value) {
+  await navigateTo('/');
+}
+
 const signIn = async () => {
   const data = await authClient.signIn.social({
     provider: 'spotify',

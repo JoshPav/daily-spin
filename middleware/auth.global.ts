@@ -1,10 +1,19 @@
-import { authClient } from '~/lib/auth-client';
+import { auth } from '~/lib/auth';
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // const { data: session } = await authClient.useSession(useFetch);
-  const session = await authClient.getSession();
+  const event = useRequestEvent();
+
+  if (!event) {
+    return;
+  }
+
+  const session = await auth.api.getSession({
+    headers: event.node.req.headers,
+  });
+
   console.log({ session });
-  if (!session?.data) {
+
+  if (!session) {
     if (to.path === '/') {
       console.log('redirecting');
       return navigateTo('/login');

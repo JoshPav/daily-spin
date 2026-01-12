@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import { ref } from 'vue';
 import type { ListenMethod, ListenTime } from '#shared/schema';
-import { getTrackListenTime } from '~/utils/listenTime.utils';
+import { getTrackListenTime } from '~/lib/utils/listenTime.utils';
 import type { SearchResult } from './useSpotifyAlbumSearch';
 
 type UseLogAlbumProps = { date: Ref<Date | undefined>; onSuccess?: () => void };

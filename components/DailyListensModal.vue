@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatDate } from '~/utils/dateUtils';
+import { formatDate } from '~/lib/utils/dateUtils';
 
 const { isOpen, dailyListens, viewTransitionName, close } =
   useDailyListensModal();

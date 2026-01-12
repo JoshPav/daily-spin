@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 import { h } from 'vue';
 import type { ListenMethod, ListenTime } from '#shared/schema';
-import { formatDate } from '~/utils/dateUtils';
+import { formatDate } from '~/lib/utils/dateUtils';
 import SpotifyIconSvg from './common/Icons/SpotifyIcon.vue';
 import type { RadioOption } from './common/RadioSelect.vue';
 
