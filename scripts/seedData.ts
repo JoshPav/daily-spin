@@ -184,4 +184,18 @@ export default [
       },
     ],
   },
+  {
+    day: 12,
+    dayAlbums: [
+      {
+        albumId: '26bhmgVpg5E5HyU4K1BYMc',
+        albumName: 'Singles',
+        artistName: 'Future Islands',
+        imageUrl:
+          'https://i.scdn.co/image/ab67616d0000b2730896bc513dc78701474ecc03',
+        listenedInOrder: true,
+        listenTime: 'noon',
+      },
+    ],
+  },
 ] satisfies SeedDay[];

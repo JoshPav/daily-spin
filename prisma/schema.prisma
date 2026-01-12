@@ -41,17 +41,17 @@ model DailyListen {
 }
 
 model AlbumListen {
-  id              String       @id @default(cuid())
-  dailyListenId   String
-  albumId         String
-  albumName       String
-  artistNames     String
-  imageUrl        String
-  listenedInOrder Boolean      @default(false)
-  listenMethod    ListenMethod @default(spotify)
-  listenTime      ListenTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  dailyListenId String
+  albumId       String
+  albumName     String
+  artistNames   String
+  imageUrl      String
+  listenOrder   ListenOrder  @default(ordered)
+  listenMethod  ListenMethod @default(spotify)
+  listenTime    ListenTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
 
@@ -64,6 +64,12 @@ enum ListenMethod {
   spotify
   vinyl
   streamed
+}
+
+enum ListenOrder {
+  ordered
+  shuffled
+  interrupted
 }
 
 enum ListenTime {

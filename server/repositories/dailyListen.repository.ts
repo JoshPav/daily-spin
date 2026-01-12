@@ -6,7 +6,7 @@ import prisma from '../clients/prisma';
 
 export type AlbumListen = Pick<
   PrismaAlbumListen,
-  | 'listenedInOrder'
+  | 'listenOrder'
   | 'albumId'
   | 'albumName'
   | 'imageUrl'
@@ -57,14 +57,14 @@ export class DailyListenRepository {
               albumName,
               artistNames,
               imageUrl,
-              listenedInOrder,
+              listenOrder,
               listenTime,
             }) => ({
               albumId,
               albumName,
               artistNames,
               imageUrl,
-              listenedInOrder,
+              listenOrder,
               listenTime,
             }),
           ),
@@ -79,7 +79,7 @@ export class DailyListenRepository {
                 albumName,
                 artistNames,
                 imageUrl,
-                listenedInOrder,
+                listenOrder,
                 listenMethod,
                 listenTime,
               }) => ({
@@ -87,7 +87,7 @@ export class DailyListenRepository {
                 albumName,
                 artistNames,
                 imageUrl,
-                listenedInOrder,
+                listenOrder,
                 listenMethod,
                 listenTime,
               }),

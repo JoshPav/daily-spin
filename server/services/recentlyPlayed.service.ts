@@ -1,4 +1,4 @@
-import type { ListenTime } from '@prisma/client';
+import type { ListenOrder, ListenTime } from '@prisma/client';
 import type { PlayHistory } from '@spotify/web-api-ts-sdk';
 import { getSpotifyClientForUser } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
@@ -6,9 +6,11 @@ import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
   areTracksInOrder,
+  areTracksPlayedContinuously,
   type GroupedTracks,
   getTrackListenTime,
   groupTracksByAlbum,
+  type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
@@ -24,7 +26,7 @@ type FinishedAlbum = {
   imageUrl: string;
   albumName: string;
   listenedInFull: true;
-  listenedInOrder: boolean;
+  listenOrder: ListenOrder;
   listenMethod: 'spotify';
   listenTime: ListenTime;
 };
@@ -54,7 +56,15 @@ export class RecentlyPlayedService {
       return [];
     }
 
-    const groupedTracks = groupTracksByAlbum(todaysTracks);
+    // Add play index to each track for interruption detection
+    const tracksWithIndex: PlayHistoryWithIndex[] = todaysTracks.map(
+      (track, index) => ({
+        ...track,
+        playIndex: index,
+      }),
+    );
+
+    const groupedTracks = groupTracksByAlbum(tracksWithIndex);
 
     const processed = Array.from(groupedTracks.values()).map(
       this.processGroupedTracks,
@@ -116,13 +126,25 @@ export class RecentlyPlayedService {
       };
     }
 
+    const playedContinuously = areTracksPlayedContinuously(tracks);
+    const tracksInSequentialOrder = areTracksInOrder(tracks);
+
+    let listenOrder: ListenOrder;
+    if (!playedContinuously) {
+      listenOrder = 'interrupted';
+    } else if (tracksInSequentialOrder) {
+      listenOrder = 'ordered';
+    } else {
+      listenOrder = 'shuffled';
+    }
+
     return {
       albumId,
       albumName,
       imageUrl: getAlbumArtwork(images),
       artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
-      listenedInOrder: areTracksInOrder(tracks),
+      listenOrder,
       listenMethod: 'spotify',
       listenTime: getTrackListenTime(tracks[0].played_at),
     };

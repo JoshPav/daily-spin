@@ -5,6 +5,8 @@ services:
     image: postgres:16
     restart: always
     container_name: album-test-db
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_USER: prisma
       POSTGRES_PASSWORD: prisma

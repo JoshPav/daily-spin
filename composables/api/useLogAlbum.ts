@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import { ref } from 'vue';
-import type { ListenMethod, ListenTime } from '#shared/schema';
+import type { ListenMethod, ListenOrder, ListenTime } from '#shared/schema';
 import { getTrackListenTime } from '~/lib/utils/listenTime.utils';
 import type { SearchResult } from './useSpotifyAlbumSearch';
 
@@ -11,7 +11,7 @@ export const useLogAlbum = ({
   onSuccess = () => {},
 }: UseLogAlbumProps) => {
   const selectedAlbum = ref<SearchResult | undefined>(undefined);
-  const listenedInOrder = ref(true);
+  const listenOrder = ref<ListenOrder>('ordered');
   const listenMethod = ref<ListenMethod>('spotify');
   const listenTime = ref<ListenTime>(
     getTrackListenTime(new Date().toISOString()),
@@ -21,7 +21,7 @@ export const useLogAlbum = ({
 
   const resetForm = () => {
     selectedAlbum.value = undefined;
-    listenedInOrder.value = true;
+    listenOrder.value = 'ordered';
     listenMethod.value = 'spotify';
     listenTime.value = getTrackListenTime(new Date().toISOString());
   };
@@ -45,7 +45,7 @@ export const useLogAlbum = ({
             imageUrl: selectedAlbum.value.images[0]?.url || '',
           },
           listenMetadata: {
-            inOrder: listenedInOrder.value,
+            listenOrder: listenOrder.value,
             listenMethod: listenMethod.value,
             listenTime: listenTime.value,
           },
@@ -63,7 +63,7 @@ export const useLogAlbum = ({
 
   return {
     selectedAlbum,
-    listenedInOrder,
+    listenOrder,
     listenMethod,
     listenTime,
     saving,

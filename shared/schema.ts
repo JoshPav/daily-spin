@@ -1,5 +1,5 @@
 export type ListenMetadata = {
-  inOrder: boolean;
+  listenOrder: ListenOrder;
   listenMethod: ListenMethod;
   listenTime: ListenTime | null;
 };
@@ -36,6 +36,8 @@ export type GetListens = {
 };
 
 export type ListenMethod = 'spotify' | 'vinyl' | 'streamed';
+
+export type ListenOrder = 'ordered' | 'shuffled' | 'interrupted';
 
 export type ListenTime = 'morning' | 'noon' | 'evening' | 'night';
 

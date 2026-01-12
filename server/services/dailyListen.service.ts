@@ -27,7 +27,7 @@ export class DailyListenService {
   private mapAddAlbumBody({
     album: { albumId, albumName, artistNames, imageUrl },
     listenMetadata: {
-      inOrder: listenedInOrder = true,
+      listenOrder = 'ordered',
       listenMethod = 'spotify',
       listenTime,
     },
@@ -37,7 +37,7 @@ export class DailyListenService {
       albumName,
       artistNames,
       imageUrl,
-      listenedInOrder,
+      listenOrder,
       listenMethod,
       listenTime,
     };

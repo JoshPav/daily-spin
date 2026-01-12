@@ -14,10 +14,10 @@
     "calculate-album": "bun scripts/calculateTodaysAlbum.ts",
     "format": "biome check --write --unsafe .",
     "lint": "tsc --noEmit && biome check .",
-    "test:db:up": "docker compose up -d --wait",
+    "test:db:up": "docker compose up -d --wait && dotenv -e .env.test -- prisma migrate deploy",
     "test:db:down": "docker compose down -v",
-    "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",
-    "test:integration": "bun run test:db:up && bun run test:db:migrate && vitest run --project integration && bun run test:db:down",
+    "test:integration:run": "vitest run --project integration",
+    "test:integration": "bun run test:db:up && bun test:integration:run && bun run test:db:down",
     "test:unit": "vitest run --project unit"
   },
   "dependencies": {

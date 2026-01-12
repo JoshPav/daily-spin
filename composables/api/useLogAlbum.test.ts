@@ -29,11 +29,11 @@ describe('useLogAlbum', () => {
       expect(selectedAlbum.value).toBeUndefined();
     });
 
-    it('should initialize listenedInOrder as true', () => {
+    it('should initialize listenOrder as ordered', () => {
       const date = ref(new Date('2024-01-15'));
-      const { listenedInOrder } = useLogAlbum({ date });
+      const { listenOrder } = useLogAlbum({ date });
 
-      expect(listenedInOrder.value).toBe(true);
+      expect(listenOrder.value).toBe('ordered');
     });
 
     it('should initialize listenMethod as spotify', () => {
@@ -61,13 +61,13 @@ describe('useLogAlbum', () => {
       expect(selectedAlbum.value).toStrictEqual(mockSearchResult);
     });
 
-    it('should update listenedInOrder', () => {
+    it('should update listenOrder', () => {
       const date = ref(new Date('2024-01-15'));
-      const { listenedInOrder } = useLogAlbum({ date });
+      const { listenOrder } = useLogAlbum({ date });
 
-      listenedInOrder.value = false;
+      listenOrder.value = 'shuffled';
 
-      expect(listenedInOrder.value).toBe(false);
+      expect(listenOrder.value).toBe('shuffled');
     });
 
     it('should update listenMethod', () => {
@@ -123,7 +123,7 @@ describe('useLogAlbum', () => {
             imageUrl: 'https://example.com/image.jpg',
           },
           listenMetadata: {
-            inOrder: true,
+            listenOrder: 'ordered',
             listenMethod: 'spotify',
             listenTime: 'morning',
           },
@@ -169,17 +169,17 @@ describe('useLogAlbum', () => {
 
     it('should reset form after successful save', async () => {
       const date = ref(new Date('2024-01-15'));
-      const { selectedAlbum, listenedInOrder, listenMethod, logAlbumListen } =
+      const { selectedAlbum, listenOrder, listenMethod, logAlbumListen } =
         useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
-      listenedInOrder.value = false;
+      listenOrder.value = 'shuffled';
       listenMethod.value = 'vinyl';
 
       await logAlbumListen();
 
       expect(selectedAlbum.value).toBeUndefined();
-      expect(listenedInOrder.value).toBe(true);
+      expect(listenOrder.value).toBe('ordered');
       expect(listenMethod.value).toBe('spotify');
     });
 
