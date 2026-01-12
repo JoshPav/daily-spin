@@ -1,7 +1,7 @@
 <template>
   <UButton 
     v-on:click="onClick" 
-    :icon="SpotifyIcon" 
+    :icon="Icons.SPOTIFY" 
     color="primary" 
     variant="solid" 
     :label="label"
@@ -11,9 +11,9 @@
 </template>
 
 <script lang="ts" setup>
-import SpotifyIcon from '~/components/common/Icons/SpotifyIcon.vue';
 import { signIn } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
+import { Icons } from '~/components/common/icons';
 
 withDefaults(defineProps<{ label?: string }>(), { label: 'Get started' });
 

@@ -27,8 +27,8 @@
       <section class="flex gap-4 mb-2">
         <ListenInfoItem
           label="Listened"
-          :text="albumListen.listenMetadata.inOrder ? 'Ordered' : 'Shuffled'"
-          :icon="albumListen.listenMetadata.inOrder ? 'i-lucide-list-ordered' : 'i-lucide-shuffle'"
+          :text="albumListen.listenMetadata.listenOrder === 'ordered' ? 'Ordered' : 'Shuffled'"
+          :icon="albumListen.listenMetadata.listenOrder === 'ordered' ? Icons.ORDERED : Icons.SHUFFLED"
         />
 
         <ListenInfoItem
@@ -55,7 +55,7 @@
 import type { ListenMethod } from '@prisma/client';
 import { type Component, h } from 'vue';
 import type { DailyAlbumListen, ListenTime } from '#shared/schema';
-import SpotifyIconSvg from '~/components/common/Icons/SpotifyIcon.vue';
+import { Icons } from '../common/icons';
 
 const { albumListen } = defineProps<{
   albumListen: DailyAlbumListen;
@@ -64,21 +64,19 @@ const { albumListen } = defineProps<{
 const listenTime = computed(() => albumListen.listenMetadata.listenTime);
 const listenMethod = computed(() => albumListen.listenMetadata.listenMethod);
 
-const SpotifyIcon = () => h(SpotifyIconSvg);
-
 const listenMethodMap: Record<
   ListenMethod,
   { text: string; icon: string | Component }
 > = {
-  spotify: { text: 'Spotify', icon: SpotifyIcon },
-  vinyl: { text: 'Vinyl', icon: 'i-lucide-disc-3' },
-  streamed: { text: 'Streamed', icon: 'i-lucide-audio-lines' },
+  spotify: { text: 'Spotify', icon: Icons.SPOTIFY },
+  vinyl: { text: 'Vinyl', icon: Icons.VINYL },
+  streamed: { text: 'Streamed', icon: Icons.AUDIO_LINES },
 };
 
 const timeMap: Record<ListenTime, { text: string; icon: string }> = {
-  morning: { text: 'Morning', icon: 'i-lucide-sunrise' },
-  noon: { text: 'Afternoon', icon: 'i-lucide-sun' },
-  evening: { text: 'Evening', icon: 'i-lucide-sunset' },
-  night: { text: 'Night', icon: 'i-lucide-moon-star' },
+  morning: { text: 'Morning', icon: Icons.SUNRISE },
+  noon: { text: 'Afternoon', icon: Icons.SUN },
+  evening: { text: 'Evening', icon: Icons.SUNSET },
+  night: { text: 'Night', icon: Icons.MOON_STAR },
 };
 </script>

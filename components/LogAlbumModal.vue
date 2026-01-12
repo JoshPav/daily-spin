@@ -29,8 +29,8 @@
 import { h } from 'vue';
 import type { ListenMethod, ListenTime } from '#shared/schema';
 import { formatDate } from '~/lib/utils/dateUtils';
-import SpotifyIconSvg from './common/Icons/SpotifyIcon.vue';
 import type { RadioOption } from './common/RadioSelect.vue';
+import { Icons } from './common/icons';
 
 const { close, dateOfListen, isOpen } = useAddAlbumListenModal();
 
@@ -40,24 +40,21 @@ const { selectedAlbum, listenMethod, listenTime, saving, logAlbumListen } =
     onSuccess: close,
   });
 
-// Wrap Vue components in h() function
-const SpotifyIcon = () => h(SpotifyIconSvg);
-
 const listenMethodOptions: RadioOption<ListenMethod>[] = [
   {
     text: 'Spotify',
     value: 'spotify',
-    icon: SpotifyIcon,
+    icon: Icons.SPOTIFY,
   },
   {
     text: 'Vinyl',
     value: 'vinyl',
-    icon: 'i-lucide-disc-3',
+    icon: Icons.VINYL,
   },
   {
     text: 'Streamed',
     value: 'streamed',
-    icon: 'i-lucide-audio-lines',
+    icon: Icons.AUDIO_LINES,
   },
 ];
 
