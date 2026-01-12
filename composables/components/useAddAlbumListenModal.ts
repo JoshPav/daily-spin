@@ -10,6 +10,7 @@ export const useAddAlbumListenModal = () => {
   const isOpen = computed(() => !!dateOfListen.value);
 
   const open = ({ date }: OpenModalPayload) => {
+    console.log('open');
     dateOfListen.value = date;
   };
 

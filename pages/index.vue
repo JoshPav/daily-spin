@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue';
 import type { DailyListens } from '~~/shared/schema';
-import { authClient } from '~/lib/auth-client';
-const session = await authClient.getSession();
 
-console.log({ session: session.data });
 const { data, pending, error, refresh } = useListens();
 
 function getNextNDays(startDate: Date, n: number): Date[] {

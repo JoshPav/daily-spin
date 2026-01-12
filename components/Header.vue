@@ -1,29 +1,18 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
 
-const { loggedIn, user } = await useAuth();
+const { loggedIn, user } = useAuth();
 
-const menuItems: DropdownMenuItem[] = [
-  [
-    {},
-    {
-      label: 'Preferences',
-      icon: 'i-heroicons-cog-6-tooth',
-      click: () => {
-        console.log('preferences');
-      },
-    },
-  ],
-  [
-    {
-      label: 'Sign out',
-      icon: 'i-heroicons-arrow-right-on-rectangle',
-      click: () => {
-        console.log('sign out');
-      },
-    },
-  ],
-];
+const menuItems = ref<DropdownMenuItem[]>([
+  {
+    label: 'Preferences',
+    icon: 'i-heroicons-cog-6-tooth',
+  },
+  {
+    label: 'Sign out',
+    icon: 'i-heroicons-arrow-right-on-rectangle',
+  },
+]);
 
 const avatarAlt = computed(() => {
   return user.value?.name || user.value?.initial || 'User';
