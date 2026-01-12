@@ -7,6 +7,8 @@ export default defineNuxtConfig({
     port: 3000,
   },
   runtimeConfig: {
+    spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
+    spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     postgresUrl: process.env.POSTGRES_URL,
   },
   css: ['~/assets/css/main.css'],

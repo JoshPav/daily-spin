@@ -10,13 +10,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
       const loggedIn = !!data;
 
-      const goingToLogin = isNavigatingTo(to, Route.LANDING_PAGE);
+      const goingToLandingPage = isNavigatingTo(to, Route.LANDING_PAGE);
 
-      if (goingToLogin && loggedIn) {
+      if (goingToLandingPage && loggedIn) {
         return navigateTo(Route.DASHBOARD);
       }
 
-      if (!loggedIn && !goingToLogin) {
+      if (!loggedIn && !goingToLandingPage) {
         return navigateTo(Route.LANDING_PAGE);
       }
     } catch (error) {

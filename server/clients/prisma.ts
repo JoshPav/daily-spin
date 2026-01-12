@@ -1,13 +1,8 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-import { config } from 'dotenv';
 import pkg from 'pg';
 
 const { Pool } = pkg;
-
-// Nuxt doesn't always load .env.local for server utils, so load it explicitly
-config({ path: '.env.local' });
-config({ path: '.env' });
 
 const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 const adapter = new PrismaPg(pool);
