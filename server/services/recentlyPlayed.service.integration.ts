@@ -9,7 +9,7 @@ import {
   it,
   vi,
 } from 'vitest';
-import { userCreateInput } from '~/tests/factories/prisma.factory';
+import { userCreateInput } from '~~/tests/factories/prisma.factory';
 import {
   createAlbumAndTracks,
   createAlbumTracks,
@@ -18,7 +18,7 @@ import {
   recentlyPlayed,
   simplifiedAlbum,
   toPlayHistory,
-} from '~/tests/factories/spotify.factory';
+} from '~~/tests/factories/spotify.factory';
 import {
   clearTestDatabase,
   getTestPrisma,
