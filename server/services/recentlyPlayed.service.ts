@@ -1,5 +1,6 @@
 import type { ListenOrder, ListenTime } from '@prisma/client';
 import type { PlayHistory } from '@spotify/web-api-ts-sdk';
+import { getTrackListenTime } from '#shared/utils/listenTime.utils';
 import { getSpotifyClientForUser } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
@@ -11,7 +12,6 @@ import {
   groupTracksByAlbum,
   type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
-import { getTrackListenTime } from '#shared/utils/listenTime.utils';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {

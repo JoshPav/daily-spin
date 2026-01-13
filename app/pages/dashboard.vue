@@ -100,22 +100,9 @@ onMounted(async () => {
     </div>
   </template>
 
-<style>
+<style scoped>
 * {
   box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  overflow: hidden;
-  background-color: #121212;
-  color: #ffffff;
-  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* View Transitions */
@@ -134,10 +121,15 @@ body {
 }
 
 .app-container {
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #121212;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .header {

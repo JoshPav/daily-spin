@@ -12,8 +12,8 @@
 
 <script lang="ts" setup>
 import { Icons } from '~/components/common/icons';
-import { Route } from '~/pages/routes';
 import { signIn } from '~/lib/auth-client';
+import { Route } from '~/pages/routes';
 
 withDefaults(defineProps<{ label?: string }>(), { label: 'Get started' });
 

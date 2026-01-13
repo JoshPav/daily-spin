@@ -6,13 +6,10 @@ const SEARCH_LIMIT = 3;
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
 
 export const useSpotifyAlbumSearch = () => {
-  const config = useRuntimeConfig();
-  const token = config.public.spotifyAccessToken;
   const searchQuery = ref('');
   const searchResults = ref<SearchResult[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
-
   let debounceTimeout: NodeJS.Timeout | null = null;
 
   const performSearch = async (query: string) => {
@@ -25,14 +22,12 @@ export const useSpotifyAlbumSearch = () => {
     error.value = null;
 
     try {
-      const data = await $fetch<SearchResults<['album']>>(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=${SEARCH_LIMIT}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const api = await useSpotifyApi();
+
+      if (!api) {
+        return;
+      }
+      const data = await api.search(query, ['album'], undefined, SEARCH_LIMIT);
 
       searchResults.value = data.albums?.items || [];
     } catch (err) {

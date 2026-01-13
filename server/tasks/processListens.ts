@@ -21,7 +21,9 @@ export default defineTask({
     const recentlyPlayedService = new RecentlyPlayedService();
 
     await Promise.all(
-      usersToProcess.map(recentlyPlayedService.processTodaysListens),
+      usersToProcess.map((user) =>
+        recentlyPlayedService.processTodaysListens(user),
+      ),
     );
 
     return { result: 'Finished processing' };

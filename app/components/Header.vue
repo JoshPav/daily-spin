@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import { Route } from '~/pages/routes';
 import { signOut } from '~/lib/auth-client';
+import { Route } from '~/pages/routes';
+import { Icons } from './common/icons';
 
 const { loggedIn, user, loading } = useAuth();
 const router = useRouter();
@@ -20,13 +21,13 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
   [
     {
       label: 'Bulk import',
-      icon: 'i-lucide-import',
+      icon: Icons.IMPORT,
       class: 'hover:cursor-pointer',
       disabled: true,
     },
     {
       label: 'Preferences',
-      icon: 'i-lucide-settings',
+      icon: Icons.SETTINGS,
       class: 'hover:cursor-pointer',
       disabled: true,
     },
@@ -34,7 +35,7 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
   [
     {
       label: 'Sign out',
-      icon: 'i-lucide-log-out',
+      icon: Icons.LOG_OUT,
       class: 'hover:cursor-pointer',
       onSelect: async () => {
         await signOut({

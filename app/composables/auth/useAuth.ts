@@ -26,6 +26,5 @@ export const useAuth = () => {
     loggedIn: computed(() => !!user.value),
     user,
     loading: computed(() => session.value.isPending),
-    token: computed(() => session.value?.data?.session.token),
   };
 };
