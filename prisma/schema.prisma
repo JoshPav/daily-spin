@@ -7,10 +7,22 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  dailyListens DailyListen[]
+  id                         String        @id @default(cuid())
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  dailyListens               DailyListen[]
+  name                       String
+  email                      String
+  emailVerified              Boolean       @default(false)
+  image                      String?
+  sessions                   Session[]
+  accounts                   Account[]
+  trackListeningHistory      Boolean       @default(true)
+  createTodaysAlbumPlaylist  Boolean       @default(true)
+  createSongOfDayPlaylist    Boolean       @default(true)
+
+  @@unique([email])
+  @@map("user")
 }
 
 model DailyListen {
@@ -29,17 +41,17 @@ model DailyListen {
 }
 
 model AlbumListen {
-  id              String       @id @default(cuid())
-  dailyListenId   String
-  albumId         String
-  albumName       String
-  artistNames     String
-  imageUrl        String
-  listenedInOrder Boolean      @default(false)
-  listenMethod    ListenMethod @default(spotify)
-  listenTime      ListenTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  dailyListenId String
+  albumId       String
+  albumName     String
+  artistNames   String
+  imageUrl      String
+  listenOrder   ListenOrder  @default(ordered)
+  listenMethod  ListenMethod @default(spotify)
+  listenTime    ListenTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
 
@@ -54,9 +66,63 @@ enum ListenMethod {
   streamed
 }
 
+enum ListenOrder {
+  ordered
+  shuffled
+  interrupted
+}
+
 enum ListenTime {
   morning
   noon
   evening
   night
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

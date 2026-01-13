@@ -1,12 +1,10 @@
 import type { GetListensQueryParams, GetListensResponse } from '#shared/schema';
 import { DailyListenService } from '../services/dailyListen.service';
-import { getUserId } from '../utils/auth.utils';
 
 export default defineEventHandler<Promise<GetListensResponse>>(
   async (event) => {
     const query = getQuery<GetListensQueryParams>(event);
-
-    const userId = getUserId();
+    const { userId } = event.context;
 
     // Default to last 2 weeks if no range specified
     const today = new Date();

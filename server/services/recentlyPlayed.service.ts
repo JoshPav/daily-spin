@@ -1,15 +1,18 @@
-import type { ListenTime } from '@prisma/client';
-import type { PlayHistory, SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { getSpotifyApiClient } from '../clients/spotify';
+import type { ListenOrder, ListenTime } from '@prisma/client';
+import type { PlayHistory } from '@spotify/web-api-ts-sdk';
+import { getTrackListenTime } from '#shared/utils/listenTime.utils';
+import { getSpotifyClientForUser } from '../clients/spotify';
 import { DailyListenRepository } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
   areTracksInOrder,
+  areTracksPlayedContinuously,
   type GroupedTracks,
-  getTrackListenTime,
   groupTracksByAlbum,
+  type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
+import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {
   albumId: string;
@@ -23,7 +26,7 @@ type FinishedAlbum = {
   imageUrl: string;
   albumName: string;
   listenedInFull: true;
-  listenedInOrder: boolean;
+  listenOrder: ListenOrder;
   listenMethod: 'spotify';
   listenTime: ListenTime;
 };
@@ -33,13 +36,10 @@ type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
 const MIN_REQUIRED_TRACKS = 5;
 
 export class RecentlyPlayedService {
-  constructor(
-    private spotifyApi: SpotifyApi = getSpotifyApiClient(),
-    private dailyListenRepo = new DailyListenRepository(),
-  ) {}
+  constructor(private dailyListenRepo = new DailyListenRepository()) {}
 
-  async processTodaysListens(userId: string) {
-    const todaysListens = await this.getTodaysFullListens();
+  async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
+    const todaysListens = await this.getTodaysFullListens(auth);
 
     if (!todaysListens.length) {
       console.debug('No finished albums found today.');
@@ -49,14 +49,22 @@ export class RecentlyPlayedService {
     return this.dailyListenRepo.saveListens(userId, todaysListens);
   }
 
-  private async getTodaysFullListens() {
-    const todaysTracks = await this.getTodaysPlays();
+  private async getTodaysFullListens(auth: AuthDetails) {
+    const todaysTracks = await this.getTodaysPlays(auth);
 
     if (!todaysTracks.length) {
       return [];
     }
 
-    const groupedTracks = groupTracksByAlbum(todaysTracks);
+    // Add play index to each track for interruption detection
+    const tracksWithIndex: PlayHistoryWithIndex[] = todaysTracks.map(
+      (track, index) => ({
+        ...track,
+        playIndex: index,
+      }),
+    );
+
+    const groupedTracks = groupTracksByAlbum(tracksWithIndex);
 
     const processed = Array.from(groupedTracks.values()).map(
       this.processGroupedTracks,
@@ -65,15 +73,19 @@ export class RecentlyPlayedService {
     return processed.filter((group) => group.listenedInFull);
   }
 
-  private async getTodaysPlays(): Promise<PlayHistory[]> {
+  private async getTodaysPlays(auth: AuthDetails): Promise<PlayHistory[]> {
     const today = new Date();
 
     try {
-      const recentlyPlayed =
-        await this.spotifyApi.player.getRecentlyPlayedTracks(50, {
+      const spotifyApi = getSpotifyClientForUser(auth);
+
+      const recentlyPlayed = await spotifyApi.player.getRecentlyPlayedTracks(
+        50,
+        {
           type: 'after',
           timestamp: getStartOfDayTimestamp(today),
-        });
+        },
+      );
 
       return recentlyPlayed.items
         .filter(
@@ -114,13 +126,25 @@ export class RecentlyPlayedService {
       };
     }
 
+    const playedContinuously = areTracksPlayedContinuously(tracks);
+    const tracksInSequentialOrder = areTracksInOrder(tracks);
+
+    let listenOrder: ListenOrder;
+    if (!playedContinuously) {
+      listenOrder = 'interrupted';
+    } else if (tracksInSequentialOrder) {
+      listenOrder = 'ordered';
+    } else {
+      listenOrder = 'shuffled';
+    }
+
     return {
       albumId,
       albumName,
       imageUrl: getAlbumArtwork(images),
       artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
-      listenedInOrder: areTracksInOrder(tracks),
+      listenOrder,
       listenMethod: 'spotify',
       listenTime: getTrackListenTime(tracks[0].played_at),
     };

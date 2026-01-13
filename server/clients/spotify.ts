@@ -1,29 +1,18 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { config } from 'dotenv';
+import type { AuthDetails } from '../services/user.service';
 
-// Nuxt doesn't always load .env.local for server utils, so load it explicitly
-config({ path: '.env.local' });
-config({ path: '.env' });
-
-let instance: SpotifyApi;
-
-const SPOTIFY_ACCESS_TOKEN = process.env.NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN;
-
-export const getSpotifyApiClient = (): SpotifyApi => {
-  if (!instance) {
-    if (!SPOTIFY_ACCESS_TOKEN) {
-      throw new Error(
-        'NUXT_PUBLIC_SPOTIFY_ACCESS_TOKEN is not set in environment variables',
-      );
-    }
-
-    instance = SpotifyApi.withAccessToken('', {
-      access_token: SPOTIFY_ACCESS_TOKEN,
-      token_type: 'Bearer',
-      expires_in: 3600,
-      refresh_token: '',
-    });
+export const getSpotifyClientForUser = ({
+  accessToken,
+  refreshToken,
+}: AuthDetails) => {
+  if (!accessToken || !refreshToken) {
+    throw new Error('User tokens invalid');
   }
 
-  return instance;
+  return SpotifyApi.withAccessToken(useRuntimeConfig().spotifyClientId, {
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: 3600,
+    refresh_token: refreshToken,
+  });
 };

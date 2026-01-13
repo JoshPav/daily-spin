@@ -21,11 +21,20 @@ const seedDay = async (userId: string, { day, dayAlbums }: SeedDay) => {
       date: new Date(`2026-01-${String(day).padStart(2, '0')}`),
       albums: {
         create: dayAlbums?.map(
-          ({ albumId, albumName, artistName, imageUrl, listenedInOrder }) => ({
+          ({
+            albumId,
+            albumName,
+            artistName,
+            imageUrl,
+            listenedInOrder,
+            listenTime,
+          }) => ({
             albumId,
             listenedInOrder: listenedInOrder || true,
+            listenTime: listenTime || 'noon',
             albumName,
             artistNames: artistName,
+            listenMethod: 'spotify',
             imageUrl,
           }),
         ),
@@ -38,25 +47,7 @@ const seedDay = async (userId: string, { day, dayAlbums }: SeedDay) => {
 };
 
 async function main() {
-  // Clear existing data
-  await prisma.albumListen.deleteMany({});
-  await prisma.dailyListen.deleteMany({});
-  await prisma.user.deleteMany({});
-
-  let userId = process.env.USER_ID;
-
-  const user = await prisma.user.upsert({
-    create: {
-      id: userId,
-    },
-    update: {},
-    where: {
-      id: userId,
-    },
-  });
-
-  userId = user.id;
-  console.log('✅ Created test user:', userId);
+  const userId = process.env.USER_ID as string;
 
   const daysToSeed = process.env.DAYS_TO_SEED?.split(',').map(Number);
 

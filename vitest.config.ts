@@ -11,15 +11,19 @@ const aliasConfig = {
     { find: /^~~/, replacement: fileURLToPath(new URL('./', import.meta.url)) },
     {
       find: /^~/,
-      replacement: fileURLToPath(new URL('./app', import.meta.url)),
+      replacement: fileURLToPath(new URL('./app/', import.meta.url)),
     },
     {
       find: /^@\//,
       replacement: fileURLToPath(new URL('./app/', import.meta.url)),
     },
     {
-      find: '#shared/schema',
-      replacement: fileURLToPath(new URL('./shared/schema', import.meta.url)),
+      find: /#shared\//,
+      replacement: fileURLToPath(new URL('./shared/', import.meta.url)),
+    },
+    {
+      find: /#server\//,
+      replacement: fileURLToPath(new URL('./server/', import.meta.url)),
     },
   ],
 };
@@ -37,7 +41,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    silent: true,
+    silent: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

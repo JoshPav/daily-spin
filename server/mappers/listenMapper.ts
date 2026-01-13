@@ -13,7 +13,7 @@ export const mapDailyListens = (
       albumName,
       artistNames,
       imageUrl,
-      listenedInOrder,
+      listenOrder,
       listenMethod,
       listenTime,
     }) => ({
@@ -24,7 +24,7 @@ export const mapDailyListens = (
         imageUrl,
       },
       listenMetadata: {
-        inOrder: listenedInOrder,
+        listenOrder,
         listenMethod,
         listenTime,
       },

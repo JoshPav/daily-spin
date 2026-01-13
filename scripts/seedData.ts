@@ -1,9 +1,12 @@
+import type { ListenTime } from '~/shared/schema';
+
 type SeedAlbum = {
   albumName: string;
   artistName: string;
   imageUrl: string;
   albumId: string;
   listenedInOrder: boolean;
+  listenTime?: ListenTime;
 };
 
 export type SeedDay = {
@@ -150,6 +153,48 @@ export default [
         listenedInOrder: true,
         imageUrl:
           'https://i.scdn.co/image/ab67616d00001e0245e82ae0372a50834825c018',
+      },
+    ],
+  },
+  {
+    day: 10,
+    dayAlbums: [
+      {
+        albumId: '1ERrUvG31thFCxdwWUoJrY',
+        albumName: 'Mercurial World',
+        artistName: 'Magdalena Bay',
+        imageUrl:
+          'https://i.scdn.co/image/ab67616d00001e020ecbdac77e72dc16719a3e89',
+        listenedInOrder: false,
+        listenTime: 'morning',
+      },
+    ],
+  },
+  {
+    day: 11,
+    dayAlbums: [
+      {
+        albumId: '6iHuSGy6pq4tNGFV3ZVPtl',
+        albumName: 'Substance',
+        artistName: 'New Order',
+        imageUrl:
+          'https://i.scdn.co/image/ab67616d00001e023c182241fcd86aeca2c68a63',
+        listenedInOrder: true,
+        listenTime: 'noon',
+      },
+    ],
+  },
+  {
+    day: 12,
+    dayAlbums: [
+      {
+        albumId: '26bhmgVpg5E5HyU4K1BYMc',
+        albumName: 'Singles',
+        artistName: 'Future Islands',
+        imageUrl:
+          'https://i.scdn.co/image/ab67616d0000b2730896bc513dc78701474ecc03',
+        listenedInOrder: true,
+        listenTime: 'noon',
       },
     ],
   },
