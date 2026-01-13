@@ -115,3 +115,14 @@ onUnmounted(() => {
   }
 }
 </style>
+
+<style>
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+</style>
