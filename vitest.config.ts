@@ -11,7 +11,7 @@ const aliasConfig = {
     { find: /^~~/, replacement: fileURLToPath(new URL('./', import.meta.url)) },
     {
       find: /^~/,
-      replacement: fileURLToPath(new URL('./', import.meta.url)),
+      replacement: fileURLToPath(new URL('./app/', import.meta.url)),
     },
     {
       find: /^@\//,
@@ -41,7 +41,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    silent: true,
+    silent: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
