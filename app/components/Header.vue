@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import { signOut } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
+import { signOut } from '~/lib/auth-client';
 
 const { loggedIn, user, loading } = useAuth();
 const router = useRouter();

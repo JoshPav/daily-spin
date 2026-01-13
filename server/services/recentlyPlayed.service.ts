@@ -8,10 +8,10 @@ import {
   areTracksInOrder,
   areTracksPlayedContinuously,
   type GroupedTracks,
-  getTrackListenTime,
   groupTracksByAlbum,
   type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
+import { getTrackListenTime } from '#shared/utils/listenTime.utils';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {

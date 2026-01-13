@@ -28,9 +28,9 @@
 <script lang="ts" setup>
 import { h } from 'vue';
 import type { ListenMethod, ListenTime } from '#shared/schema';
-import { formatDate } from '~/lib/utils/dateUtils';
-import type { RadioOption } from './common/RadioSelect.vue';
+import { formatDate } from '~/utils/dateUtils';
 import { Icons } from './common/icons';
+import type { RadioOption } from './common/RadioSelect.vue';
 
 const { close, dateOfListen, isOpen } = useAddAlbumListenModal();
 

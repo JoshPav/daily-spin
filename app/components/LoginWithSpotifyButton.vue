@@ -11,9 +11,9 @@
 </template>
 
 <script lang="ts" setup>
-import { signIn } from '~/lib/auth-client';
-import { Route } from '~/pages/routes';
 import { Icons } from '~/components/common/icons';
+import { Route } from '~/pages/routes';
+import { signIn } from '~/lib/auth-client';
 
 withDefaults(defineProps<{ label?: string }>(), { label: 'Get started' });
 

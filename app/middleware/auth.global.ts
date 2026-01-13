@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) {
     try {
       // ! Keep it here to avoid Buffer error when bundling
-      const { auth } = await import('~/lib/auth');
+      const { auth } = await import('#shared/auth');
 
       const data = await auth.api.getSession({ headers: useRequestHeaders() });
 

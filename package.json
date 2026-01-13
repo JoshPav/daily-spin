@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@nuxt/image": "2.0.0",
-    "@nuxt/ui": "4.1.0",
+    "@nuxt/ui": "^4.3.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@spotify/web-api-ts-sdk": "^1.2.0",
