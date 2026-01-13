@@ -5,6 +5,8 @@ import prisma from '../server/clients/prisma';
 const clientId = process.env.SPOTIFY_CLIENT_ID || '';
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
 
+const baseUrl = process.env.BASE_URL || '';
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
@@ -24,7 +26,7 @@ export const auth = betterAuth({
         'playlist-modify-public',
         'playlist-modify-private',
       ],
-      redirectURI: 'http://127.0.0.1:3000/api/auth/callback/spotify',
+      redirectURI: `${baseUrl}/api/auth/callback/spotify`,
     },
   },
 });
