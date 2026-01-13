@@ -50,7 +50,12 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
 </script>
 
 <template>
-  <UHeader title="Album of the Day">
+  <UHeader>
+
+    <template #title>
+      <Logo />
+    </template>
+
     <template #toggle>
       <USkeleton v-if="loading" class="h-8 w-8 rounded-full mr-1.5"/>
       <UDropdownMenu

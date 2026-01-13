@@ -17,10 +17,10 @@
       <UContainer class="relative z-10 py-32">
         <div class="text-center space-y-6 max-w-3xl mx-auto">
           <h1 class="text-4xl sm:text-6xl font-black tracking-tight">
-            Capture your listening, effortlessly
+            Your complete album history
           </h1>
           <p class="text-xl sm:text-2xl text-gray-300">
-            Automatically capture your listening history and visualize your musical journey
+            Build a complete archive of your album plays and watch your musical taste evolve over time.
           </p>
           <div class="pt-6">
             <div class="inline-block scale-125">

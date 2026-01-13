@@ -2,10 +2,9 @@
   <UButton 
     v-on:click="onClick" 
     :icon="Icons.SPOTIFY" 
-    color="primary" 
     variant="solid" 
     :label="label"
-    class="text-white font-semibold px-4 py-2 rounded-sm hover:cursor-pointer" 
+    class="text-white font-semibold px-4 py-2 rounded-sm hover:cursor-pointer bg-(--color-spotify-brand-green) hover:bg-(--color-spotify-brand-green-hover)" 
     :loading="loading" 
   />
 </template>
@@ -19,18 +18,33 @@ withDefaults(defineProps<{ label?: string }>(), { label: 'Get started' });
 
 const loading = ref(false);
 
+const toast = useToast();
+
 const onClick = async () => {
   loading.value = true;
 
-  await signIn.social({
-    provider: 'spotify',
-    callbackURL: Route.DASHBOARD,
-    fetchOptions: {
-      onError: () => {
-        loading.value = false;
+  try {
+    await signIn.social({
+      provider: 'spotify',
+      callbackURL: Route.DASHBOARD,
+      fetchOptions: {
+        onError: () => {
+          loading.value = false;
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    loading.value = false;
+
+    toast.add({
+      title: 'Uh oh! Something went wrong.',
+      description:
+        "We couldn't connect to Spotify right now. Try again later. ",
+      icon: Icons.WIFI,
+      progress: false,
+      color: 'error',
+    });
+  }
 };
 </script>
 
