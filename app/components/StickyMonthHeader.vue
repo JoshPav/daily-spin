@@ -13,7 +13,7 @@ const { formattedMonth } = useCurrentMonth();
 <style scoped>
 .sticky-month-header {
   position: sticky;
-  top: 8px;
+  top: 40px;
   z-index: 100;
 
   /* Span all grid columns */

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Album of the Day is a Nuxt 4 application that automatically tracks albums listened to on Spotify. It polls Spotify's recently played tracks API to detect when a user has listened to a full album (all tracks in order), stores this data in PostgreSQL via Prisma, and displays a calendar-style history of listening activity.
+Daily Spin is a Nuxt 4 application that automatically tracks albums listened to on Spotify. It polls Spotify's recently played tracks API to detect when a user has listened to a full album (all tracks in order), stores this data in PostgreSQL via Prisma, and displays a calendar-style history of listening activity.
 
 ## Commands
 

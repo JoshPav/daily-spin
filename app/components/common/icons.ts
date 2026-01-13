@@ -1,3 +1,5 @@
+import { h } from 'vue';
+
 const SpotifyIcon = h(
   'svg',
   {
@@ -26,4 +28,5 @@ export const Icons = {
   SETTINGS: 'i-lucide-settings',
   IMPORT: 'i-lucide-import',
   LOG_OUT: 'i-lucide-log-out',
+  WIFI: 'i-lucide-wifi',
 };

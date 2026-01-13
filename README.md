@@ -1,4 +1,4 @@
-# 🎵 Album Of The Day
+# 🎵 Daily Spin
 
 Track the albums you actually listen to — automatically.
 

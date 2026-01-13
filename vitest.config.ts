@@ -41,7 +41,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    silent: false,
+    silent: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
