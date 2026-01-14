@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Account, Prisma } from '@prisma/client';
 import {
   afterEach,
   beforeAll,
@@ -16,11 +16,16 @@ import {
   createFullAlbumPlayHistory,
   recentlyPlayed,
 } from '~~/tests/factories/spotify.factory';
+import { mockRuntimeConfig } from '~~/tests/integration.setup';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
-import { mockSpotifyApi } from '~~/tests/mocks/spotifyMock';
+import {
+  mockSpotifyApi,
+  mockWithAccessToken,
+} from '~~/tests/mocks/spotifyMock';
 
 describe('GET /api/listens Integration Tests', () => {
   let userId: string;
+  let userAccount: Account;
 
   const mockGetRecentlyPlayedTracks = vi.mocked(
     mockSpotifyApi.player.getRecentlyPlayedTracks,
@@ -29,25 +34,26 @@ describe('GET /api/listens Integration Tests', () => {
   const today = new Date('2026-01-15T12:00:00.000Z');
   const startOfToday = new Date('2026-01-15T00:00:00.000Z');
 
-  const spotifyClientId = 'spotifyClientId';
+  const spotifyClientId = 'test-spotify-client-id';
 
   let handler: EventHandler<GetListensResponse>;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
-    vi.stubEnv('SPOTIFY_CLIENT_ID', spotifyClientId);
+    mockRuntimeConfig.spotifyClientId = spotifyClientId;
   });
 
   beforeEach(async () => {
     // Create a test user
-    userId = (await createUser()).id;
+    const user = await createUser();
+    userId = user.id;
+    userAccount = user.accounts[0];
 
     handler = (await import('./listens.get')).default;
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-
     vi.unstubAllEnvs();
   });
 
@@ -86,8 +92,6 @@ describe('GET /api/listens Integration Tests', () => {
         },
       }),
     );
-
-    result[0].albums[0].album.imageUrl;
 
     // Then
     expect(result).toHaveLength(3);
@@ -164,6 +168,12 @@ describe('GET /api/listens Integration Tests', () => {
       );
 
       // Then
+      expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
+        access_token: userAccount.accessToken,
+        token_type: 'Bearer',
+        expires_in: 3600,
+        refresh_token: userAccount.refreshToken,
+      });
       expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
       expect(result).toHaveLength(2);
       expect(result[1].albums).toHaveLength(1);

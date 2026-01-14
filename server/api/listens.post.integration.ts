@@ -18,7 +18,6 @@ import {
   addAlbumListenBody,
   album,
   createHandlerEvent,
-  handlerEvent,
 } from '~~/tests/factories/api.factory';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 
@@ -210,7 +209,7 @@ describe('POST /api/listens Integration Tests', () => {
       });
 
       // When
-      await handler(handlerEvent(createHandlerEvent(userId, { body })));
+      await handler(createHandlerEvent(userId, { body }));
 
       // Then
       const savedListens = await getAllListensForUser(userId);

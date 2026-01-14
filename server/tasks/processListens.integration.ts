@@ -1,8 +1,15 @@
-import { afterEach } from 'node:test';
-import type { ListenTime } from '@prisma/client';
+import type { Account, ListenTime } from '@prisma/client';
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import type { Task } from 'nitropack/types';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { getTestPrisma } from '~~/tests/db/setup';
 import { createUser, getAllListensForUser } from '~~/tests/db/utils';
 import {
@@ -14,7 +21,13 @@ import {
   simplifiedAlbum,
   toPlayHistory,
 } from '~~/tests/factories/spotify.factory';
-import { mockSpotifyApi } from '~~/tests/mocks/spotifyMock';
+import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import {
+  mockSpotifyApi,
+  mockWithAccessToken,
+} from '~~/tests/mocks/spotifyMock';
+
+vi.stubGlobal('defineTask', (task: Task<string>) => task);
 
 describe('processListens Task Integration Tests', () => {
   const mockGetRecentlyPlayedTracks = vi.mocked(
@@ -24,10 +37,13 @@ describe('processListens Task Integration Tests', () => {
   const today = new Date('2026-01-01T12:00:00.000Z');
   const startOfDay = new Date('2026-01-01T00:00:00.000Z');
 
+  const spotifyClientId = 'test-spotify-client-id';
+
   let processEvent: () => ReturnType<Task['run']>;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
+    mockRuntimeConfig.spotifyClientId = spotifyClientId;
 
     const eventHandler = (await import('./processListens')).default.run;
     processEvent = () =>
@@ -66,12 +82,14 @@ describe('processListens Task Integration Tests', () => {
 
     describe('when a user with history tracking exists', () => {
       let userId: string;
+      let userAccount: Account;
 
       beforeEach(async () => {
         const user = await createUser({
           trackListeningHistory: true,
         });
         userId = user.id;
+        userAccount = user.accounts[0];
       });
 
       describe('when additional users exist', () => {
@@ -96,7 +114,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 2 user(s)');
-          const user1Listens = await getAllListensForUser(userId);
+          const [user1Listens] = await getAllListensForUser(userId);
           expect(user1Listens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -104,7 +122,7 @@ describe('processListens Task Integration Tests', () => {
             ]),
           });
 
-          const user2Listens = await getAllListensForUser(otherUser.id);
+          const [user2Listens] = await getAllListensForUser(otherUser.id);
           expect(user2Listens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -129,7 +147,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const userWithFeatureListens = await getAllListensForUser(userId);
+          const [userWithFeatureListens] = await getAllListensForUser(userId);
           expect(userWithFeatureListens).toMatchObject({
             userId,
             date: startOfDay,
@@ -138,7 +156,7 @@ describe('processListens Task Integration Tests', () => {
 
           // User without feature should not have listens
           const allListens = await getAllListensForUser(user2.id);
-          expect(allListens).toHaveLength(1);
+          expect(allListens).toHaveLength(0);
         });
       });
 
@@ -154,6 +172,12 @@ describe('processListens Task Integration Tests', () => {
         const { result } = await processEvent();
 
         // Then
+        expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
+          access_token: userAccount.accessToken,
+          token_type: 'Bearer',
+          expires_in: 3600,
+          refresh_token: userAccount.refreshToken,
+        });
         expect(result).toEqual('Successfully processed 1 user(s)');
         const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toMatchObject({

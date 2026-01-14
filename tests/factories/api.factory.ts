@@ -28,9 +28,7 @@ export const createHandlerEvent = (
     context: { userId },
   });
 
-export const handlerEvent = createFactory<HandlerEvent>(
-  () => ({}) as HandlerEvent,
-);
+const handlerEvent = createFactory<HandlerEvent>(() => ({}) as HandlerEvent);
 
 export const album = createFactory<Album>(() => ({
   albumId: uuid(),

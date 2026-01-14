@@ -8,7 +8,9 @@ import {
 import '~~/tests/mocks/nitroMock';
 import '~~/tests/mocks/spotifyMock';
 
-vi.stubGlobal('useRuntimeConfig', () => ({}));
+export const mockRuntimeConfig: Record<string, unknown> = {};
+
+vi.stubGlobal('useRuntimeConfig', () => mockRuntimeConfig);
 
 beforeAll(async () => {
   await setupTestDatabase();
