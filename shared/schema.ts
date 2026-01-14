@@ -51,3 +51,67 @@ export type AddListen = {
   body: AddAlbumListenBody;
   response: never;
 };
+
+// Backlog types
+export type BacklogType = 'album' | 'artist';
+
+export type BacklogAlbum = {
+  id: string;
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  artistNames: string | null;
+  addedAt: string;
+};
+
+export type BacklogArtist = {
+  id: string;
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  addedAt: string;
+};
+
+export type GetBacklogResponse = {
+  albums: BacklogAlbum[];
+  artists: BacklogArtist[];
+};
+
+export type GetBacklog = {
+  query: never;
+  params: never;
+  body: never;
+  response: GetBacklogResponse;
+};
+
+export type AddBacklogItemBody = {
+  type: BacklogType;
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+  artistNames?: string;
+};
+
+export type AddBacklogItemResponse = {
+  id: string;
+  type: BacklogType;
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  artistNames: string | null;
+  addedAt: string;
+};
+
+export type AddBacklogItem = {
+  query: never;
+  params: never;
+  body: AddBacklogItemBody;
+  response: AddBacklogItemResponse;
+};
+
+export type DeleteBacklogItem = {
+  query: never;
+  params: { id: string };
+  body: never;
+  response: never;
+};
