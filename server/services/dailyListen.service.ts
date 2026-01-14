@@ -17,7 +17,7 @@ export class DailyListenService {
   async addAlbumListen(userId: string, body: AddAlbumListenBody) {
     const dateOfListens = new Date(body.date);
 
-    this.dailyListenRepo.saveListens(
+    await this.dailyListenRepo.saveListens(
       userId,
       [this.mapAddAlbumBody(body)],
       dateOfListens,
