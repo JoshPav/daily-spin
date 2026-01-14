@@ -16,7 +16,7 @@ import {
   teardownTestDatabase,
 } from '../../tests/setup/db';
 import { DailyListenService } from '../services/dailyListen.service';
-import { album, listenMetadata } from '../../tests/factories/api.factory';
+import { album } from '../../tests/factories/api.factory';
 import {
   createFullAlbumPlayHistory,
   recentlyPlayed,
