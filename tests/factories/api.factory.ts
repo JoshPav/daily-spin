@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import type {
   AddAlbumListenBody,
+  AddBacklogItemBody,
   Album,
+  BacklogType,
   DailyAlbumListen,
   ListenMetadata,
 } from '~~/shared/schema';
@@ -57,4 +59,12 @@ export const addAlbumListenBody = createFactory<AddAlbumListenBody>(() => ({
   album: album(),
   listenMetadata: listenMetadata(),
   date: date.recent().toISOString(),
+}));
+
+export const addBacklogItemBody = createFactory<AddBacklogItemBody>(() => ({
+  type: 'album' as BacklogType,
+  spotifyId: uuid(),
+  name: music.songName(),
+  imageUrl: url(),
+  artistNames: music.artist(),
 }));
