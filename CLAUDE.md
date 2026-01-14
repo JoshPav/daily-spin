@@ -242,19 +242,31 @@ Before implementing any new feature, follow this workflow:
 
 2. **Check for or create a feature branch**:
    - Check if a branch already exists for this feature
-   - If not, create a feature branch that includes the issue number:
+   - If not, create a feature branch with the type prefix and issue number:
      ```bash
-     git checkout -b <issue-number>-short-description
+     git checkout -b <type>/<issue-number>-short-description
      ```
 
    Branch naming conventions:
-   - **Always prefix with the GitHub issue number**
-   - Use kebab-case (lowercase with hyphens) after the number
+   - **Start with the type prefix** followed by a slash
+   - **Include the GitHub issue number** after the type
+   - Use kebab-case (lowercase with hyphens) for the description
    - Be descriptive but concise
-   - Examples:
-     - `15-bulk-upload` (for issue #15)
-     - `19-css-variables` (for issue #19)
-     - `20-date-library` (for issue #20)
+
+   Type prefixes:
+   - `feat/` - New features
+   - `fix/` - Bug fixes
+   - `docs/` - Documentation changes
+   - `refactor/` - Code refactoring (no functional changes)
+   - `test/` - Adding or updating tests
+   - `chore/` - Maintenance tasks, dependencies, config
+   - `breaking/` - Breaking changes
+
+   Examples:
+   - `feat/15-bulk-upload` (feature for issue #15)
+   - `fix/23-album-detection` (bug fix for issue #23)
+   - `refactor/19-css-variables` (refactor for issue #19)
+   - `docs/20-api-documentation` (docs for issue #20)
 
 3. **Plan before implementing**: Use Claude Code's plan mode to:
    - Explore the codebase and understand existing patterns
