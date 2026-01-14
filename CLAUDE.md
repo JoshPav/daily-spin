@@ -201,9 +201,9 @@ export const user = createFactory<YourType>({
 - Easy to override specific fields while keeping realistic defaults
 - Deep merging support via lodash.merge for complex nested objects
 
-## Roadmap
+## Feature Tracking
 
-This section tracks planned features and their implementation status.
+Features and tech debt are tracked in **GitHub Issues** on the [DailySpin project board](https://github.com/users/JoshPav/projects/2).
 
 ### Current Features
 
@@ -211,39 +211,14 @@ This section tracks planned features and their implementation status.
 - **Manual album logging**: UI for manually logging albums (Spotify/vinyl/streamed)
 - **Listen metadata**: Tracks whether albums were listened in order and time of day (morning/noon/evening/night)
 - **Calendar view**: Display listening history in a calendar format
+- **Spotify API integration**: OAuth authentication via BetterAuth for Spotify login
 
-### Tech debt
-- **CSS Tidy Up**
-  - CSS varaibles are hardcoded everywhere. We should define variables centrally and reference these
-- **Nuxt UI migration**
-  - Replace custom components with Nuxt UI components
-- **Dates**
-  - Add modern date library to tidy up formatting logic
-- **dotenv**
-  - Used in lots of places, where is the central spot
+### Finding Work
 
-### Planned Features
-
-- **Spotify API integration** (blocked by [Spotify developer forum issue](https://community.spotify.com/t5/Spotify-for-Developers/Unable-to-create-app/td-p/7283365/page/7))
-  - Setup login screen which uses BetterAuth (or similar) to authenticate users and store required info
-  - Use Spotify auth flow to generate tokens when making requests (instead of current env var workaround)
-
-- **Bulk Upload**: Import historical listening data
-  - User can upload their Spotify data from the "Download your data" tool (https://support.spotify.com/uk/article/understanding-your-data/)
-  - Process the data to extract historic album listens
-  - Data won't be stored permanently, only processed
-
-- **Future Listens**: Plan ahead for albums to listen to
-  - Can assign albums to days in the future as a placeholder of what to listen to
-  - Can be assigned manually
-  - Automated CRON job to assign future days based on Spotify suggestions
-  - Linked playlist that has today's album in it. Playlist auto-updated by CRON job
-
-- **Song of the day**: Track favorite songs from daily albums
-  - User can choose their favourite song of that day's album
-  - Linked playlist that has the user's favourite song from each day of the year
-
-_When a feature is fully implemented, move it from this section to "Current Features" above. If partially implemented, update the description to reflect what's complete and what remains._
+Before starting any feature or fix:
+1. Check the [GitHub Issues](https://github.com/JoshPav/album-of-the-day/issues) for the relevant issue
+2. Read the issue description for requirements and acceptance criteria
+3. Use the issue number when creating branches (see below)
 
 ## Development Workflow
 
@@ -259,40 +234,62 @@ _When a feature is fully implemented, move it from this section to "Current Feat
 
 Before implementing any new feature, follow this workflow:
 
-1. **Check for or create a feature branch**:
+1. **Find the GitHub Issue**:
+   - Look up the relevant issue in [GitHub Issues](https://github.com/JoshPav/album-of-the-day/issues)
+   - Read the full issue description, acceptance criteria, and any comments
+   - Use `gh issue view <number>` to fetch issue details from the command line
+   - If no issue exists for the work, ask the user if one should be created first
+
+2. **Check for or create a feature branch**:
    - Check if a branch already exists for this feature
-   - If not, create a feature branch with a descriptive name:
+   - If not, create a feature branch with the type prefix and issue number:
      ```bash
-     git checkout -b feature-name
+     git checkout -b <type>/<issue-number>-short-description
      ```
 
    Branch naming conventions:
-   - Use kebab-case (lowercase with hyphens)
-   - Be descriptive but concise (e.g., `user-profile-page`, `spotify-playlist-sync`, `listening-stats`)
-   - Prefix with context if helpful (e.g., `fix-album-detection`, `refactor-date-utils`)
+   - **Start with the type prefix** followed by a slash
+   - **Include the GitHub issue number** after the type
+   - Use kebab-case (lowercase with hyphens) for the description
+   - Be descriptive but concise
 
-2. **Plan before implementing**: Use Claude Code's plan mode to:
+   Type prefixes:
+   - `feat/` - New features
+   - `fix/` - Bug fixes
+   - `docs/` - Documentation changes
+   - `refactor/` - Code refactoring (no functional changes)
+   - `test/` - Adding or updating tests
+   - `chore/` - Maintenance tasks, dependencies, config
+   - `breaking/` - Breaking changes
+
+   Examples:
+   - `feat/15-bulk-upload` (feature for issue #15)
+   - `fix/23-album-detection` (bug fix for issue #23)
+   - `refactor/19-css-variables` (refactor for issue #19)
+   - `docs/20-api-documentation` (docs for issue #20)
+
+3. **Plan before implementing**: Use Claude Code's plan mode to:
    - Explore the codebase and understand existing patterns
    - Identify which files need to be modified
    - Design the implementation approach
-   - Write the plan to a file in `.claude/plans/` directory (e.g., `.claude/plans/feature-name-plan.md`)
+   - Write the plan to a file in `.claude/plans/` directory (e.g., `.claude/plans/15-bulk-upload-plan.md`)
    - Get user approval on the plan before writing code
 
    In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review. All plans should be saved to `.claude/plans/` for easy reference.
 
-3. **Wait for user direction**: After creating the plan, WAIT for the user to specify which parts to implement. Do not automatically start implementing the entire plan.
+4. **Wait for user direction**: After creating the plan, WAIT for the user to specify which parts to implement. Do not automatically start implementing the entire plan.
 
-4. **Implement selected parts**: Implement only the parts the user asks you to work on
+5. **Implement selected parts**: Implement only the parts the user asks you to work on
 
-5. **Test**: Add unit and/or integration tests as appropriate
+6. **Test**: Add unit and/or integration tests as appropriate
 
-6. **Ask before committing**: After completing each step of the plan, ASK the user for permission before creating a commit. Never commit without explicit approval.
+7. **Ask before committing**: After completing each step of the plan, ASK the user for permission before creating a commit. Never commit without explicit approval.
 
-7. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan (only after user approval)
+8. **Create a PR**: Use `gh pr create` with a clear summary of changes and test plan (only after user approval). Reference the issue in the PR description (e.g., "Closes #15").
 
-8. **Update the roadmap**:
-   - If the feature is fully implemented: Remove it from the Roadmap section and add it to the Features list
-   - If only partially implemented: Update the roadmap item to reflect what's still left to do
+9. **Close the GitHub Issue**: When the feature is complete and merged:
+   - Close the issue with `gh issue close <number>`
+   - Update the "Current Features" list in this file if applicable
 
 This workflow ensures features are well-thought-out before implementation and reduces the need for major refactoring.
 
