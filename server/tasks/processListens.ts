@@ -26,6 +26,8 @@ export default defineTask({
       ),
     );
 
-    return { result: 'Finished processing' };
+    return {
+      result: `Successfully processed ${usersToProcess.length} user(s)`,
+    };
   },
 });

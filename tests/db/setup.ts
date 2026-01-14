@@ -8,7 +8,6 @@ let testPrisma: PrismaClient | null = null;
 let pool: pkg.Pool | null = null;
 
 export async function setupTestDatabase() {
-  // Ensure DATABASE_URL is set for tests
   if (!process.env.DATABASE_URL) {
     throw new Error(
       'DATABASE_URL is not set. Make sure .env.test is loaded or set DATABASE_URL environment variable.',
@@ -23,7 +22,6 @@ export async function setupTestDatabase() {
     log: ['error'],
   });
 
-  // Verify connection
   try {
     await testPrisma.$connect();
     console.log('✓ Test database connection established');
