@@ -1,5 +1,6 @@
 import type { ListenTime } from '@prisma/client';
 import type { SimplifiedAlbum, SpotifyApi } from '@spotify/web-api-ts-sdk';
+import type { Task } from 'nitropack/types';
 import {
   afterAll,
   beforeAll,
@@ -26,17 +27,12 @@ import {
   teardownTestDatabase,
 } from '../../tests/setup/db';
 import { getSpotifyClientForUser } from '../clients/spotify';
-import { DailyListenRepository } from '../repositories/dailyListen.repository';
-import { UserRepository } from '../repositories/user.repository';
-import { RecentlyPlayedService } from '../services/recentlyPlayed.service';
-import { UserService } from '../services/user.service';
 
 vi.mock('../clients/spotify');
+vi.stubGlobal('defineTask', (task: Task<string>) => task);
 
 describe('processListens Task Integration Tests', () => {
   let prisma: ReturnType<typeof getTestPrisma>;
-  let userService: UserService;
-  let recentlyPlayedService: RecentlyPlayedService;
 
   const mockGetSpotifyClientForUser = vi.mocked(getSpotifyClientForUser);
   const mockGetRecentlyPlayedTracks = vi.fn();
@@ -50,10 +46,15 @@ describe('processListens Task Integration Tests', () => {
   const today = new Date('2026-01-01T12:00:00.000Z');
   const startOfDay = new Date('2026-01-01T00:00:00.000Z');
 
+  let processEvent: () => ReturnType<Task['run']>;
+
   beforeAll(async () => {
     vi.setSystemTime(today);
 
     await setupTestDatabase();
+
+    const eventHandler = (await import('./processListens')).default.run;
+    processEvent = () => eventHandler({} as any);
   });
 
   afterAll(async () => {
@@ -66,13 +67,6 @@ describe('processListens Task Integration Tests', () => {
     vi.clearAllMocks();
 
     mockGetSpotifyClientForUser.mockReturnValue(mockSpotifyApi);
-
-    // Create services with test Prisma client
-    const userRepository = new UserRepository(prisma);
-    const dailyListenRepository = new DailyListenRepository(prisma);
-
-    userService = new UserService(userRepository);
-    recentlyPlayedService = new RecentlyPlayedService(dailyListenRepository);
   });
 
   const getExpectedAlbum = (
@@ -90,7 +84,7 @@ describe('processListens Task Integration Tests', () => {
 
   describe('processTodaysListens', () => {
     it('should return no users when no users have feature enabled', async () => {
-      // Given - no users with trackListeningHistory enabled
+      // Given
       await prisma.user.create({
         data: userCreateInput({
           trackListeningHistory: false,
@@ -98,430 +92,14 @@ describe('processListens Task Integration Tests', () => {
       });
 
       // When
-      const users = await userService.fetchUsersForRecentlyPlayedProcessing();
+      const { result } = await processEvent();
 
       // Then
-      expect(users).toHaveLength(0);
+      expect(result).toEqual('No users to process');
+      expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
     });
 
-    it('should process listens for single user with feature enabled', async () => {
-      // Given
-      const { id: userId } = await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-        select: {
-          id: true,
-        },
-      });
-
-      const { album, history } = createFullAlbumPlayHistory();
-
-      mockGetRecentlyPlayedTracks.mockResolvedValue(
-        recentlyPlayed({ items: history }),
-      );
-
-      // When - Simulate what the task does
-      const users = await userService.fetchUsersForRecentlyPlayedProcessing();
-      expect(users).toHaveLength(1);
-
-      const recentlyPlayedService = new RecentlyPlayedService(
-        new DailyListenRepository(prisma),
-      );
-
-      await Promise.all(
-        users.map((user) => recentlyPlayedService.processTodaysListens(user)),
-      );
-
-      // Then
-      const [savedListens] = await prisma.dailyListen.findMany({
-        where: { userId },
-        include: { albums: true },
-      });
-      expect(savedListens).toMatchObject({
-        userId,
-        date: startOfDay,
-        albums: expect.arrayContaining([getExpectedAlbum(album)]),
-      });
-    });
-
-    it('should process listens for multiple users with feature enabled', async () => {
-      // Given
-      const _user1Data = await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-        select: {
-          id: true,
-          accounts: true,
-        },
-      });
-
-      const _user2Data = await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-        select: {
-          id: true,
-          accounts: true,
-        },
-      });
-
-      // User 1 listens to album 1
-      const { album: album1, history: history1 } = createFullAlbumPlayHistory();
-
-      // User 2 listens to album 2
-      const { album: album2, history: history2 } = createFullAlbumPlayHistory();
-
-      mockGetRecentlyPlayedTracks
-        .mockResolvedValueOnce(recentlyPlayed({ items: history1 }))
-        .mockResolvedValueOnce(recentlyPlayed({ items: history2 }));
-
-      // When - simulate task logic
-      const usersToProcess =
-        await userService.fetchUsersForRecentlyPlayedProcessing();
-
-      expect(usersToProcess).toHaveLength(2);
-
-      for (const user of usersToProcess) {
-        await recentlyPlayedService.processTodaysListens(user);
-      }
-
-      // Then
-      const user1Listens = await prisma.dailyListen.findFirst({
-        where: { userId: usersToProcess[0].id },
-        include: { albums: true },
-      });
-      expect(user1Listens).toMatchObject({
-        date: startOfDay,
-        albums: expect.arrayContaining([
-          getExpectedAlbum(history1[0].track.album),
-        ]),
-      });
-
-      const user2Listens = await prisma.dailyListen.findFirst({
-        where: { userId: usersToProcess[1].id },
-        include: { albums: true },
-      });
-      expect(user2Listens).toMatchObject({
-        date: startOfDay,
-        albums: expect.arrayContaining([
-          getExpectedAlbum(history2[0].track.album),
-        ]),
-      });
-    });
-
-    it('should only process users with feature enabled', async () => {
-      // Given
-      const userWithFeature = await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-        select: {
-          id: true,
-        },
-      });
-
-      await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: false,
-        }),
-      });
-
-      const { album, history } = createFullAlbumPlayHistory();
-
-      mockGetRecentlyPlayedTracks.mockResolvedValue(
-        recentlyPlayed({ items: history }),
-      );
-
-      // When - simulate task logic
-      const usersToProcess =
-        await userService.fetchUsersForRecentlyPlayedProcessing();
-
-      expect(usersToProcess).toHaveLength(1);
-
-      for (const user of usersToProcess) {
-        await recentlyPlayedService.processTodaysListens(user);
-      }
-
-      // Then - User with feature should have listens
-      const userWithFeatureListens = await prisma.dailyListen.findFirst({
-        where: { userId: userWithFeature.id },
-        include: { albums: true },
-      });
-      expect(userWithFeatureListens).toMatchObject({
-        userId: userWithFeature.id,
-        date: startOfDay,
-        albums: expect.arrayContaining([getExpectedAlbum(album)]),
-      });
-
-      // User without feature should not have listens
-      const allListens = await prisma.dailyListen.findMany();
-      expect(allListens).toHaveLength(1);
-    });
-
-    describe('ordering', () => {
-      it('should save in order album listen to database', async () => {
-        // Given
-        await prisma.user.create({
-          data: userCreateInput({
-            trackListeningHistory: true,
-          }),
-        });
-
-        const { album, history } = createFullAlbumPlayHistory();
-
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({ items: history }),
-        );
-
-        // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
-
-        // Then
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
-        expect(savedListens).toMatchObject({
-          date: startOfDay,
-          albums: expect.arrayContaining([getExpectedAlbum(album)]),
-        });
-      });
-
-      it('should still record album when a song from another album is listened to in the middle', async () => {
-        // Given
-        await prisma.user.create({
-          data: userCreateInput({
-            trackListeningHistory: true,
-          }),
-        });
-
-        const { album, history } = createFullAlbumPlayHistory();
-
-        const {
-          tracks: [album2Track],
-        } = createAlbumAndTracks();
-
-        history.splice(
-          5,
-          0,
-          playHistory({
-            track: album2Track,
-            played_at: '2026-01-01T12:15:00.000Z',
-          }),
-        );
-
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({
-            items: history,
-          }),
-        );
-
-        // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
-
-        // Then
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
-        expect(savedListens).toMatchObject({
-          date: startOfDay,
-          albums: expect.arrayContaining([
-            getExpectedAlbum(album, { listenOrder: 'interrupted' }),
-          ]),
-        });
-      });
-
-      it('should save shuffled album listen to database', async () => {
-        // Given
-        await prisma.user.create({
-          data: userCreateInput({
-            trackListeningHistory: true,
-          }),
-        });
-
-        const { album, history } = createFullAlbumPlayHistory();
-
-        history[0].track.track_number = 2;
-        history[1].track.track_number = 1;
-
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({ items: history }),
-        );
-
-        // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
-
-        // Then
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
-        expect(savedListens).toMatchObject({
-          date: startOfDay,
-          albums: expect.arrayContaining([
-            getExpectedAlbum(album, { listenOrder: 'shuffled' }),
-          ]),
-        });
-      });
-    });
-
-    describe('listen time', () => {
-      it.each<{ hour: string; listenTime: ListenTime }>([
-        { hour: '08', listenTime: 'morning' },
-        { hour: '15', listenTime: 'noon' },
-        { hour: '19', listenTime: 'evening' },
-        { hour: '23', listenTime: 'night' },
-      ])('should save album listened to at $listenTime', async ({
-        hour,
-        listenTime,
-      }) => {
-        // Given
-        await prisma.user.create({
-          data: userCreateInput({
-            trackListeningHistory: true,
-          }),
-        });
-
-        const { album, history } = createFullAlbumPlayHistory({ hour });
-
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({ items: history }),
-        );
-
-        // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
-
-        // Then
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
-        expect(savedListens).toMatchObject({
-          date: startOfDay,
-          albums: expect.arrayContaining([
-            getExpectedAlbum(album, { listenTime }),
-          ]),
-        });
-      });
-    });
-
-    it('should not save history from previous days', async () => {
-      // Given
-      await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-      });
-
-      const { history } = createFullAlbumPlayHistory({
-        tracksInAlbum: 4,
-        date: `2025-12-31`,
-      });
-
-      mockGetRecentlyPlayedTracks.mockResolvedValue(
-        recentlyPlayed({ items: history }),
-      );
-
-      // When
-      const usersToProcess =
-        await userService.fetchUsersForRecentlyPlayedProcessing();
-      for (const user of usersToProcess) {
-        await recentlyPlayedService.processTodaysListens(user);
-      }
-
-      // Then
-      const [savedListens] = await prisma.dailyListen.findMany({
-        include: { albums: true },
-      });
-      expect(savedListens).toBeUndefined();
-    });
-
-    it('should not save album with less than 5 tracks', async () => {
-      // Given
-      await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-      });
-
-      const { history } = createFullAlbumPlayHistory({
-        tracksInAlbum: 4,
-      });
-
-      mockGetRecentlyPlayedTracks.mockResolvedValue(
-        recentlyPlayed({ items: history }),
-      );
-
-      // When
-      const usersToProcess =
-        await userService.fetchUsersForRecentlyPlayedProcessing();
-      for (const user of usersToProcess) {
-        await recentlyPlayedService.processTodaysListens(user);
-      }
-
-      // Then
-      const [savedListens] = await prisma.dailyListen.findMany({
-        include: { albums: true },
-      });
-      expect(savedListens).toBeUndefined();
-    });
-
-    it('should save multiple albums for same day', async () => {
-      // Given
-      await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: true,
-        }),
-      });
-
-      const { album: album1, history: history1 } = createFullAlbumPlayHistory({
-        hour: '08',
-      });
-      const { album: album2, history: history2 } = createFullAlbumPlayHistory({
-        hour: '14',
-      });
-
-      mockGetRecentlyPlayedTracks.mockResolvedValue(
-        recentlyPlayed({ items: [...history1, ...history2] }),
-      );
-
-      // When
-      const usersToProcess =
-        await userService.fetchUsersForRecentlyPlayedProcessing();
-      for (const user of usersToProcess) {
-        await recentlyPlayedService.processTodaysListens(user);
-      }
-
-      // Then
-      const [savedListens] = await prisma.dailyListen.findMany({
-        include: { albums: true },
-      });
-      expect(savedListens).toMatchObject({
-        date: startOfDay,
-        albums: expect.arrayContaining([
-          getExpectedAlbum(album1, { listenTime: 'morning' }),
-          getExpectedAlbum(album2, { listenTime: 'noon' }),
-        ]),
-      });
-    });
-
-    describe('existing db record', () => {
-      let existingAlbum: SimplifiedAlbum;
+    describe('when a user with history tracking exists', () => {
       let userId: string;
 
       beforeEach(async () => {
@@ -529,36 +107,97 @@ describe('processListens Task Integration Tests', () => {
           data: userCreateInput({
             trackListeningHistory: true,
           }),
-          select: {
-            id: true,
-          },
         });
         userId = user.id;
+      });
 
-        existingAlbum = simplifiedAlbum();
+      describe('when additional users exist', () => {
+        it('should process listens for multiple users with feature enabled', async () => {
+          // Given
+          const otherUser = await prisma.user.create({
+            data: userCreateInput({
+              trackListeningHistory: true,
+            }),
+            select: {
+              id: true,
+              accounts: true,
+            },
+          });
 
-        await prisma.dailyListen.create({
-          data: {
+          // User 1 listens to album 1
+          const { history: history1 } = createFullAlbumPlayHistory();
+
+          // User 2 listens to album 2
+          const { history: history2 } = createFullAlbumPlayHistory();
+
+          mockGetRecentlyPlayedTracks
+            .mockResolvedValueOnce(recentlyPlayed({ items: history1 }))
+            .mockResolvedValueOnce(recentlyPlayed({ items: history2 }));
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 2 user(s)');
+          const user1Listens = await prisma.dailyListen.findFirst({
+            where: { userId },
+            include: { albums: true },
+          });
+          expect(user1Listens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(history1[0].track.album),
+            ]),
+          });
+
+          const user2Listens = await prisma.dailyListen.findFirst({
+            where: { userId: otherUser.id },
+            include: { albums: true },
+          });
+          expect(user2Listens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(history2[0].track.album),
+            ]),
+          });
+        });
+
+        it('should only process users with feature enabled', async () => {
+          // Given
+          await prisma.user.create({
+            data: userCreateInput({
+              trackListeningHistory: false,
+            }),
+          });
+
+          const { album, history } = createFullAlbumPlayHistory();
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const userWithFeatureListens = await prisma.dailyListen.findFirst({
+            where: { userId },
+            include: { albums: true },
+          });
+          expect(userWithFeatureListens).toMatchObject({
             userId,
             date: startOfDay,
-            albums: {
-              create: [
-                {
-                  albumId: existingAlbum.id,
-                  albumName: existingAlbum.name,
-                  artistNames: existingAlbum.artists[0].name,
-                  imageUrl: existingAlbum.images[1].url,
-                  listenMethod: 'spotify',
-                  listenOrder: 'ordered',
-                  listenTime: 'morning',
-                },
-              ],
-            },
-          },
+            albums: expect.arrayContaining([getExpectedAlbum(album)]),
+          });
+
+          // User without feature should not have listens
+          const allListens = await prisma.dailyListen.findMany();
+          expect(allListens).toHaveLength(1);
         });
       });
 
-      it(`should append additional albums to today's record`, async () => {
+      it('should process listens for single user with feature enabled', async () => {
         // Given
         const { album, history } = createFullAlbumPlayHistory();
 
@@ -567,13 +206,10 @@ describe('processListens Task Integration Tests', () => {
         );
 
         // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
+        const { result } = await processEvent();
 
         // Then
+        expect(result).toEqual('Successfully processed 1 user(s)');
         const [savedListens] = await prisma.dailyListen.findMany({
           where: { userId },
           include: { albums: true },
@@ -581,40 +217,296 @@ describe('processListens Task Integration Tests', () => {
         expect(savedListens).toMatchObject({
           userId,
           date: startOfDay,
-          albums: expect.arrayContaining([
-            getExpectedAlbum(existingAlbum, { listenTime: 'morning' }),
-            getExpectedAlbum(album),
-          ]),
+          albums: expect.arrayContaining([getExpectedAlbum(album)]),
         });
       });
 
-      it(`should not override first listen of album`, async () => {
+      describe('ordering', () => {
+        it('should save in order album listen to database', async () => {
+          // Given
+
+          const { album, history } = createFullAlbumPlayHistory();
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([getExpectedAlbum(album)]),
+          });
+        });
+
+        it('should still record album when a song from another album is listened to in the middle', async () => {
+          // Given
+
+          const { album, history } = createFullAlbumPlayHistory();
+
+          const {
+            tracks: [album2Track],
+          } = createAlbumAndTracks();
+
+          history.splice(
+            5,
+            0,
+            playHistory({
+              track: album2Track,
+              played_at: '2026-01-01T12:15:00.000Z',
+            }),
+          );
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({
+              items: history,
+            }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(album, { listenOrder: 'interrupted' }),
+            ]),
+          });
+        });
+
+        it('should save shuffled album listen to database', async () => {
+          // Given
+
+          const { album, history } = createFullAlbumPlayHistory();
+
+          history[0].track.track_number = 2;
+          history[1].track.track_number = 1;
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(album, { listenOrder: 'shuffled' }),
+            ]),
+          });
+        });
+      });
+
+      describe('listen time', () => {
+        it.each<{ hour: string; listenTime: ListenTime }>([
+          { hour: '08', listenTime: 'morning' },
+          { hour: '15', listenTime: 'noon' },
+          { hour: '19', listenTime: 'evening' },
+          { hour: '23', listenTime: 'night' },
+        ])('should save album listened to at $listenTime', async ({
+          hour,
+          listenTime,
+        }) => {
+          // Given
+
+          const { album, history } = createFullAlbumPlayHistory({ hour });
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(album, { listenTime }),
+            ]),
+          });
+        });
+      });
+
+      it('should not save history from previous days', async () => {
         // Given
-        const tracks = createAlbumTracks({ album: existingAlbum });
-        const history = toPlayHistory({ tracks });
+
+        const { history } = createFullAlbumPlayHistory({
+          tracksInAlbum: 4,
+          date: `2025-12-31`,
+        });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
           recentlyPlayed({ items: history }),
         );
 
         // When
-        const usersToProcess =
-          await userService.fetchUsersForRecentlyPlayedProcessing();
-        for (const user of usersToProcess) {
-          await recentlyPlayedService.processTodaysListens(user);
-        }
+        const { result } = await processEvent();
 
         // Then
+        expect(result).toEqual('Successfully processed 1 user(s)');
         const [savedListens] = await prisma.dailyListen.findMany({
-          where: { userId },
+          include: { albums: true },
+        });
+        expect(savedListens).toBeUndefined();
+      });
+
+      it('should not save album with less than 5 tracks', async () => {
+        // Given
+
+        const { history } = createFullAlbumPlayHistory({
+          tracksInAlbum: 4,
+        });
+
+        mockGetRecentlyPlayedTracks.mockResolvedValue(
+          recentlyPlayed({ items: history }),
+        );
+
+        // When
+        const { result } = await processEvent();
+
+        // Then
+        expect(result).toEqual('Successfully processed 1 user(s)');
+        const [savedListens] = await prisma.dailyListen.findMany({
+          include: { albums: true },
+        });
+        expect(savedListens).toBeUndefined();
+      });
+
+      it('should save multiple albums for same day', async () => {
+        // Given
+        const { album: album1, history: history1 } = createFullAlbumPlayHistory(
+          {
+            hour: '08',
+          },
+        );
+        const { album: album2, history: history2 } = createFullAlbumPlayHistory(
+          {
+            hour: '14',
+          },
+        );
+
+        mockGetRecentlyPlayedTracks.mockResolvedValue(
+          recentlyPlayed({ items: [...history1, ...history2] }),
+        );
+
+        // When
+        const { result } = await processEvent();
+
+        // Then
+        expect(result).toEqual('Successfully processed 1 user(s)');
+        const [savedListens] = await prisma.dailyListen.findMany({
           include: { albums: true },
         });
         expect(savedListens).toMatchObject({
-          userId,
           date: startOfDay,
           albums: expect.arrayContaining([
-            getExpectedAlbum(existingAlbum, { listenTime: 'morning' }),
+            getExpectedAlbum(album1, { listenTime: 'morning' }),
+            getExpectedAlbum(album2, { listenTime: 'noon' }),
           ]),
+        });
+      });
+
+      describe('existing db record', () => {
+        let existingAlbum: SimplifiedAlbum;
+
+        beforeEach(async () => {
+          existingAlbum = simplifiedAlbum();
+
+          await prisma.dailyListen.create({
+            data: {
+              userId,
+              date: startOfDay,
+              albums: {
+                create: [
+                  {
+                    albumId: existingAlbum.id,
+                    albumName: existingAlbum.name,
+                    artistNames: existingAlbum.artists[0].name,
+                    imageUrl: existingAlbum.images[1].url,
+                    listenMethod: 'spotify',
+                    listenOrder: 'ordered',
+                    listenTime: 'morning',
+                  },
+                ],
+              },
+            },
+          });
+        });
+
+        it(`should append additional albums to today's record`, async () => {
+          // Given
+          const { album, history } = createFullAlbumPlayHistory();
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            where: { userId },
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            userId,
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(existingAlbum, { listenTime: 'morning' }),
+              getExpectedAlbum(album),
+            ]),
+          });
+        });
+
+        it(`should not override first listen of album`, async () => {
+          // Given
+          const tracks = createAlbumTracks({ album: existingAlbum });
+          const history = toPlayHistory({ tracks });
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Successfully processed 1 user(s)');
+          const [savedListens] = await prisma.dailyListen.findMany({
+            where: { userId },
+            include: { albums: true },
+          });
+          expect(savedListens).toMatchObject({
+            userId,
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(existingAlbum, { listenTime: 'morning' }),
+            ]),
+          });
         });
       });
     });

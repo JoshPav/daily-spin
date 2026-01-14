@@ -113,7 +113,6 @@ prisma/
 ### Environment Variables
 
 Required runtime config (nuxt.config.ts runtimeConfig):
-- `POSTGRES_URL`: PostgreSQL connection string
 - `DISABLE_AUTO_FETCH`: Set to 'true' to disable automatic fetching of today's listens
 
 Test environment variables go in `.env.test`.
