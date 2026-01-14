@@ -1,25 +1,18 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import type { AddAlbumListenBody } from '~~/shared/schema';
 import { userCreateInput } from '~~/tests/factories/prisma.factory';
+import {
+  addAlbumListenBody,
+  album,
+  listenMetadata,
+} from '../../tests/factories/api.factory';
 import {
   clearTestDatabase,
   getTestPrisma,
   setupTestDatabase,
   teardownTestDatabase,
 } from '../../tests/setup/db';
-import {
-  addAlbumListenBody,
-  album,
-  listenMetadata,
-} from '../../tests/factories/api.factory';
 import { DailyListenService } from '../services/dailyListen.service';
-import type { AddAlbumListenBody } from '~~/shared/schema';
 
 describe('POST /api/listens Integration Tests', () => {
   let prisma: ReturnType<typeof getTestPrisma>;
@@ -50,8 +43,9 @@ describe('POST /api/listens Integration Tests', () => {
     userId = user.id;
 
     service = new DailyListenService(
-      new (await import('../repositories/dailyListen.repository'))
-        .DailyListenRepository(prisma),
+      new (
+        await import('../repositories/dailyListen.repository')
+      ).DailyListenRepository(prisma),
       new (await import('../repositories/user.repository')).UserRepository(
         prisma,
       ),
@@ -325,7 +319,7 @@ describe('POST /api/listens Integration Tests', () => {
     it('should save album with all listen times', async () => {
       // Given
       const listenTimes = ['morning', 'noon', 'evening', 'night'] as const;
-      const albums = listenTimes.map((time, i) =>
+      const albums = listenTimes.map((_time, i) =>
         album({ albumId: `album-${i}` }),
       );
 

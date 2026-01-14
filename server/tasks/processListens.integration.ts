@@ -93,16 +93,12 @@ describe('processListens Task Integration Tests', () => {
 
     it('should process listens for single user with feature enabled', async () => {
       // Given
-      const {
-        id: userId,
-        accounts: [{ accessToken, accessTokenExpiresAt, refreshToken, scope }],
-      } = await prisma.user.create({
+      const { id: userId } = await prisma.user.create({
         data: userCreateInput({
           trackListeningHistory: true,
         }),
         select: {
           id: true,
-          accounts: true,
         },
       });
 
@@ -365,38 +361,38 @@ describe('processListens Task Integration Tests', () => {
         { hour: '15', listenTime: 'noon' },
         { hour: '19', listenTime: 'evening' },
         { hour: '23', listenTime: 'night' },
-      ])(
-        'should save album listened to at $listenTime',
-        async ({ hour, listenTime }) => {
-          // Given
-          await prisma.user.create({
-            data: userCreateInput({
-              trackListeningHistory: true,
-            }),
-          });
+      ])('should save album listened to at $listenTime', async ({
+        hour,
+        listenTime,
+      }) => {
+        // Given
+        await prisma.user.create({
+          data: userCreateInput({
+            trackListeningHistory: true,
+          }),
+        });
 
-          const { album, history } = createFullAlbumPlayHistory({ hour });
+        const { album, history } = createFullAlbumPlayHistory({ hour });
 
-          mockGetRecentlyPlayedTracks.mockResolvedValue(
-            recentlyPlayed({ items: history }),
-          );
+        mockGetRecentlyPlayedTracks.mockResolvedValue(
+          recentlyPlayed({ items: history }),
+        );
 
-          // When
-          const { run } = (await import('./processListens')).default;
-          await run();
+        // When
+        const { run } = (await import('./processListens')).default;
+        await run();
 
-          // Then
-          const [savedListens] = await prisma.dailyListen.findMany({
-            include: { albums: true },
-          });
-          expect(savedListens).toMatchObject({
-            date: startOfDay,
-            albums: expect.arrayContaining([
-              getExpectedAlbum(album, { listenTime }),
-            ]),
-          });
-        },
-      );
+        // Then
+        const [savedListens] = await prisma.dailyListen.findMany({
+          include: { albums: true },
+        });
+        expect(savedListens).toMatchObject({
+          date: startOfDay,
+          albums: expect.arrayContaining([
+            getExpectedAlbum(album, { listenTime }),
+          ]),
+        });
+      });
     });
 
     it('should not save history from previous days', async () => {

@@ -9,19 +9,19 @@ import {
   vi,
 } from 'vitest';
 import { userCreateInput } from '~~/tests/factories/prisma.factory';
+import { album } from '../../tests/factories/api.factory';
+import {
+  createFullAlbumPlayHistory,
+  recentlyPlayed,
+} from '../../tests/factories/spotify.factory';
 import {
   clearTestDatabase,
   getTestPrisma,
   setupTestDatabase,
   teardownTestDatabase,
 } from '../../tests/setup/db';
-import { DailyListenService } from '../services/dailyListen.service';
-import { album } from '../../tests/factories/api.factory';
-import {
-  createFullAlbumPlayHistory,
-  recentlyPlayed,
-} from '../../tests/factories/spotify.factory';
 import { getSpotifyClientForUser } from '../clients/spotify';
+import { DailyListenService } from '../services/dailyListen.service';
 
 vi.mock('../clients/spotify');
 
@@ -65,8 +65,9 @@ describe('GET /api/listens Integration Tests', () => {
     mockGetSpotifyClientForUser.mockReturnValue(mockSpotifyApi);
 
     service = new DailyListenService(
-      new (await import('../repositories/dailyListen.repository'))
-        .DailyListenRepository(prisma),
+      new (
+        await import('../repositories/dailyListen.repository')
+      ).DailyListenRepository(prisma),
       new (await import('../repositories/user.repository')).UserRepository(
         prisma,
       ),
