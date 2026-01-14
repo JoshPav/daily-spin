@@ -18,6 +18,16 @@ type EventHandler = ReturnType<typeof defineEventHandler>;
 
 type HandlerEvent = Parameters<EventHandler>[0];
 
+export const createHandlerEvent = (
+  userId: string,
+  { body = {}, query = {} } = {},
+) =>
+  handlerEvent({
+    _requestBody: JSON.stringify(body),
+    _path: `/path${query ? `?${new URLSearchParams(query).toString()}` : ''}`,
+    context: { userId },
+  });
+
 export const handlerEvent = createFactory<HandlerEvent>(
   () => ({}) as HandlerEvent,
 );

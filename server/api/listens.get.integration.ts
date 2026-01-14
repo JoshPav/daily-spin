@@ -1,6 +1,6 @@
-import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import type { Prisma } from '@prisma/client';
 import {
-  afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -8,509 +8,293 @@ import {
   it,
   vi,
 } from 'vitest';
-import { userCreateInput } from '~~/tests/factories/prisma.factory';
-import { album } from '../../tests/factories/api.factory';
+import type { DailyAlbumListen, GetListensResponse } from '~~/shared/schema';
+import { createDailyListens, createUser } from '~~/tests/db/utils';
+import { createHandlerEvent } from '~~/tests/factories/api.factory';
+import { albumListenInput } from '~~/tests/factories/prisma.factory';
 import {
   createFullAlbumPlayHistory,
   recentlyPlayed,
-} from '../../tests/factories/spotify.factory';
-import {
-  clearTestDatabase,
-  getTestPrisma,
-  setupTestDatabase,
-  teardownTestDatabase,
-} from '../../tests/setup/db';
-import { getSpotifyClientForUser } from '../clients/spotify';
-import { DailyListenService } from '../services/dailyListen.service';
-
-vi.mock('../clients/spotify');
+} from '~~/tests/factories/spotify.factory';
+import type { EventHandler } from '~~/tests/mocks/nitroMock';
+import { mockSpotifyApi } from '~~/tests/mocks/spotifyMock';
 
 describe('GET /api/listens Integration Tests', () => {
-  let prisma: ReturnType<typeof getTestPrisma>;
-  let service: DailyListenService;
   let userId: string;
 
-  const mockGetSpotifyClientForUser = vi.mocked(getSpotifyClientForUser);
-  const mockGetRecentlyPlayedTracks = vi.fn();
-
-  const mockSpotifyApi: SpotifyApi = {
-    player: {
-      getRecentlyPlayedTracks: mockGetRecentlyPlayedTracks,
-    },
-  } as unknown as SpotifyApi;
+  const mockGetRecentlyPlayedTracks = vi.mocked(
+    mockSpotifyApi.player.getRecentlyPlayedTracks,
+  );
 
   const today = new Date('2026-01-15T12:00:00.000Z');
   const startOfToday = new Date('2026-01-15T00:00:00.000Z');
 
+  const spotifyClientId = 'spotifyClientId';
+
+  let handler: EventHandler<GetListensResponse>;
+
   beforeAll(async () => {
     vi.setSystemTime(today);
-    await setupTestDatabase();
-  });
-
-  afterAll(async () => {
-    await teardownTestDatabase();
+    vi.stubEnv('SPOTIFY_CLIENT_ID', spotifyClientId);
   });
 
   beforeEach(async () => {
-    await clearTestDatabase();
-    prisma = getTestPrisma();
-    vi.clearAllMocks();
-
     // Create a test user
-    const user = await prisma.user.create({
-      data: userCreateInput(),
-      select: { id: true },
-    });
-    userId = user.id;
+    userId = (await createUser()).id;
 
-    mockGetSpotifyClientForUser.mockReturnValue(mockSpotifyApi);
-
-    service = new DailyListenService(
-      new (
-        await import('../repositories/dailyListen.repository')
-      ).DailyListenRepository(prisma),
-      new (await import('../repositories/user.repository')).UserRepository(
-        prisma,
-      ),
-    );
+    handler = (await import('./listens.get')).default;
   });
 
-  describe('getListensInRange', () => {
-    it('should return listens for a date range', async () => {
-      // Given
-      const day1 = new Date('2026-01-10T00:00:00.000Z');
-      const day2 = new Date('2026-01-12T00:00:00.000Z');
+  afterEach(() => {
+    vi.clearAllMocks();
 
-      const album1 = album({ albumId: 'album-1', albumName: 'Album 1' });
-      const album2 = album({ albumId: 'album-2', albumName: 'Album 2' });
+    vi.unstubAllEnvs();
+  });
 
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day1,
-          albums: {
-            create: {
-              albumId: album1.albumId,
-              albumName: album1.albumName,
-              artistNames: album1.artistNames,
-              imageUrl: album1.imageUrl,
-              listenMethod: 'spotify',
-              listenOrder: 'ordered',
-              listenTime: 'morning',
-            },
-          },
+  const getExpectedAlbum = (
+    dbAlbum: Omit<Prisma.AlbumListenCreateInput, 'dailyListen'>,
+  ): DailyAlbumListen => ({
+    album: {
+      albumId: dbAlbum.albumId,
+      albumName: dbAlbum.albumName,
+      imageUrl: dbAlbum.imageUrl,
+      artistNames: dbAlbum.artistNames,
+    },
+    listenMetadata: expect.objectContaining({
+      listenMethod: dbAlbum.listenMethod,
+      listenOrder: dbAlbum.listenOrder,
+      listenTime: dbAlbum.listenTime,
+    }),
+  });
+
+  it('should return listens for a date range, with missing dates filled in', async () => {
+    // Given
+    const album1 = albumListenInput();
+    const day1 = new Date('2026-01-10T00:00:00.000Z');
+    await createDailyListens({ userId, date: day1, albumListen: album1 });
+
+    const album2 = albumListenInput();
+    const day2 = new Date('2026-01-12T00:00:00.000Z');
+    await createDailyListens({ userId, date: day2, albumListen: album2 });
+
+    // When
+    const result = await handler(
+      createHandlerEvent(userId, {
+        query: {
+          startDate: day1.toISOString(),
+          endDate: day2.toISOString(),
         },
-      });
+      }),
+    );
 
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day2,
-          albums: {
-            create: {
-              albumId: album2.albumId,
-              albumName: album2.albumName,
-              artistNames: album2.artistNames,
-              imageUrl: album2.imageUrl,
-              listenMethod: 'vinyl',
-              listenOrder: 'shuffled',
-              listenTime: 'evening',
-            },
-          },
-        },
-      });
+    result[0].albums[0].album.imageUrl;
 
-      // When
-      const result = await service.getListensInRange(userId, {
-        start: day1,
-        end: day2,
-      });
-
-      // Then
-      expect(result).toHaveLength(3); // day1, day2, and the missing day in between
-      expect(result[0]).toMatchObject({
+    // Then
+    expect(result).toHaveLength(3);
+    expect(result).toEqual([
+      {
         date: day1.toISOString(),
-        albums: expect.arrayContaining([
-          expect.objectContaining({
-            album: expect.objectContaining({
-              albumId: 'album-1',
-              albumName: 'Album 1',
-            }),
-            listenMetadata: expect.objectContaining({
-              listenMethod: 'spotify',
-              listenOrder: 'ordered',
-              listenTime: 'morning',
-            }),
-          }),
-        ]),
-      });
-
-      expect(result[2]).toMatchObject({
-        date: day2.toISOString(),
-        albums: expect.arrayContaining([
-          expect.objectContaining({
-            album: expect.objectContaining({
-              albumId: 'album-2',
-              albumName: 'Album 2',
-            }),
-            listenMetadata: expect.objectContaining({
-              listenMethod: 'vinyl',
-              listenOrder: 'shuffled',
-              listenTime: 'evening',
-            }),
-          }),
-        ]),
-      });
-    });
-
-    it('should fill in missing days with empty albums array', async () => {
-      // Given
-      const day1 = new Date('2026-01-10T00:00:00.000Z');
-      const day3 = new Date('2026-01-12T00:00:00.000Z');
-      const missingDay = new Date('2026-01-11T00:00:00.000Z');
-
-      const testAlbum = album();
-
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day1,
-          albums: {
-            create: {
-              albumId: testAlbum.albumId,
-              albumName: testAlbum.albumName,
-              artistNames: testAlbum.artistNames,
-              imageUrl: testAlbum.imageUrl,
-              listenMethod: 'spotify',
-              listenOrder: 'ordered',
-              listenTime: 'noon',
-            },
-          },
-        },
-      });
-
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day3,
-          albums: {
-            create: {
-              albumId: testAlbum.albumId,
-              albumName: testAlbum.albumName,
-              artistNames: testAlbum.artistNames,
-              imageUrl: testAlbum.imageUrl,
-              listenMethod: 'spotify',
-              listenOrder: 'ordered',
-              listenTime: 'noon',
-            },
-          },
-        },
-      });
-
-      // When
-      const result = await service.getListensInRange(userId, {
-        start: day1,
-        end: day3,
-      });
-
-      // Then
-      expect(result).toHaveLength(3);
-      expect(result[1]).toMatchObject({
-        date: missingDay.toISOString(),
+        albums: [getExpectedAlbum(album1)],
+      },
+      {
+        date: '2026-01-11T00:00:00.000Z',
         albums: [],
-      });
+      },
+      {
+        date: day2.toISOString(),
+        albums: [getExpectedAlbum(album2)],
+      },
+    ]);
+  });
+
+  it('should return multiple albums for the same day', async () => {
+    // Given
+    const day = new Date('2026-01-10T00:00:00.000Z');
+
+    const album1 = albumListenInput({ listenTime: 'morning' });
+    const album2 = albumListenInput({ listenTime: 'evening' });
+
+    await createDailyListens({
+      userId,
+      date: day,
+      albumListens: [album1, album2],
     });
 
-    it('should return multiple albums for the same day', async () => {
-      // Given
-      const day = new Date('2026-01-10T00:00:00.000Z');
-
-      const album1 = album({ albumId: 'album-1' });
-      const album2 = album({ albumId: 'album-2' });
-
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day,
-          albums: {
-            create: [
-              {
-                albumId: album1.albumId,
-                albumName: album1.albumName,
-                artistNames: album1.artistNames,
-                imageUrl: album1.imageUrl,
-                listenMethod: 'spotify',
-                listenOrder: 'ordered',
-                listenTime: 'morning',
-              },
-              {
-                albumId: album2.albumId,
-                albumName: album2.albumName,
-                artistNames: album2.artistNames,
-                imageUrl: album2.imageUrl,
-                listenMethod: 'vinyl',
-                listenOrder: 'shuffled',
-                listenTime: 'evening',
-              },
-            ],
-          },
+    // When
+    const result = await handler(
+      createHandlerEvent(userId, {
+        query: {
+          startDate: day.toISOString(),
+          endDate: day.toISOString(),
         },
+      }),
+    );
+
+    // Then
+    expect(result).toHaveLength(1);
+    expect(result[0].albums).toHaveLength(2);
+    expect(result[0]).toEqual({
+      date: day.toISOString(),
+      albums: [getExpectedAlbum(album1), getExpectedAlbum(album2)],
+    });
+  });
+
+  describe('auto-fetch today', () => {
+    it('should auto-fetch today when today is in range and missing', async () => {
+      // Given
+      const { album: spotifyAlbum, history } = createFullAlbumPlayHistory({
+        date: '2026-01-15',
       });
+
+      mockGetRecentlyPlayedTracks.mockResolvedValue(
+        recentlyPlayed({ items: history }),
+      );
+
+      const startDate = new Date('2026-01-14T00:00:00.000Z');
+      const endDate = new Date('2026-01-15T23:59:59.999Z');
 
       // When
-      const result = await service.getListensInRange(userId, {
-        start: day,
-        end: day,
-      });
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        }),
+      );
 
       // Then
-      expect(result).toHaveLength(1);
-      expect(result[0].albums).toHaveLength(2);
-      expect(result[0]).toMatchObject({
-        date: day.toISOString(),
-        albums: expect.arrayContaining([
-          expect.objectContaining({
-            album: expect.objectContaining({ albumId: 'album-1' }),
-          }),
-          expect.objectContaining({
-            album: expect.objectContaining({ albumId: 'album-2' }),
-          }),
-        ]),
-      });
+      expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+      expect(result[1].albums).toHaveLength(1);
+      expect(result[1].albums[0].album.albumId).toBe(spotifyAlbum.id);
     });
 
-    it('should return empty albums array for days with no listens', async () => {
-      // Given - no listens in database
-      const start = new Date('2026-01-10T00:00:00.000Z');
-      const end = new Date('2026-01-12T00:00:00.000Z');
+    it('should not auto-fetch if today is not in range', async () => {
+      // Given
+      const startDate = new Date('2026-01-10T00:00:00.000Z');
+      const endDate = new Date('2026-01-12T00:00:00.000Z');
 
       // When
-      const result = await service.getListensInRange(userId, {
-        start,
-        end,
-      });
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        }),
+      );
 
       // Then
+      expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
       expect(result).toHaveLength(3);
-      for (const dailyListen of result) {
-        expect(dailyListen.albums).toEqual([]);
-      }
     });
 
-    describe('auto-fetch today', () => {
-      beforeEach(() => {
-        // Ensure auto-fetch is enabled
-        delete process.env.DISABLE_AUTO_FETCH;
-      });
-
-      it('should auto-fetch today when today is in range and missing', async () => {
-        // Given
-        const { album: spotifyAlbum, history } = createFullAlbumPlayHistory({
-          date: '2026-01-15',
-        });
-
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({ items: history }),
-        );
-
-        const start = new Date('2026-01-14T00:00:00.000Z');
-        const end = new Date('2026-01-15T23:59:59.999Z');
-
-        // When
-        const result = await service.getListensInRange(userId, {
-          start,
-          end,
-        });
-
-        // Then
-        expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
-        expect(result).toHaveLength(2);
-
-        // Find today's entry
-        const todayEntry = result.find(
-          (r) =>
-            new Date(r.date).toISOString().split('T')[0] ===
-            startOfToday.toISOString().split('T')[0],
-        );
-
-        expect(todayEntry).toBeDefined();
-        expect(todayEntry?.albums).toHaveLength(1);
-        expect(todayEntry?.albums[0]).toMatchObject({
-          album: expect.objectContaining({
-            albumId: spotifyAlbum.id,
-          }),
-        });
-      });
-
-      it('should not auto-fetch if today is not in range', async () => {
-        // Given
-        const start = new Date('2026-01-10T00:00:00.000Z');
-        const end = new Date('2026-01-12T00:00:00.000Z');
-
-        // When
-        const result = await service.getListensInRange(userId, {
-          start,
-          end,
-        });
-
-        // Then
-        expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
-        expect(result).toHaveLength(3);
-      });
-
-      it('should not auto-fetch if today already exists in database', async () => {
-        // Given
-        const testAlbum = album();
-
-        await prisma.dailyListen.create({
-          data: {
-            userId,
-            date: startOfToday,
-            albums: {
-              create: {
-                albumId: testAlbum.albumId,
-                albumName: testAlbum.albumName,
-                artistNames: testAlbum.artistNames,
-                imageUrl: testAlbum.imageUrl,
-                listenMethod: 'spotify',
-                listenOrder: 'ordered',
-                listenTime: 'noon',
-              },
-            },
-          },
-        });
-
-        // When
-        const result = await service.getListensInRange(userId, {
-          start: startOfToday,
-          end: startOfToday,
-        });
-
-        // Then
-        expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
-        expect(result).toHaveLength(1);
-        expect(result[0].albums).toHaveLength(1);
-      });
-
-      it('should not auto-fetch when DISABLE_AUTO_FETCH is true', async () => {
-        // Given
-        process.env.DISABLE_AUTO_FETCH = 'true';
-
-        const start = new Date('2026-01-14T00:00:00.000Z');
-        const end = new Date('2026-01-15T23:59:59.999Z');
-
-        // When
-        const result = await service.getListensInRange(userId, {
-          start,
-          end,
-        });
-
-        // Then
-        expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
-        expect(result).toHaveLength(2);
-
-        // Today should be empty
-        const todayEntry = result.find(
-          (r) =>
-            new Date(r.date).toISOString().split('T')[0] ===
-            startOfToday.toISOString().split('T')[0],
-        );
-
-        expect(todayEntry?.albums).toEqual([]);
-      });
-
-      it('should handle auto-fetch returning no albums', async () => {
-        // Given
-        mockGetRecentlyPlayedTracks.mockResolvedValue(
-          recentlyPlayed({ items: [] }),
-        );
-
-        const start = new Date('2026-01-14T00:00:00.000Z');
-        const end = new Date('2026-01-15T23:59:59.999Z');
-
-        // When
-        const result = await service.getListensInRange(userId, {
-          start,
-          end,
-        });
-
-        // Then
-        expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
-        expect(result).toHaveLength(2);
-
-        // Today should be empty since no albums were returned
-        const todayEntry = result.find(
-          (r) =>
-            new Date(r.date).toISOString().split('T')[0] ===
-            startOfToday.toISOString().split('T')[0],
-        );
-
-        expect(todayEntry?.albums).toEqual([]);
-      });
-    });
-
-    it('should only return listens for the specified user', async () => {
+    it('should not auto-fetch if today already exists in database', async () => {
       // Given
-      const otherUser = await prisma.user.create({
-        data: userCreateInput(),
-        select: { id: true },
-      });
-
-      const day = new Date('2026-01-10T00:00:00.000Z');
-      const testAlbum = album();
-
-      // Create listen for the main user
-      await prisma.dailyListen.create({
-        data: {
-          userId,
-          date: day,
-          albums: {
-            create: {
-              albumId: testAlbum.albumId,
-              albumName: testAlbum.albumName,
-              artistNames: testAlbum.artistNames,
-              imageUrl: testAlbum.imageUrl,
-              listenMethod: 'spotify',
-              listenOrder: 'ordered',
-              listenTime: 'noon',
-            },
-          },
-        },
-      });
-
-      // Create listen for other user
-      await prisma.dailyListen.create({
-        data: {
-          userId: otherUser.id,
-          date: day,
-          albums: {
-            create: {
-              albumId: 'other-album',
-              albumName: 'Other Album',
-              artistNames: 'Other Artist',
-              imageUrl: 'https://example.com/other.jpg',
-              listenMethod: 'vinyl',
-              listenOrder: 'shuffled',
-              listenTime: 'evening',
-            },
-          },
-        },
+      const existingAlbum = albumListenInput();
+      await createDailyListens({
+        userId,
+        date: startOfToday,
+        albumListen: existingAlbum,
       });
 
       // When
-      const result = await service.getListensInRange(userId, {
-        start: day,
-        end: day,
-      });
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startOfToday.toISOString(),
+            endDate: startOfToday.toISOString(),
+          },
+        }),
+      );
 
       // Then
+      expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
       expect(result).toHaveLength(1);
       expect(result[0].albums).toHaveLength(1);
-      expect(result[0].albums[0]).toMatchObject({
-        album: expect.objectContaining({
-          albumId: testAlbum.albumId,
+    });
+
+    it('should not auto-fetch when DISABLE_AUTO_FETCH is true', async () => {
+      // Given
+      vi.stubEnv('DISABLE_AUTO_FETCH', 'true');
+
+      const startDate = new Date('2026-01-14T00:00:00.000Z');
+      const endDate = new Date('2026-01-15T23:59:59.999Z');
+
+      // When
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
         }),
-      });
+      );
+
+      // Then
+      expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+      expect(result[1].albums).toEqual([]);
+    });
+
+    it('should handle auto-fetch returning no albums', async () => {
+      // Given
+      mockGetRecentlyPlayedTracks.mockResolvedValue(
+        recentlyPlayed({ items: [] }),
+      );
+
+      const startDate = new Date('2026-01-14T00:00:00.000Z');
+      const endDate = new Date('2026-01-15T23:59:59.999Z');
+
+      // When
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        }),
+      );
+
+      // Then
+      expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+      expect(result[1].albums).toEqual([]);
+    });
+  });
+
+  it('should only return listens for the specified user', async () => {
+    // Given
+    const otherUser = await createUser();
+
+    const day = new Date('2026-01-10T00:00:00.000Z');
+
+    const mainUserAlbum = albumListenInput();
+    await createDailyListens({ userId, date: day, albumListen: mainUserAlbum });
+
+    const otherUserAlbum = albumListenInput();
+    await createDailyListens({
+      userId: otherUser.id,
+      date: day,
+      albumListen: otherUserAlbum,
+    });
+
+    // When
+    const result = await handler(
+      createHandlerEvent(userId, {
+        query: {
+          startDate: day.toISOString(),
+          endDate: day.toISOString(),
+        },
+      }),
+    );
+
+    // Then
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      date: day.toISOString(),
+      albums: [getExpectedAlbum(mainUserAlbum)],
     });
   });
 });

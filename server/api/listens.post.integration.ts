@@ -1,5 +1,5 @@
 import {
-  afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -13,30 +13,16 @@ import type {
   ListenOrder,
   ListenTime,
 } from '~~/shared/schema';
-import { userCreateInput } from '~~/tests/factories/prisma.factory';
+import { createUser, getAllListensForUser } from '~~/tests/db/utils';
 import {
   addAlbumListenBody,
   album,
+  createHandlerEvent,
   handlerEvent,
-} from '../../tests/factories/api.factory';
-import {
-  clearTestDatabase,
-  getTestPrisma,
-  setupTestDatabase,
-  teardownTestDatabase,
-} from '../../tests/setup/db';
-
-type EventHandler = ReturnType<typeof defineEventHandler>;
-type HandlerEvent = Parameters<EventHandler>[0];
-
-vi.stubGlobal('defineEventHandler', (handler: EventHandler) => handler);
-vi.stubGlobal('readBody', (event: HandlerEvent) => {
-  const body = (event as unknown as { _requestBody: string })._requestBody;
-  return typeof body === 'string' ? JSON.parse(body) : undefined;
-});
+} from '~~/tests/factories/api.factory';
+import type { EventHandler } from '~~/tests/mocks/nitroMock';
 
 describe('POST /api/listens Integration Tests', () => {
-  let prisma: ReturnType<typeof getTestPrisma>;
   let userId: string;
 
   const today = new Date('2026-01-01T12:00:00.000Z');
@@ -46,138 +32,85 @@ describe('POST /api/listens Integration Tests', () => {
 
   beforeAll(async () => {
     vi.setSystemTime(today);
-    await setupTestDatabase();
 
     handler = (await import('./listens.post')).default;
   });
 
-  afterAll(async () => {
-    await teardownTestDatabase();
-  });
-
   beforeEach(async () => {
-    await clearTestDatabase();
-    prisma = getTestPrisma();
-    vi.clearAllMocks();
-
-    // Create a test user
-    const user = await prisma.user.create({
-      data: userCreateInput(),
-      select: { id: true },
-    });
-    userId = user.id;
+    userId = (await createUser()).id;
   });
 
-  describe('addAlbumListen', () => {
-    it.each<ListenMethod>([
-      'spotify',
-      'streamed',
-      'vinyl',
-    ])('should save album with $listenMethod listen method', async (listenMethod) => {
-      // Give
-      const body = addAlbumListenBody({ listenMetadata: { listenMethod } });
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-      // When
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body),
-          context: { userId, session: {} },
-        }),
-      );
+  it.each<ListenMethod>([
+    'spotify',
+    'streamed',
+    'vinyl',
+  ])('should save album with $listenMethod listen method', async (listenMethod) => {
+    // Given
+    const body = addAlbumListenBody({ listenMetadata: { listenMethod } });
 
-      // Then
-      const savedListens = await prisma.dailyListen.findMany({
-        where: { userId },
-        include: { albums: true },
-      });
+    // When
+    await handler(createHandlerEvent(userId, { body }));
 
-      expect(savedListens.length).toEqual(1);
-      expect(savedListens[0].albums).toEqual([
-        expect.objectContaining({
-          albumId: body.album.albumId,
-          listenTime: body.listenMetadata.listenTime,
-        }),
-      ]);
+    // Then
+    const savedListens = await getAllListensForUser(userId);
+
+    expect(savedListens.length).toEqual(1);
+    expect(savedListens[0].albums).toEqual([
+      expect.objectContaining({
+        albumId: body.album.albumId,
+        listenTime: body.listenMetadata.listenTime,
+      }),
+    ]);
+  });
+
+  it.each<ListenOrder>([
+    'interrupted',
+    'ordered',
+    'shuffled',
+  ])('should save album with $listenOrder listen order', async (listenOrder) => {
+    // Given
+    const body = addAlbumListenBody({ listenMetadata: { listenOrder } });
+
+    // When
+    await handler(createHandlerEvent(userId, { body }));
+
+    // Then
+    const savedListens = await getAllListensForUser(userId);
+
+    expect(savedListens.length).toEqual(1);
+    expect(savedListens[0].albums).toEqual([
+      expect.objectContaining({
+        albumId: body.album.albumId,
+        listenTime: body.listenMetadata.listenTime,
+      }),
+    ]);
+  });
+
+  it('should add multiple albums to the same day', async () => {
+    // Given
+    const body1: AddAlbumListenBody = addAlbumListenBody({
+      album: album({ albumId: 'album-1', albumName: 'Album 1' }),
+      date: startOfDay.toISOString(),
     });
 
-    it.each<ListenOrder>([
-      'interrupted',
-      'ordered',
-      'shuffled',
-    ])('should save album with $listenOrder listen order', async (listenOrder) => {
-      // Give
-      const body = addAlbumListenBody({ listenMetadata: { listenOrder } });
-
-      // When
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body),
-          context: { userId, session: {} },
-        }),
-      );
-
-      // Then
-      const savedListens = await prisma.dailyListen.findMany({
-        where: { userId },
-        include: { albums: true },
-      });
-
-      expect(savedListens.length).toEqual(1);
-      expect(savedListens[0].albums).toEqual([
-        expect.objectContaining({
-          albumId: body.album.albumId,
-          listenTime: body.listenMetadata.listenTime,
-        }),
-      ]);
+    const body2: AddAlbumListenBody = addAlbumListenBody({
+      album: album({ albumId: 'album-2', albumName: 'Album 2' }),
+      date: startOfDay.toISOString(),
     });
 
-    it('should add multiple albums to the same day', async () => {
-      // Given
-      const album1 = album({ albumId: 'album-1', albumName: 'Album 1' });
-      const album2 = album({ albumId: 'album-2', albumName: 'Album 2' });
+    // When
+    await handler(createHandlerEvent(userId, { body: body1 }));
+    await handler(createHandlerEvent(userId, { body: body2 }));
 
-      const body1: AddAlbumListenBody = addAlbumListenBody({
-        album: album1,
-        listenMetadata: {
-          listenTime: 'morning',
-          listenMethod: 'spotify',
-          listenOrder: 'ordered',
-        },
-        date: startOfDay.toISOString(),
-      });
+    // Then
+    const savedListens = await getAllListensForUser(userId);
 
-      const body2: AddAlbumListenBody = addAlbumListenBody({
-        album: album2,
-        listenMetadata: {
-          listenTime: 'evening',
-          listenMethod: 'spotify',
-          listenOrder: 'ordered',
-        },
-        date: startOfDay.toISOString(),
-      });
-
-      // When
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body1),
-          context: { userId, session: {} },
-        }),
-      );
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body2),
-          context: { userId, session: {} },
-        }),
-      );
-
-      // Then
-      const savedListens = await prisma.dailyListen.findFirst({
-        where: { userId },
-        include: { albums: true },
-      });
-
-      expect(savedListens?.albums).toHaveLength(2);
-      expect(savedListens).toMatchObject({
+    expect(savedListens).toMatchObject([
+      {
         userId,
         date: startOfDay,
         albums: expect.arrayContaining([
@@ -192,137 +125,103 @@ describe('POST /api/listens Integration Tests', () => {
             listenTime: body2.listenMetadata.listenTime,
           }),
         ]),
-      });
+      },
+    ]);
+  });
+
+  it('should save albums for different days separately', async () => {
+    // Given
+    const day1 = new Date('2026-01-01T00:00:00.000Z');
+    const day2 = new Date('2026-01-02T00:00:00.000Z');
+
+    const body1: AddAlbumListenBody = addAlbumListenBody({
+      date: day1.toISOString(),
     });
 
-    it('should save albums for different days separately', async () => {
+    const body2: AddAlbumListenBody = addAlbumListenBody({
+      date: day2.toISOString(),
+    });
+
+    // When
+    await handler(createHandlerEvent(userId, { body: body1 }));
+    await handler(createHandlerEvent(userId, { body: body2 }));
+
+    // Then
+    const listens = await getAllListensForUser(userId);
+    expect(listens).toHaveLength(2);
+
+    const isDay =
+      (d: Date) =>
+      ({ date }: { date: Date }) =>
+        d.valueOf() === date.valueOf();
+
+    const day1Listens = listens.filter(isDay(day1));
+    expect(day1Listens.length).toEqual(1);
+    expect(day1Listens[0].albums).toEqual([
+      expect.objectContaining({
+        albumId: body1.album.albumId,
+        listenTime: body1.listenMetadata.listenTime,
+      }),
+    ]);
+
+    const day2Listens = listens.filter(isDay(day2));
+    expect(day2Listens.length).toEqual(1);
+    expect(day2Listens[0].albums).toEqual([
+      expect.objectContaining({
+        albumId: body2.album.albumId,
+        listenTime: body2.listenMetadata.listenTime,
+      }),
+    ]);
+  });
+
+  describe('listenTime', () => {
+    it.each<ListenTime>([
+      'morning',
+      'noon',
+      'evening',
+      'night',
+    ])('should save album with $listenTime listen time', async (listenTime) => {
       // Given
-      const day1 = new Date('2026-01-01T00:00:00.000Z');
-      const day2 = new Date('2026-01-02T00:00:00.000Z');
+      const body = addAlbumListenBody({ listenMetadata: { listenTime } });
 
-      const album1 = album({ albumId: 'album-1' });
-      const album2 = album({ albumId: 'album-2' });
+      // When
+      await handler(createHandlerEvent(userId, { body }));
 
-      const body1: AddAlbumListenBody = addAlbumListenBody({
-        album: album1,
-        date: day1.toISOString(),
+      // Then
+      const savedListens = await getAllListensForUser(userId);
+
+      expect(savedListens.length).toEqual(1);
+      expect(savedListens[0].albums).toEqual([
+        expect.objectContaining({
+          albumId: body.album.albumId,
+          listenTime: body.listenMetadata.listenTime,
+        }),
+      ]);
+    });
+
+    it('should save album listen with null listen time', async () => {
+      // Given
+      const body: AddAlbumListenBody = addAlbumListenBody({
         listenMetadata: {
-          listenTime: 'noon',
-          listenMethod: 'spotify',
-          listenOrder: 'ordered',
-        },
-      });
-
-      const body2: AddAlbumListenBody = addAlbumListenBody({
-        album: album2,
-        date: day2.toISOString(),
-        listenMetadata: {
-          listenTime: 'noon',
+          listenTime: null,
           listenMethod: 'spotify',
           listenOrder: 'ordered',
         },
       });
 
       // When
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body1),
-          context: { userId, session: {} },
-        }),
-      );
-      await handler(
-        handlerEvent({
-          _requestBody: JSON.stringify(body2),
-          context: { userId, session: {} },
-        }),
-      );
+      await handler(handlerEvent(createHandlerEvent(userId, { body })));
 
       // Then
-      const day1Listen = await prisma.dailyListen.findFirst({
-        where: { userId, date: day1 },
-        include: { albums: true },
-      });
+      const savedListens = await getAllListensForUser(userId);
 
-      const day2Listen = await prisma.dailyListen.findFirst({
-        where: { userId, date: day2 },
-        include: { albums: true },
-      });
-
-      expect(day1Listen?.albums).toHaveLength(1);
-      expect(day1Listen?.albums[0]).toMatchObject({
-        albumId: body1.album.albumId,
-      });
-
-      expect(day2Listen?.albums).toHaveLength(1);
-      expect(day2Listen?.albums[0]).toMatchObject({
-        albumId: body2.album.albumId,
-      });
-    });
-
-    describe('listenTime', () => {
-      it.each<ListenTime>([
-        'morning',
-        'noon',
-        'evening',
-        'night',
-      ])('should save album with $listenTime listen time', async (listenTime) => {
-        // Give
-        const body = addAlbumListenBody({ listenMetadata: { listenTime } });
-
-        // When
-        await handler(
-          handlerEvent({
-            _requestBody: JSON.stringify(body),
-            context: { userId, session: {} },
-          }),
-        );
-
-        // Then
-        const savedListens = await prisma.dailyListen.findMany({
-          where: { userId },
-          include: { albums: true },
-        });
-
-        expect(savedListens.length).toEqual(1);
-        expect(savedListens[0].albums).toEqual([
-          expect.objectContaining({
-            albumId: body.album.albumId,
-            listenTime: body.listenMetadata.listenTime,
-          }),
-        ]);
-      });
-
-      it('should save album listen with null listen time', async () => {
-        // Given
-        const body: AddAlbumListenBody = addAlbumListenBody({
-          listenMetadata: {
-            listenTime: null,
-            listenMethod: 'spotify',
-            listenOrder: 'ordered',
-          },
-        });
-
-        // When
-        await handler(
-          handlerEvent({
-            _requestBody: JSON.stringify(body),
-            context: { userId, session: {} },
-          }),
-        );
-
-        // Then
-        const savedListens = await prisma.dailyListen.findFirst({
-          where: { userId },
-          include: { albums: true },
-        });
-
-        expect(savedListens?.albums).toEqual([
-          expect.objectContaining({
-            albumId: body.album.albumId,
-            listenTime: body.listenMetadata.listenTime,
-          }),
-        ]);
-      });
+      expect(savedListens.length).toEqual(1);
+      expect(savedListens[0].albums).toEqual([
+        expect.objectContaining({
+          albumId: body.album.albumId,
+          listenTime: body.listenMetadata.listenTime,
+        }),
+      ]);
     });
   });
 });

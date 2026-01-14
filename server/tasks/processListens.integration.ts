@@ -1,16 +1,10 @@
+import { afterEach } from 'node:test';
 import type { ListenTime } from '@prisma/client';
-import type { SimplifiedAlbum, SpotifyApi } from '@spotify/web-api-ts-sdk';
+import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import type { Task } from 'nitropack/types';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
-import { userCreateInput } from '~~/tests/factories/prisma.factory';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getTestPrisma } from '~~/tests/db/setup';
+import { createUser, getAllListensForUser } from '~~/tests/db/utils';
 import {
   createAlbumAndTracks,
   createAlbumTracks,
@@ -20,28 +14,12 @@ import {
   simplifiedAlbum,
   toPlayHistory,
 } from '~~/tests/factories/spotify.factory';
-import {
-  clearTestDatabase,
-  getTestPrisma,
-  setupTestDatabase,
-  teardownTestDatabase,
-} from '../../tests/setup/db';
-import { getSpotifyClientForUser } from '../clients/spotify';
-
-vi.mock('../clients/spotify');
-vi.stubGlobal('defineTask', (task: Task<string>) => task);
+import { mockSpotifyApi } from '~~/tests/mocks/spotifyMock';
 
 describe('processListens Task Integration Tests', () => {
-  let prisma: ReturnType<typeof getTestPrisma>;
-
-  const mockGetSpotifyClientForUser = vi.mocked(getSpotifyClientForUser);
-  const mockGetRecentlyPlayedTracks = vi.fn();
-
-  const mockSpotifyApi: SpotifyApi = {
-    player: {
-      getRecentlyPlayedTracks: mockGetRecentlyPlayedTracks,
-    },
-  } as unknown as SpotifyApi;
+  const mockGetRecentlyPlayedTracks = vi.mocked(
+    mockSpotifyApi.player.getRecentlyPlayedTracks,
+  );
 
   const today = new Date('2026-01-01T12:00:00.000Z');
   const startOfDay = new Date('2026-01-01T00:00:00.000Z');
@@ -51,22 +29,13 @@ describe('processListens Task Integration Tests', () => {
   beforeAll(async () => {
     vi.setSystemTime(today);
 
-    await setupTestDatabase();
-
     const eventHandler = (await import('./processListens')).default.run;
-    processEvent = () => eventHandler({} as any);
+    processEvent = () =>
+      eventHandler({ name: 'event', context: {}, payload: {} });
   });
 
-  afterAll(async () => {
-    await teardownTestDatabase();
-  });
-
-  beforeEach(async () => {
-    await clearTestDatabase();
-    prisma = getTestPrisma();
+  afterEach(() => {
     vi.clearAllMocks();
-
-    mockGetSpotifyClientForUser.mockReturnValue(mockSpotifyApi);
   });
 
   const getExpectedAlbum = (
@@ -85,11 +54,7 @@ describe('processListens Task Integration Tests', () => {
   describe('processTodaysListens', () => {
     it('should return no users when no users have feature enabled', async () => {
       // Given
-      await prisma.user.create({
-        data: userCreateInput({
-          trackListeningHistory: false,
-        }),
-      });
+      await createUser({ trackListeningHistory: false });
 
       // When
       const { result } = await processEvent();
@@ -103,10 +68,8 @@ describe('processListens Task Integration Tests', () => {
       let userId: string;
 
       beforeEach(async () => {
-        const user = await prisma.user.create({
-          data: userCreateInput({
-            trackListeningHistory: true,
-          }),
+        const user = await createUser({
+          trackListeningHistory: true,
         });
         userId = user.id;
       });
@@ -114,14 +77,8 @@ describe('processListens Task Integration Tests', () => {
       describe('when additional users exist', () => {
         it('should process listens for multiple users with feature enabled', async () => {
           // Given
-          const otherUser = await prisma.user.create({
-            data: userCreateInput({
-              trackListeningHistory: true,
-            }),
-            select: {
-              id: true,
-              accounts: true,
-            },
+          const otherUser = await createUser({
+            trackListeningHistory: true,
           });
 
           // User 1 listens to album 1
@@ -139,10 +96,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 2 user(s)');
-          const user1Listens = await prisma.dailyListen.findFirst({
-            where: { userId },
-            include: { albums: true },
-          });
+          const user1Listens = await getAllListensForUser(userId);
           expect(user1Listens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -150,10 +104,7 @@ describe('processListens Task Integration Tests', () => {
             ]),
           });
 
-          const user2Listens = await prisma.dailyListen.findFirst({
-            where: { userId: otherUser.id },
-            include: { albums: true },
-          });
+          const user2Listens = await getAllListensForUser(otherUser.id);
           expect(user2Listens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -164,12 +115,9 @@ describe('processListens Task Integration Tests', () => {
 
         it('should only process users with feature enabled', async () => {
           // Given
-          await prisma.user.create({
-            data: userCreateInput({
-              trackListeningHistory: false,
-            }),
+          const user2 = await createUser({
+            trackListeningHistory: false,
           });
-
           const { album, history } = createFullAlbumPlayHistory();
 
           mockGetRecentlyPlayedTracks.mockResolvedValue(
@@ -181,10 +129,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const userWithFeatureListens = await prisma.dailyListen.findFirst({
-            where: { userId },
-            include: { albums: true },
-          });
+          const userWithFeatureListens = await getAllListensForUser(userId);
           expect(userWithFeatureListens).toMatchObject({
             userId,
             date: startOfDay,
@@ -192,7 +137,7 @@ describe('processListens Task Integration Tests', () => {
           });
 
           // User without feature should not have listens
-          const allListens = await prisma.dailyListen.findMany();
+          const allListens = await getAllListensForUser(user2.id);
           expect(allListens).toHaveLength(1);
         });
       });
@@ -210,10 +155,7 @@ describe('processListens Task Integration Tests', () => {
 
         // Then
         expect(result).toEqual('Successfully processed 1 user(s)');
-        const [savedListens] = await prisma.dailyListen.findMany({
-          where: { userId },
-          include: { albums: true },
-        });
+        const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toMatchObject({
           userId,
           date: startOfDay,
@@ -236,9 +178,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([getExpectedAlbum(album)]),
@@ -274,9 +214,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -302,9 +240,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -337,9 +273,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([
@@ -366,9 +300,7 @@ describe('processListens Task Integration Tests', () => {
 
         // Then
         expect(result).toEqual('Successfully processed 1 user(s)');
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
+        const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toBeUndefined();
       });
 
@@ -388,9 +320,7 @@ describe('processListens Task Integration Tests', () => {
 
         // Then
         expect(result).toEqual('Successfully processed 1 user(s)');
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
+        const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toBeUndefined();
       });
 
@@ -416,9 +346,7 @@ describe('processListens Task Integration Tests', () => {
 
         // Then
         expect(result).toEqual('Successfully processed 1 user(s)');
-        const [savedListens] = await prisma.dailyListen.findMany({
-          include: { albums: true },
-        });
+        const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toMatchObject({
           date: startOfDay,
           albums: expect.arrayContaining([
@@ -434,7 +362,7 @@ describe('processListens Task Integration Tests', () => {
         beforeEach(async () => {
           existingAlbum = simplifiedAlbum();
 
-          await prisma.dailyListen.create({
+          await getTestPrisma().dailyListen.create({
             data: {
               userId,
               date: startOfDay,
@@ -468,10 +396,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            where: { userId },
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             userId,
             date: startOfDay,
@@ -496,10 +421,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await prisma.dailyListen.findMany({
-            where: { userId },
-            include: { albums: true },
-          });
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             userId,
             date: startOfDay,

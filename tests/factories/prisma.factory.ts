@@ -28,3 +28,16 @@ export const userCreateInput = createFactory<Prisma.UserCreateInput>(() => ({
     },
   },
 }));
+
+export const albumListenInput = createFactory<
+  Omit<Prisma.AlbumListenCreateInput, 'dailyListen'>
+>(() => ({
+  albumId: faker.string.uuid(),
+  albumName: faker.music.album(),
+  artistNames: faker.music.artist(),
+  imageUrl: faker.image.url(),
+  listenMethod: 'spotify',
+  listenOrder: 'ordered',
+
+  listenTime: 'morning',
+}));
