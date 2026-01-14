@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
+import { describe, expect, it } from 'vitest';
 import { getAlbumArtwork } from './albums.utils';
 
 describe('albums.utils', () => {
