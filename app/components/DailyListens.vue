@@ -55,13 +55,16 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { DailyListens } from '#shared/schema';
+import { LazyDailyListensModal } from '#components';
 
 const { dayListens, pending = false } = defineProps<{
   dayListens: DailyListens;
   pending?: boolean;
 }>();
 
-const { open, viewTransitionName } = useDailyListensModal();
+const overlay = useOverlay();
+const modal = overlay.create(LazyDailyListensModal);
+
 const { open: openAddModal } = useAddAlbumListenModal();
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
@@ -70,12 +73,11 @@ const firstAlbum = computed(() => dayListens.albums[0]);
 const handleClick = () => {
   if (!hasAlbums.value) return;
 
-  open({
+  modal.open({
     dailyListens: dayListens,
   });
 };
 
-// Date utilities
 const {
   day,
   date,

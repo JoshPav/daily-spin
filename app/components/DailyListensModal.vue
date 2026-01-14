@@ -1,32 +1,30 @@
 <template>
-  <Modal :isOpen="isOpen" @close="close" :title="modalHeader" :modalSubheading="modalSubheading">
-
+  <UModal :title="modalHeader" :description="modalSubheading || undefined" :content="{ onOpenAutoFocus: (e) => e.preventDefault() }" >
     <template #body>
       <AlbumCarousel
         v-if="dailyListens"
         :albums="dailyListens.albums"
-        :view-transition-name="viewTransitionName"
       />
     </template>
-  </Modal>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import { formatDate } from '~/utils/dateUtils';
+import type { DailyListens } from '~~/shared/schema';
 
-const { isOpen, dailyListens, viewTransitionName, close } =
-  useDailyListensModal();
+const { dailyListens } = defineProps<{ dailyListens: DailyListens }>();
 
 const emit = defineEmits<{
   close: [];
 }>();
 
 const modalHeader = computed(() =>
-  dailyListens.value ? formatDate(new Date(dailyListens.value.date)) : '',
+  dailyListens ? formatDate(new Date(dailyListens.date)) : '',
 );
 
 const modalSubheading = computed(() => {
-  const albumCount = dailyListens.value?.albums.length;
+  const albumCount = dailyListens.albums.length;
 
   if (!albumCount || albumCount <= 1) {
     return undefined;

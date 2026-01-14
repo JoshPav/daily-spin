@@ -7,8 +7,8 @@ html {
 
 @theme static {
   /* Brand Colors - Spotify Green */
-  --color-spotify-brand-green: oklch(0.62 0.17 145); /* #2f9f3d */
-  --color-spotify-brand-green-hover: oklch(0.65 0.18 145); /* #1ed760 */
+  --color-spotify-brand-green: rgb(47, 159, 61); /* #2f9f3d */
+  --color-spotify-brand-green-hover: #31aa40; /* #1ed760 */
 
   --color-brand-primary: var(--color-spotify-brand-green);
   --color-brand-primary-hover: var(--color-spotify-brand-green-hover);
@@ -16,12 +16,13 @@ html {
   /* Primary Color Scale - Based on Spotify Green */
   --color-primary-50: oklch(0.97 0.01 145);
   --color-primary-100: oklch(0.94 0.02 145);
-  --color-primary-200: oklch(0.88 0.04 145);
-  --color-primary-300: oklch(0.79 0.08 145);
-  --color-primary-400: oklch(0.69 0.14 145);
+  --color-primary-200: #c8dfc8;
+  --color-primary-300: #9bc99b;
+  --color-primary-400: hsl(123, 35%, 53%);
   --color-primary-500: var(--color-brand-primary);
-  --color-primary-600: oklch(0.56 0.15 145);
-  --color-primary-700: oklch(0.46 0.12 145);
+  --color-primary-600: #2b8836;
+  --color-primary-600: #1db954;
+  --color-primary-700: hsl(126, 51%, 27%);
   --color-primary-800: oklch(0.37 0.09 145);
   --color-primary-900: oklch(0.31 0.07 145);
   --color-primary-950: oklch(0.19 0.04 145);
@@ -40,17 +41,17 @@ html {
   --color-secondary-950: oklch(0.21 0.04 15);
 
   /* Neutral Grays - Based on your background colors */
-  --color-neutral-50: oklch(0.98 0 0);
-  --color-neutral-100: oklch(0.95 0 0);
-  --color-neutral-200: oklch(0.88 0 0);
-  --color-neutral-300: oklch(0.75 0 0); /* #b3b3b3 */
-  --color-neutral-400: oklch(0.6 0 0);
-  --color-neutral-500: oklch(0.45 0 0);
-  --color-neutral-600: oklch(0.35 0 0); /* #333333 */
-  --color-neutral-700: oklch(0.25 0 0); /* #282828 */
-  --color-neutral-800: oklch(0.16 0 0); /* #121212 */
-  --color-neutral-900: oklch(0.12 0 0);
-  --color-neutral-950: oklch(0.08 0 0);
+  --ui-color-neutral-50:  #f6f6f6;
+  --ui-color-neutral-100: #e7e7e7;
+  --ui-color-neutral-200: #cfcfcf;
+  --ui-color-neutral-300: #a8a8a8;
+  --ui-color-neutral-400: #7a7a7a;
+  --ui-color-neutral-500: #4d4d4d;
+  --ui-color-neutral-600: #2f2f2f;
+  --ui-color-neutral-700: #222222;
+  --ui-color-neutral-800: #1c1c1c;
+  --ui-color-neutral-900: #181818; /* your base */
+  --ui-color-neutral-950: #0f0f0f;
 }
 
 :root {
@@ -89,3 +90,12 @@ html {
   /* Header height */
   --ui-header-height: --spacing(16);
 }
+
+.dark {
+  --ui-bg: var(--ui-color-neutral-900);
+  --ui-bg-muted: var(--ui-color-neutral-800);
+  --ui-bg-elevated: var(--ui-color-neutral-800);
+  --ui-bg-accented: var(--ui-color-neutral-700);
+  --ui-bg-inverted: white;
+}
+

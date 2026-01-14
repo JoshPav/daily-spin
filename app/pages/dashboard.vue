@@ -94,7 +94,6 @@ onMounted(async () => {
       </main>
 
       <Teleport to="body">
-        <DailyListensModal />
         <LogAlbumModal />
       </Teleport>
     </div>
