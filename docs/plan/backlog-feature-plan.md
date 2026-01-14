@@ -57,9 +57,8 @@ Add new types:
 // Backlog types
 export type BacklogType = 'album' | 'artist';
 
-export type BacklogItemData = {
+export type BacklogAlbum = {
   id: string;
-  type: BacklogType;
   spotifyId: string;
   name: string;
   imageUrl: string | null;
@@ -67,8 +66,19 @@ export type BacklogItemData = {
   addedAt: string;
 };
 
+export type BacklogArtist = {
+  id: string;
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  addedAt: string;
+};
+
 // API endpoint types
-export type GetBacklogResponse = BacklogItemData[];
+export type GetBacklogResponse = {
+  albums: BacklogAlbum[];
+  artists: BacklogArtist[];
+};
 
 export type GetBacklog = {
   query: never;
@@ -85,11 +95,21 @@ export type AddBacklogItemBody = {
   artistNames?: string;
 };
 
+export type AddBacklogItemResponse = {
+  id: string;
+  type: BacklogType;
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  artistNames: string | null;
+  addedAt: string;
+};
+
 export type AddBacklogItem = {
   query: never;
   params: never;
   body: AddBacklogItemBody;
-  response: BacklogItemData;
+  response: AddBacklogItemResponse;
 };
 
 export type DeleteBacklogItem = {
@@ -99,21 +119,13 @@ export type DeleteBacklogItem = {
   response: never;
 };
 
+// Type for background task suggestions
 export type BacklogSuggestion = {
   albumId: string;
   albumName: string;
   artistNames: string;
   imageUrl: string;
   source: 'backlog_album' | 'backlog_artist';
-};
-
-export type GetBacklogSuggestionResponse = BacklogSuggestion | null;
-
-export type GetBacklogSuggestion = {
-  query: never;
-  params: never;
-  body: never;
-  response: GetBacklogSuggestionResponse;
 };
 ```
 
@@ -238,6 +250,9 @@ export class BacklogService {
     return await this.backlogRepo.deleteBacklogItem(itemId, userId);
   }
 
+  /**
+   * Get a random suggestion from the backlog (used by background task)
+   */
   async getRandomSuggestion(userId: string, auth: AuthDetails) {
     const backlogAlbums = await this.backlogRepo.getBacklogAlbums(userId);
     const backlogArtists = await this.backlogRepo.getBacklogArtists(userId);
@@ -435,7 +450,7 @@ export const filterRealAlbums = (albums: SimplifiedAlbum[]): SimplifiedAlbum[] =
 **File:** `server/api/backlog/index.get.ts`
 
 ```typescript
-import type { GetBacklogResponse } from '#shared/schema';
+import type { GetBacklogResponse, BacklogAlbum, BacklogArtist } from '#shared/schema';
 import { BacklogService } from '../../services/backlog.service';
 
 export default defineEventHandler<Promise<GetBacklogResponse>>(async (event) => {
@@ -444,15 +459,35 @@ export default defineEventHandler<Promise<GetBacklogResponse>>(async (event) => 
 
   const backlogItems = await service.getBacklog(userId);
 
-  return backlogItems.map(item => ({
-    id: item.id,
-    type: item.type,
-    spotifyId: item.spotifyId,
-    name: item.name,
-    imageUrl: item.imageUrl,
-    artistNames: item.artistNames,
-    addedAt: item.addedAt.toISOString(),
-  }));
+  // Separate albums and artists
+  const albums: BacklogAlbum[] = [];
+  const artists: BacklogArtist[] = [];
+
+  for (const item of backlogItems) {
+    if (item.type === 'album') {
+      albums.push({
+        id: item.id,
+        spotifyId: item.spotifyId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        artistNames: item.artistNames,
+        addedAt: item.addedAt.toISOString(),
+      });
+    } else {
+      artists.push({
+        id: item.id,
+        spotifyId: item.spotifyId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        addedAt: item.addedAt.toISOString(),
+      });
+    }
+  }
+
+  return {
+    albums,
+    artists,
+  };
 });
 ```
 
@@ -461,10 +496,10 @@ export default defineEventHandler<Promise<GetBacklogResponse>>(async (event) => 
 **File:** `server/api/backlog/index.post.ts`
 
 ```typescript
-import type { AddBacklogItemBody, BacklogItemData } from '#shared/schema';
+import type { AddBacklogItemBody, AddBacklogItemResponse } from '#shared/schema';
 import { BacklogService } from '../../services/backlog.service';
 
-export default defineEventHandler<Promise<BacklogItemData>>(async (event) => {
+export default defineEventHandler<Promise<AddBacklogItemResponse>>(async (event) => {
   const { userId } = event.context;
   const body = await readBody<AddBacklogItemBody>(event);
 
@@ -507,37 +542,6 @@ export default defineEventHandler(async (event) => {
 
   return { success: true };
 });
-```
-
-### 6.4 GET /api/backlog/suggest
-
-**File:** `server/api/backlog/suggest.get.ts`
-
-```typescript
-import type { GetBacklogSuggestionResponse } from '#shared/schema';
-import { BacklogService } from '../../services/backlog.service';
-import { UserRepository } from '../../repositories/user.repository';
-
-export default defineEventHandler<Promise<GetBacklogSuggestionResponse>>(
-  async (event) => {
-    const { userId } = event.context;
-
-    const userRepo = new UserRepository();
-    const user = await userRepo.getUser(userId);
-
-    if (!user || !user.accounts[0]) {
-      throw createError({
-        statusCode: 401,
-        message: 'User authentication required',
-      });
-    }
-
-    const service = new BacklogService();
-    const suggestion = await service.getRandomSuggestion(userId, user.accounts[0]);
-
-    return suggestion;
-  }
-);
 ```
 
 ---
@@ -619,11 +623,11 @@ export const useBacklog = () => {
 **File:** `app/composables/api/useAddToBacklog.ts`
 
 ```typescript
-import type { AddBacklogItemBody, BacklogItemData } from '#shared/schema';
+import type { AddBacklogItemBody, AddBacklogItemResponse } from '#shared/schema';
 
 export const useAddToBacklog = () => {
   const add = async (item: AddBacklogItemBody) => {
-    return await $fetch<BacklogItemData>('/api/backlog', {
+    return await $fetch<AddBacklogItemResponse>('/api/backlog', {
       method: 'POST',
       body: item,
     });
@@ -721,7 +725,7 @@ export const useSpotifyArtistSearch = () => {
 import { ref } from 'vue';
 
 const { data: backlog, pending, error, refresh } = useBacklog();
-const { add, remove } = useAddToBacklog();
+const { remove } = useAddToBacklog();
 
 const showAddModal = ref(false);
 const addType = ref<'album' | 'artist'>('album');
@@ -754,31 +758,61 @@ const openAddModal = (type: 'album' | 'artist') => {
     <main class="content">
       <div v-if="pending" class="loading">Loading...</div>
       <div v-else-if="error" class="error">Error: {{ error }}</div>
-      <div v-else-if="!backlog || backlog.length === 0" class="empty">
+      <div v-else-if="!backlog || (backlog.albums.length === 0 && backlog.artists.length === 0)" class="empty">
         No items in your backlog yet. Add some albums or artists to get started!
       </div>
 
-      <div v-else class="backlog-grid">
-        <div
-          v-for="item in backlog"
-          :key="item.id"
-          class="backlog-item"
-        >
-          <img
-            v-if="item.imageUrl"
-            :src="item.imageUrl"
-            :alt="item.name"
-            class="item-image"
-          />
-          <div class="item-info">
-            <h3>{{ item.name }}</h3>
-            <p v-if="item.artistNames" class="artist">{{ item.artistNames }}</p>
-            <span class="type-badge">{{ item.type }}</span>
+      <div v-else>
+        <!-- Albums Section -->
+        <section v-if="backlog.albums.length > 0" class="backlog-section">
+          <h2>Albums</h2>
+          <div class="backlog-grid">
+            <div
+              v-for="album in backlog.albums"
+              :key="album.id"
+              class="backlog-item"
+            >
+              <img
+                v-if="album.imageUrl"
+                :src="album.imageUrl"
+                :alt="album.name"
+                class="item-image"
+              />
+              <div class="item-info">
+                <h3>{{ album.name }}</h3>
+                <p v-if="album.artistNames" class="artist">{{ album.artistNames }}</p>
+              </div>
+              <button @click="handleRemove(album.id)" class="remove-button">
+                Remove
+              </button>
+            </div>
           </div>
-          <button @click="handleRemove(item.id)" class="remove-button">
-            Remove
-          </button>
-        </div>
+        </section>
+
+        <!-- Artists Section -->
+        <section v-if="backlog.artists.length > 0" class="backlog-section">
+          <h2>Artists</h2>
+          <div class="backlog-grid">
+            <div
+              v-for="artist in backlog.artists"
+              :key="artist.id"
+              class="backlog-item"
+            >
+              <img
+                v-if="artist.imageUrl"
+                :src="artist.imageUrl"
+                :alt="artist.name"
+                class="item-image"
+              />
+              <div class="item-info">
+                <h3>{{ artist.name }}</h3>
+              </div>
+              <button @click="handleRemove(artist.id)" class="remove-button">
+                Remove
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -825,6 +859,15 @@ const openAddModal = (type: 'album' | 'artist') => {
   font-weight: 600;
 }
 
+.backlog-section {
+  margin-bottom: 48px;
+}
+
+.backlog-section h2 {
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
 .backlog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -845,16 +888,6 @@ const openAddModal = (type: 'album' | 'artist') => {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 4px;
-}
-
-.type-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  background-color: #1db954;
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-  text-transform: uppercase;
 }
 
 .remove-button {
@@ -1275,8 +1308,7 @@ describe('BacklogRepository Integration', () => {
 1. Implement GET /api/backlog
 2. Implement POST /api/backlog
 3. Implement DELETE /api/backlog/:id
-4. Implement GET /api/backlog/suggest
-5. Test endpoints manually
+4. Test endpoints manually
 
 ### Phase 4: Integration with Existing Features
 1. Modify DailyListenService to trigger cleanup
@@ -1346,7 +1378,6 @@ describe('BacklogRepository Integration', () => {
 - `server/api/backlog/index.get.ts`
 - `server/api/backlog/index.post.ts`
 - `server/api/backlog/[id].delete.ts`
-- `server/api/backlog/suggest.get.ts`
 - `server/tasks/generateFutureListens.ts`
 - `app/pages/backlog.vue`
 - `app/components/BacklogAddModal.vue`
