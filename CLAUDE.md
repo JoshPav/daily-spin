@@ -200,6 +200,148 @@ export const user = createFactory<YourType>({
 - Easy to override specific fields while keeping realistic defaults
 - Deep merging support via lodash.merge for complex nested objects
 
+#### Integration Test Patterns
+
+Integration tests run against a real PostgreSQL database in Docker. Follow these patterns for consistency:
+
+**Test structure** - Use Given/When/Then comments:
+
+```typescript
+it('should return listens for a date range', async () => {
+  // Given
+  const album1 = albumListenInput();
+  const day1 = new Date('2026-01-10T00:00:00.000Z');
+  await createDailyListens({ userId, date: day1, albumListen: album1 });
+
+  // When
+  const result = await handler(
+    createHandlerEvent(userId, {
+      query: { startDate: day1.toISOString(), endDate: day1.toISOString() },
+    }),
+  );
+
+  // Then
+  expect(result).toHaveLength(1);
+  expect(result[0]).toEqual({
+    date: day1.toISOString(),
+    albums: [getExpectedAlbum(album1)],
+  });
+});
+```
+
+**Database helpers** - Use helpers from `tests/db/utils.ts`:
+
+```typescript
+import { createUser, createDailyListens, getAllListensForUser } from '~~/tests/db/utils';
+
+// Create a user (returns { id, accounts })
+const user = await createUser();
+userId = user.id;
+userAccount = user.accounts[0];
+
+// Create daily listens with single album
+await createDailyListens({ userId, date, albumListen: albumListenInput() });
+
+// Create daily listens with multiple albums
+await createDailyListens({ userId, date, albumListens: [album1, album2] });
+
+// Query listens (returns array - remember to destructure)
+const [savedListens] = await getAllListensForUser(userId);
+```
+
+**Handler testing** - Import and call handlers directly:
+
+```typescript
+import { createHandlerEvent } from '~~/tests/factories/api.factory';
+import type { EventHandler } from '~~/tests/mocks/nitroMock';
+
+let handler: EventHandler<GetListensResponse>;
+
+beforeEach(async () => {
+  handler = (await import('./listens.get')).default;
+});
+
+// Call with query params
+const result = await handler(
+  createHandlerEvent(userId, {
+    query: { startDate: '...', endDate: '...' },
+  }),
+);
+
+// Call with body
+await handler(createHandlerEvent(userId, { body: addAlbumListenBody() }));
+```
+
+**Mocking Spotify API** - Use the shared mock and assert on calls:
+
+```typescript
+import { mockSpotifyApi, mockWithAccessToken } from '~~/tests/mocks/spotifyMock';
+import { mockRuntimeConfig } from '~~/tests/integration.setup';
+
+const mockGetRecentlyPlayedTracks = vi.mocked(
+  mockSpotifyApi.player.getRecentlyPlayedTracks,
+);
+
+const spotifyClientId = 'test-spotify-client-id';
+
+beforeAll(async () => {
+  mockRuntimeConfig.spotifyClientId = spotifyClientId;
+});
+
+// In test - mock the response
+mockGetRecentlyPlayedTracks.mockResolvedValue(
+  recentlyPlayed({ items: history }),
+);
+
+// Assert Spotify client was created with correct credentials
+expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
+  access_token: userAccount.accessToken,
+  token_type: 'Bearer',
+  expires_in: 3600,
+  refresh_token: userAccount.refreshToken,
+});
+```
+
+**Test file setup**:
+
+```typescript
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+describe('My Integration Tests', () => {
+  let userId: string;
+  let userAccount: Account;
+  let handler: EventHandler<ResponseType>;
+
+  beforeAll(async () => {
+    vi.setSystemTime(new Date('2026-01-15T12:00:00.000Z'));
+    mockRuntimeConfig.spotifyClientId = 'test-client-id';
+  });
+
+  beforeEach(async () => {
+    const user = await createUser();
+    userId = user.id;
+    userAccount = user.accounts[0];
+    handler = (await import('./myHandler')).default;
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  // tests...
+});
+```
+
+**Key points**:
+- Always use `albumListenInput()` factory for album data, not inline objects
+- Always use `createDailyListens()` helper instead of direct Prisma calls
+- Remember `getAllListensForUser()` returns an array - destructure it: `const [listen] = await getAllListensForUser(userId)`
+- Use `createHandlerEvent(userId, { query/body })` to create handler events
+- Set `mockRuntimeConfig.spotifyClientId` in `beforeAll` for Spotify tests
+- Store `userAccount` from `createUser()` to assert on auth details
+- Call `vi.unstubAllEnvs()` in `afterEach` if any test uses `vi.stubEnv()`
+
 ## Feature Tracking
 
 Features and tech debt are tracked in **GitHub Issues** on the [DailySpin project board](https://github.com/users/JoshPav/projects/2).
