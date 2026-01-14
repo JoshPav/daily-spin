@@ -14,6 +14,14 @@ const {
   date,
 } = faker;
 
+type EventHandler = ReturnType<typeof defineEventHandler>;
+
+type HandlerEvent = Parameters<EventHandler>[0];
+
+export const handlerEvent = createFactory<HandlerEvent>(
+  () => ({}) as HandlerEvent,
+);
+
 export const album = createFactory<Album>(() => ({
   albumId: uuid(),
   albumName: music.songName(),

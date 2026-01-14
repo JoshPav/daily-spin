@@ -58,6 +58,7 @@ export class DailyListenRepository {
               artistNames,
               imageUrl,
               listenOrder,
+              listenMethod,
               listenTime,
             }) => ({
               albumId,
@@ -65,6 +66,7 @@ export class DailyListenRepository {
               artistNames,
               imageUrl,
               listenOrder,
+              listenMethod,
               listenTime,
             }),
           ),
