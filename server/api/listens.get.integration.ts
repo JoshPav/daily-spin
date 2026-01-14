@@ -54,6 +54,7 @@ describe('GET /api/listens Integration Tests', () => {
   beforeEach(async () => {
     await clearTestDatabase();
     prisma = getTestPrisma();
+    vi.clearAllMocks();
 
     // Create a test user
     const user = await prisma.user.create({

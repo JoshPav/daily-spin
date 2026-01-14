@@ -29,6 +29,9 @@ import { getSpotifyClientForUser } from '../clients/spotify';
 
 vi.mock('../clients/spotify');
 
+// Mock Nuxt's defineTask since it's not available in test environment
+globalThis.defineTask = vi.fn((config) => config);
+
 describe('processListens Task Integration Tests', () => {
   let prisma: ReturnType<typeof getTestPrisma>;
 
@@ -57,6 +60,7 @@ describe('processListens Task Integration Tests', () => {
   beforeEach(async () => {
     await clearTestDatabase();
     prisma = getTestPrisma();
+    vi.clearAllMocks();
 
     mockGetSpotifyClientForUser.mockReturnValue(mockSpotifyApi);
   });

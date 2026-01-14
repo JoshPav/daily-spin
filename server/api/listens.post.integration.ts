@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import type { AddAlbumListenBody } from '~~/shared/schema';
 import { userCreateInput } from '~~/tests/factories/prisma.factory';
 import {
@@ -34,6 +42,7 @@ describe('POST /api/listens Integration Tests', () => {
   beforeEach(async () => {
     await clearTestDatabase();
     prisma = getTestPrisma();
+    vi.clearAllMocks();
 
     // Create a test user
     const user = await prisma.user.create({
