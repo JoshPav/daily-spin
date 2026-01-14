@@ -11,6 +11,7 @@ model User {
   createdAt                  DateTime      @default(now())
   updatedAt                  DateTime      @updatedAt
   dailyListens               DailyListen[]
+  backlogItems               BacklogItem[]
   name                       String
   email                      String
   emailVerified              Boolean       @default(false)
@@ -77,6 +78,31 @@ enum ListenTime {
   noon
   evening
   night
+}
+
+model BacklogItem {
+  id          String      @id @default(cuid())
+  userId      String
+  type        BacklogType
+  spotifyId   String
+  name        String
+  imageUrl    String?
+  artistNames String?
+  addedAt     DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spotifyId, type])
+  @@index([userId])
+  @@index([type])
+  @@map("backlog_item")
+}
+
+enum BacklogType {
+  album
+  artist
 }
 
 model Session {
