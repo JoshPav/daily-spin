@@ -6,6 +6,24 @@ The Backlog feature allows users to queue albums and artists for future listenin
 
 ---
 
+## Implementation Status
+
+| Phase | Description | Status | PR |
+|-------|-------------|--------|-----|
+| 1 | Database & Repository Layer | ✅ Complete | [#27](https://github.com/JoshPav/daily-spin/pull/27) |
+| 2 | Shared Types & API Contracts | 🔲 Not Started | - |
+| 3 | Service Layer | 🔲 Not Started | - |
+| 4 | API Endpoints | 🔲 Not Started | - |
+| 5 | Integration with Listen Tracking | 🔲 Not Started | - |
+| 6 | Frontend Composables | 🔲 Not Started | - |
+| 7 | Frontend UI Components | 🔲 Not Started | - |
+| 8 | Future Listen Generation Task | 🔲 Not Started | - |
+| 9 | Testing & Polish | 🔲 Not Started | - |
+
+**Next up:** Phase 2 - Add shared types to `shared/schema.ts`
+
+---
+
 ## 1. Database Schema Changes
 
 ### New Prisma Models

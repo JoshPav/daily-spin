@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type {
+  BacklogType,
   ListenMethod,
   ListenOrder,
   ListenTime,
@@ -84,3 +85,28 @@ export const dailyListenWithAlbums = createFactory<DailyListenWithAlbums>(
     updatedAt: recent(),
   }),
 );
+
+type BacklogItemModel = Prisma.BacklogItemGetPayload<object>;
+
+export const backlogItemInput = createFactory<
+  Omit<Prisma.BacklogItemCreateInput, 'user'>
+>(() => ({
+  type: 'album' as BacklogType,
+  spotifyId: uuid(),
+  name: album(),
+  imageUrl: imageUrl(),
+  artistNames: artist(),
+}));
+
+export const backlogItem = createFactory<BacklogItemModel>(() => ({
+  id: uuid(),
+  userId: uuid(),
+  type: 'album' as BacklogType,
+  spotifyId: uuid(),
+  name: album(),
+  imageUrl: imageUrl(),
+  artistNames: artist(),
+  addedAt: recent(),
+  createdAt: recent(),
+  updatedAt: recent(),
+}));
