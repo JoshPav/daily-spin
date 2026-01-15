@@ -54,4 +54,37 @@ export class UserRepository {
       },
     });
   }
+
+  async updateUserTokens(
+    userId: string,
+    tokens: {
+      accessToken: string;
+      accessTokenExpiresAt: Date;
+      scope: string;
+    },
+  ) {
+    // Find the user's Spotify account
+    const account = await this.prismaClient.account.findFirst({
+      where: {
+        userId,
+        providerId: 'spotify',
+      },
+    });
+
+    if (!account) {
+      throw new Error('Spotify account not found for user');
+    }
+
+    // Update the account with new tokens
+    return await this.prismaClient.account.update({
+      where: {
+        id: account.id,
+      },
+      data: {
+        accessToken: tokens.accessToken,
+        accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+        scope: tokens.scope,
+      },
+    });
+  }
 }
