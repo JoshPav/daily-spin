@@ -12,6 +12,7 @@ import {
   groupTracksByAlbum,
   type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
+import { BacklogService } from './backlog.service';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {
@@ -36,7 +37,10 @@ type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
 const MIN_REQUIRED_TRACKS = 5;
 
 export class RecentlyPlayedService {
-  constructor(private dailyListenRepo = new DailyListenRepository()) {}
+  constructor(
+    private dailyListenRepo = new DailyListenRepository(),
+    private backlogService = new BacklogService(),
+  ) {}
 
   async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
     const todaysListens = await this.getTodaysFullListens(auth);
@@ -46,7 +50,22 @@ export class RecentlyPlayedService {
       return;
     }
 
-    return this.dailyListenRepo.saveListens(userId, todaysListens);
+    const result = await this.dailyListenRepo.saveListens(
+      userId,
+      todaysListens,
+    );
+
+    // Remove listened albums from backlog
+    await Promise.all(
+      todaysListens.map((listen) =>
+        this.backlogService.removeBacklogItemByAlbumSpotifyId(
+          userId,
+          listen.albumId,
+        ),
+      ),
+    );
+
+    return result;
   }
 
   private async getTodaysFullListens(auth: AuthDetails) {
