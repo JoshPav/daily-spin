@@ -11,7 +11,6 @@ model User {
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
   dailyListens              DailyListen[]
-  dailyListensOld           DailyListenOld[]
   backlogItems              BacklogItem[]
   name                      String
   email                     String
@@ -25,43 +24,6 @@ model User {
 
   @@unique([email])
   @@map("user")
-}
-
-model DailyListenOld {
-  id        String           @id @default(cuid())
-  userId    String
-  date      DateTime         @db.Date
-  albums    AlbumListenOld[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date])
-  @@index([userId])
-  @@index([date])
-  @@map("daily_listen_old")
-}
-
-model AlbumListenOld {
-  id            String       @id @default(cuid())
-  dailyListenId String
-  albumId       String
-  albumName     String
-  artistNames   String
-  imageUrl      String
-  listenOrder   ListenOrder  @default(ordered)
-  listenMethod  ListenMethod @default(spotify)
-  listenTime    ListenTime?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  dailyListen DailyListenOld @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
-
-  @@unique([dailyListenId, albumId])
-  @@index([dailyListenId])
-  @@index([albumId])
-  @@map("album_listen_old")
 }
 
 enum ListenMethod {
@@ -83,8 +45,6 @@ enum ListenTime {
   night
 }
 
-// New normalized tables for DailyListen migration (#38)
-// These use snake_case table names and link to normalized Album table
 model DailyListen {
   id        String        @id @default(cuid())
   userId    String
