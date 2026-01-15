@@ -13,5 +13,12 @@ export default defineEventHandler(async (event): Promise<void> => {
 
   const service = new FutureListenService();
 
-  await service.removeFutureListen(userId, id);
+  try {
+    await service.removeFutureListen(userId, id);
+  } catch {
+    throw createError({
+      statusCode: 404,
+      message: 'Future listen not found',
+    });
+  }
 });

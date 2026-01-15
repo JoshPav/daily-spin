@@ -25,7 +25,10 @@ export default defineNuxtConfig({
   },
   nitro: {
     scheduledTasks: {
+      // Every hour
       '0 * * * *': ['processListens'],
+      // Daily at 3 AM UTC
+      '0 3 * * *': ['scheduleBacklogListens'],
     },
     experimental: {
       tasks: true,

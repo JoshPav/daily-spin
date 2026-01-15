@@ -154,3 +154,96 @@ export const getArtistBySpotifyId = (spotifyId: string) =>
   getTestPrisma().artist.findUnique({
     where: { spotifyId },
   });
+
+export type CreateFutureListenInput = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+  releaseDate?: string;
+  totalTracks?: number;
+  artists: { spotifyId: string; name: string; imageUrl?: string }[];
+  date: Date;
+};
+
+export const createFutureListen = async ({
+  userId,
+  item,
+}: {
+  userId: string;
+  item: CreateFutureListenInput;
+}) => {
+  const prisma = getTestPrisma();
+
+  // Create or find artists
+  const artistRecords = await Promise.all(
+    item.artists.map((artist) =>
+      prisma.artist.upsert({
+        where: { spotifyId: artist.spotifyId },
+        update: { name: artist.name, imageUrl: artist.imageUrl },
+        create: {
+          spotifyId: artist.spotifyId,
+          name: artist.name,
+          imageUrl: artist.imageUrl,
+        },
+      }),
+    ),
+  );
+
+  // Create or find album with artist relations
+  let album = await prisma.album.findUnique({
+    where: { spotifyId: item.spotifyId },
+  });
+
+  if (!album) {
+    album = await prisma.album.create({
+      data: {
+        spotifyId: item.spotifyId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        releaseDate: item.releaseDate,
+        totalTracks: item.totalTracks,
+        artists: {
+          create: artistRecords.map((artist, index) => ({
+            artistId: artist.id,
+            order: index,
+          })),
+        },
+      },
+    });
+  }
+
+  // Create future listen
+  return prisma.futureListen.create({
+    data: {
+      userId,
+      albumId: album.id,
+      date: item.date,
+    },
+    include: {
+      album: {
+        include: {
+          artists: {
+            include: { artist: true },
+            orderBy: { order: 'asc' },
+          },
+        },
+      },
+    },
+  });
+};
+
+export const getFutureListensForUser = (userId: string) =>
+  getTestPrisma().futureListen.findMany({
+    where: { userId },
+    orderBy: { date: 'asc' },
+    include: {
+      album: {
+        include: {
+          artists: {
+            include: { artist: true },
+            orderBy: { order: 'asc' },
+          },
+        },
+      },
+    },
+  });

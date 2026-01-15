@@ -64,6 +64,57 @@ export class BacklogRepository {
   }
 
   /**
+   * Count backlog items excluding already scheduled albums
+   * Used for weighted random selection
+   */
+  async countUnscheduledBacklogItems(
+    userId: string,
+    excludeAlbumIds: string[],
+  ): Promise<number> {
+    return await this.prismaClient.backlogItem.count({
+      where: {
+        userId,
+        albumId: { notIn: excludeAlbumIds },
+      },
+    });
+  }
+
+  /**
+   * Get a single backlog item at a specific offset
+   * Used for weighted random selection with offset
+   * Items ordered by createdAt DESC (newest first, oldest last)
+   */
+  async getBacklogItemAtOffset(
+    userId: string,
+    excludeAlbumIds: string[],
+    offset: number,
+  ) {
+    return await this.prismaClient.backlogItem.findFirst({
+      where: {
+        userId,
+        albumId: { notIn: excludeAlbumIds },
+      },
+      orderBy: { createdAt: 'desc' }, // Newest first, so higher offsets = older items
+      skip: offset,
+      take: 1,
+      include: {
+        album: {
+          include: {
+            artists: {
+              include: {
+                artist: true,
+              },
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * Find or create an artist by Spotify ID
    */
   async findOrCreateArtist(artist: CreateArtist) {
