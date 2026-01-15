@@ -13,7 +13,12 @@ import type {
   ListenOrder,
   ListenTime,
 } from '~~/shared/schema';
-import { createUser, getAllListensForUser } from '~~/tests/db/utils';
+import {
+  createBacklogItem,
+  createUser,
+  getAllListensForUser,
+  getBacklogItemsForUser,
+} from '~~/tests/db/utils';
 import {
   addAlbumListenBody,
   album,
@@ -218,6 +223,98 @@ describe('POST /api/listens Integration Tests', () => {
           listenTime: body.listenMetadata.listenTime,
         }),
       ]);
+    });
+  });
+
+  describe('backlog cleanup', () => {
+    it('should remove album from backlog when listened to', async () => {
+      // Given
+      const albumSpotifyId = 'album-to-listen';
+      await createBacklogItem({
+        userId,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Backlog Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+        },
+      });
+
+      // Verify backlog item exists
+      const backlogBefore = await getBacklogItemsForUser(userId);
+      expect(backlogBefore).toHaveLength(1);
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: albumSpotifyId }),
+      });
+
+      // When
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then
+      const backlogAfter = await getBacklogItemsForUser(userId);
+      expect(backlogAfter).toHaveLength(0);
+    });
+
+    it('should not affect backlog when listening to album not in backlog', async () => {
+      // Given
+      await createBacklogItem({
+        userId,
+        item: {
+          spotifyId: 'different-album',
+          name: 'Different Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+        },
+      });
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: 'listened-album' }),
+      });
+
+      // When
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then
+      const backlogAfter = await getBacklogItemsForUser(userId);
+      expect(backlogAfter).toHaveLength(1);
+      expect(backlogAfter[0].album.spotifyId).toBe('different-album');
+    });
+
+    it('should only remove backlog item for the current user', async () => {
+      // Given
+      const otherUser = await createUser();
+      const albumSpotifyId = 'shared-album';
+
+      // Both users have the same album in backlog
+      await createBacklogItem({
+        userId,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Shared Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+        },
+      });
+      await createBacklogItem({
+        userId: otherUser.id,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Shared Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+        },
+      });
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: albumSpotifyId }),
+      });
+
+      // When - current user listens to the album
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then - only current user's backlog is cleaned
+      const currentUserBacklog = await getBacklogItemsForUser(userId);
+      expect(currentUserBacklog).toHaveLength(0);
+
+      const otherUserBacklog = await getBacklogItemsForUser(otherUser.id);
+      expect(otherUserBacklog).toHaveLength(1);
     });
   });
 });

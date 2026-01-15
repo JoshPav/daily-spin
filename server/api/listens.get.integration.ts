@@ -9,7 +9,12 @@ import {
   vi,
 } from 'vitest';
 import type { DailyAlbumListen, GetListensResponse } from '~~/shared/schema';
-import { createDailyListens, createUser } from '~~/tests/db/utils';
+import {
+  createBacklogItem,
+  createDailyListens,
+  createUser,
+  getBacklogItemsForUser,
+} from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import { albumListenInput } from '~~/tests/factories/prisma.factory';
 import {
@@ -271,6 +276,53 @@ describe('GET /api/listens Integration Tests', () => {
       expect(mockGetRecentlyPlayedTracks).toHaveBeenCalled();
       expect(result).toHaveLength(2);
       expect(result[1].albums).toEqual([]);
+    });
+
+    it('should remove album from backlog when auto-fetched', async () => {
+      // Given
+      const { album: spotifyAlbum, history } = createFullAlbumPlayHistory({
+        date: '2026-01-15',
+      });
+
+      // Add the album to user's backlog
+      await createBacklogItem({
+        userId,
+        item: {
+          spotifyId: spotifyAlbum.id,
+          name: spotifyAlbum.name,
+          artists: [
+            {
+              spotifyId: spotifyAlbum.artists[0].id,
+              name: spotifyAlbum.artists[0].name,
+            },
+          ],
+        },
+      });
+
+      // Verify backlog item exists
+      const backlogBefore = await getBacklogItemsForUser(userId);
+      expect(backlogBefore).toHaveLength(1);
+
+      mockGetRecentlyPlayedTracks.mockResolvedValue(
+        recentlyPlayed({ items: history }),
+      );
+
+      const startDate = new Date('2026-01-14T00:00:00.000Z');
+      const endDate = new Date('2026-01-15T23:59:59.999Z');
+
+      // When
+      await handler(
+        createHandlerEvent(userId, {
+          query: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        }),
+      );
+
+      // Then
+      const backlogAfter = await getBacklogItemsForUser(userId);
+      expect(backlogAfter).toHaveLength(0);
     });
   });
 

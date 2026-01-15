@@ -110,6 +110,20 @@ export class BacklogService {
   }
 
   /**
+   * Remove album from backlog by its Spotify ID
+   * Used when an album is listened to, to auto-clean the backlog
+   */
+  async removeBacklogItemByAlbumSpotifyId(
+    userId: string,
+    albumSpotifyId: string,
+  ) {
+    return await this.backlogRepo.deleteBacklogItemByAlbumSpotifyId(
+      userId,
+      albumSpotifyId,
+    );
+  }
+
+  /**
    * Get a random album suggestion from the backlog (used by background task)
    */
   async getRandomSuggestion(userId: string) {

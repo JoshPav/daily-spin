@@ -6,12 +6,14 @@ import {
 } from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
+import { BacklogService } from './backlog.service';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
 
 export class DailyListenService {
   constructor(
     private dailyListenRepo = new DailyListenRepository(),
     private userRepo = new UserRepository(),
+    private backlogService = new BacklogService(),
   ) {}
 
   async addAlbumListen(userId: string, body: AddAlbumListenBody) {
@@ -21,6 +23,12 @@ export class DailyListenService {
       userId,
       [this.mapAddAlbumBody(body)],
       dateOfListens,
+    );
+
+    // Remove album from backlog if present
+    await this.backlogService.removeBacklogItemByAlbumSpotifyId(
+      userId,
+      body.album.albumId,
     );
   }
 
