@@ -1,11 +1,29 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 import { signOut } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
 import { Icons } from './common/icons';
 
 const { loggedIn, user, loading } = useAuth();
 const router = useRouter();
+const route = useRoute();
+
+const navItems = computed<NavigationMenuItem[][]>(() => [
+  [
+    {
+      label: 'Dashboard',
+      icon: 'i-lucide-calendar',
+      to: Route.DASHBOARD,
+      active: route.path === Route.DASHBOARD,
+    },
+    {
+      label: 'Backlog',
+      icon: 'i-lucide-list-music',
+      to: Route.BACKLOG,
+      active: route.path === Route.BACKLOG,
+    },
+  ],
+]);
 
 const menuItems = computed<DropdownMenuItem[]>(() => [
   [
@@ -51,6 +69,9 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
 
 <template>
   <UHeader title="DailySpin" :to="loggedIn ? Route.DASHBOARD : Route.LANDING_PAGE">
+    <template v-if="loggedIn" #body>
+      <UNavigationMenu :items="navItems" highlight />
+    </template>
 
     <template #toggle>
       <USkeleton v-if="loading" class="h-8 w-8 rounded-full mr-1.5"/>

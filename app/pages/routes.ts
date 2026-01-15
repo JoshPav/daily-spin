@@ -2,6 +2,7 @@ import type { RouteLocationNormalizedGeneric } from 'vue-router';
 
 export enum Route {
   DASHBOARD = '/dashboard',
+  BACKLOG = '/backlog',
   LANDING_PAGE = '/',
 }
 
