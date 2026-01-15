@@ -33,7 +33,7 @@
     <div v-else-if="pending" class="skeleton"></div>
     <div v-else-if="firstAlbum && !firstAlbum.album.imageUrl" class="empty no-artwork">
       <div class="album-info">
-        <div class="artist-name">{{ firstAlbum.album.artistNames || 'Unknown Artist' }}</div>
+        <div class="artist-name">{{ firstAlbum.album.artists[0]?.name || 'Unknown Artist' }}</div>
         <div class="album-name">{{ firstAlbum.album.albumName || 'Unknown Album' }}</div>
       </div>
     </div>

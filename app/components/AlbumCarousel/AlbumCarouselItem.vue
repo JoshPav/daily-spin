@@ -13,7 +13,7 @@
 
       <div class="mt-6 md:mt-0 md:flex md:flex-col md:justify-center">
         <h2 class="mb-2 text-2xl md:text-[32px] font-black text-default leading-tight">{{ albumListen.album.albumName }}</h2>
-        <p class="mb-3 text-base font-semibold text-muted">{{ albumListen.album.artistNames }}</p>
+        <p class="mb-3 text-base font-semibold text-muted">{{ albumListen.album.artists[0]?.name }}</p>
 
       </div>
     </section>

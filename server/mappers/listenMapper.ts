@@ -10,7 +10,10 @@ export const mapDailyListens = (
       album: {
         albumId: album.spotifyId,
         albumName: album.name,
-        artistNames: album.artists.map((aa) => aa.artist.name).join(', '),
+        artists: album.artists.map(({ artist: { name, spotifyId } }) => ({
+          spotifyId,
+          name,
+        })),
         imageUrl: album.imageUrl ?? '',
       },
       listenMetadata: {

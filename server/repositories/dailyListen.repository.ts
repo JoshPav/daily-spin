@@ -81,12 +81,18 @@ export class DailyListenRepository {
     );
 
     // Build the album listen data with album IDs
-    const albumListenData = albumListens.map((input, index) => ({
-      albumId: albumRecords[index].id,
-      listenOrder: input.listenOrder ?? 'ordered',
-      listenMethod: input.listenMethod ?? 'spotify',
-      listenTime: input.listenTime,
-    }));
+    const albumListenData = albumListens.map((input, index) => {
+      const albumRecord = albumRecords[index];
+      if (!albumRecord) {
+        throw new Error('Album record not found');
+      }
+      return {
+        albumId: albumRecord.id,
+        listenOrder: input.listenOrder ?? 'ordered',
+        listenMethod: input.listenMethod ?? 'spotify',
+        listenTime: input.listenTime,
+      };
+    });
 
     return this.prismaClient.dailyListen.upsert({
       where: {

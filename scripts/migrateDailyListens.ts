@@ -173,6 +173,9 @@ async function migrateListens() {
     include: {
       albums: true,
     },
+    where: {
+      date: '2026-01-06T00:00:00.000Z',
+    },
     orderBy: {
       date: 'asc',
     },

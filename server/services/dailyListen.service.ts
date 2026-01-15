@@ -33,23 +33,25 @@ export class DailyListenService {
   }
 
   private mapAddAlbumBody({
-    album: { albumId, albumName, imageUrl },
+    album: { albumId, albumName, imageUrl, artists },
     listenMetadata: {
       listenOrder = 'ordered',
       listenMethod = 'spotify',
       listenTime,
     },
   }: AddAlbumListenBody): AlbumListenInput {
-    // Note: Manual logging only has artistNames as a comma-separated string
-    // without Spotify IDs, so we create the album without artist relations.
-    // The artist names are preserved in the Album name/display but not linked
-    // to Artist records. Future API update could accept artist objects with IDs.
     return {
       album: {
         spotifyId: albumId,
         name: albumName,
         imageUrl,
-        artists: [], // No artist relations for manual logging
+        artists: artists
+          ? artists.map((artist) => ({
+              spotifyId: artist.spotifyId,
+              name: artist.name,
+              imageUrl: artist.imageUrl,
+            }))
+          : [],
       },
       listenOrder,
       listenMethod,

@@ -1,4 +1,4 @@
-import type { Account, Prisma } from '@prisma/client';
+import type { Account } from '@prisma/client';
 import {
   afterEach,
   beforeAll,
@@ -8,6 +8,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import type { AlbumListenInput } from '~~/server/repositories/dailyListen.repository';
 import type { DailyAlbumListen, GetListensResponse } from '~~/shared/schema';
 import {
   createBacklogItem,
@@ -63,18 +64,21 @@ describe('GET /api/listens Integration Tests', () => {
   });
 
   const getExpectedAlbum = (
-    dbAlbum: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>,
+    albumInput: AlbumListenInput,
   ): DailyAlbumListen => ({
     album: {
-      albumId: dbAlbum.albumId,
-      albumName: dbAlbum.albumName,
-      imageUrl: dbAlbum.imageUrl,
-      artistNames: dbAlbum.artistNames,
+      albumId: albumInput.album.spotifyId,
+      albumName: albumInput.album.name,
+      imageUrl: albumInput.album.imageUrl ?? '',
+      artists: albumInput.album.artists.map(({ spotifyId, name }) => ({
+        name,
+        spotifyId,
+      })),
     },
     listenMetadata: expect.objectContaining({
-      listenMethod: dbAlbum.listenMethod,
-      listenOrder: dbAlbum.listenOrder,
-      listenTime: dbAlbum.listenTime,
+      listenMethod: albumInput.listenMethod ?? 'spotify',
+      listenOrder: albumInput.listenOrder ?? 'ordered',
+      listenTime: albumInput.listenTime ?? null,
     }),
   });
 

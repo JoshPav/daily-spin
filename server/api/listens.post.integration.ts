@@ -62,7 +62,10 @@ describe('POST /api/listens Integration Tests', () => {
     expect(savedListens.length).toEqual(1);
     expect(savedListens[0].albums).toEqual([
       expect.objectContaining({
-        albumId: body.album.albumId,
+        album: expect.objectContaining({
+          spotifyId: body.album.albumId,
+        }),
+        listenMethod,
         listenTime: body.listenMetadata.listenTime,
       }),
     ]);
@@ -85,7 +88,10 @@ describe('POST /api/listens Integration Tests', () => {
     expect(savedListens.length).toEqual(1);
     expect(savedListens[0].albums).toEqual([
       expect.objectContaining({
-        albumId: body.album.albumId,
+        album: expect.objectContaining({
+          spotifyId: body.album.albumId,
+        }),
+        listenOrder,
         listenTime: body.listenMetadata.listenTime,
       }),
     ]);
@@ -116,13 +122,17 @@ describe('POST /api/listens Integration Tests', () => {
         date: startOfDay,
         albums: expect.arrayContaining([
           expect.objectContaining({
-            albumId: body1.album.albumId,
-            albumName: body1.album.albumName,
+            album: expect.objectContaining({
+              spotifyId: body1.album.albumId,
+              name: body1.album.albumName,
+            }),
             listenTime: body1.listenMetadata.listenTime,
           }),
           expect.objectContaining({
-            albumId: body2.album.albumId,
-            albumName: body2.album.albumName,
+            album: expect.objectContaining({
+              spotifyId: body2.album.albumId,
+              name: body2.album.albumName,
+            }),
             listenTime: body2.listenMetadata.listenTime,
           }),
         ]),
@@ -160,7 +170,9 @@ describe('POST /api/listens Integration Tests', () => {
     expect(day1Listens.length).toEqual(1);
     expect(day1Listens[0].albums).toEqual([
       expect.objectContaining({
-        albumId: body1.album.albumId,
+        album: expect.objectContaining({
+          spotifyId: body1.album.albumId,
+        }),
         listenTime: body1.listenMetadata.listenTime,
       }),
     ]);
@@ -169,7 +181,9 @@ describe('POST /api/listens Integration Tests', () => {
     expect(day2Listens.length).toEqual(1);
     expect(day2Listens[0].albums).toEqual([
       expect.objectContaining({
-        albumId: body2.album.albumId,
+        album: expect.objectContaining({
+          spotifyId: body2.album.albumId,
+        }),
         listenTime: body2.listenMetadata.listenTime,
       }),
     ]);
@@ -194,8 +208,10 @@ describe('POST /api/listens Integration Tests', () => {
       expect(savedListens.length).toEqual(1);
       expect(savedListens[0].albums).toEqual([
         expect.objectContaining({
-          albumId: body.album.albumId,
-          listenTime: body.listenMetadata.listenTime,
+          album: expect.objectContaining({
+            spotifyId: body.album.albumId,
+          }),
+          listenTime,
         }),
       ]);
     });
@@ -219,8 +235,10 @@ describe('POST /api/listens Integration Tests', () => {
       expect(savedListens.length).toEqual(1);
       expect(savedListens[0].albums).toEqual([
         expect.objectContaining({
-          albumId: body.album.albumId,
-          listenTime: body.listenMetadata.listenTime,
+          album: expect.objectContaining({
+            spotifyId: body.album.albumId,
+          }),
+          listenTime: null,
         }),
       ]);
     });

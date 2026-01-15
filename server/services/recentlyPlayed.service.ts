@@ -61,7 +61,7 @@ export class RecentlyPlayedService {
       todaysListens.map((listen) =>
         this.backlogService.removeBacklogItemByAlbumSpotifyId(
           userId,
-          listen.albumId,
+          listen.album.spotifyId,
         ),
       ),
     );
