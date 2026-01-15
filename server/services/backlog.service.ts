@@ -1,4 +1,4 @@
-import type { BacklogType } from '@prisma/client';
+import type { AddBacklogItemBody } from '#shared/schema';
 import { BacklogRepository } from '../repositories/backlog.repository';
 
 export class BacklogService {
@@ -8,49 +8,71 @@ export class BacklogService {
     return await this.backlogRepo.getBacklogItems(userId);
   }
 
-  async getBacklogAlbums(userId: string) {
-    return await this.backlogRepo.getBacklogAlbums(userId);
-  }
+  /**
+   * Add multiple albums to backlog in bulk
+   * Returns successfully added items and list of skipped album IDs
+   */
+  async addBacklogItems(userId: string, items: AddBacklogItemBody[]) {
+    if (items.length === 0) {
+      return { added: [], skipped: [] };
+    }
 
-  async getBacklogArtists(userId: string) {
-    return await this.backlogRepo.getBacklogArtists(userId);
-  }
-
-  async addBacklogItem(
-    userId: string,
-    data: {
-      type: BacklogType;
-      spotifyId: string;
-      name: string;
-      imageUrl?: string;
-      artistNames?: string;
-    },
-  ) {
-    return await this.backlogRepo.createBacklogItem({
+    // Check which albums already exist
+    const spotifyIds = items.map((item) => item.spotifyId);
+    const existingIds = await this.backlogRepo.getExistingAlbumIds(
       userId,
-      ...data,
-    });
+      spotifyIds,
+    );
+
+    // Create items (repository will skip duplicates)
+    const created = await this.backlogRepo.createBacklogItems(
+      items.map((item) => ({
+        userId,
+        ...item,
+      })),
+    );
+
+    return {
+      added: created,
+      skipped: existingIds,
+    };
   }
 
   async removeBacklogItem(userId: string, itemId: string) {
-    const item = await this.backlogRepo.getBacklogItemById(itemId, userId);
-
-    if (!item) {
-      return null;
-    }
-
     return await this.backlogRepo.deleteBacklogItem(itemId, userId);
   }
 
-  async removeBacklogItemBySpotifyId(
-    userId: string,
-    spotifyId: string,
-    type: BacklogType,
-  ) {
-    return await this.backlogRepo.deleteBacklogItemBySpotifyId(
-      userId,
-      spotifyId,
-      type,
-    );
+  /**
+   * Remove multiple albums from backlog in bulk
+   * Returns count of deleted items
+   */
+  async removeBacklogItems(userId: string, itemIds: string[]) {
+    if (itemIds.length === 0) {
+      return 0;
+    }
+    return await this.backlogRepo.deleteBacklogItems(itemIds, userId);
+  }
+
+  /**
+   * Get a random album suggestion from the backlog (used by background task)
+   */
+  async getRandomSuggestion(userId: string) {
+    const backlogAlbums = await this.backlogRepo.getBacklogItems(userId);
+
+    if (backlogAlbums.length === 0) {
+      return null;
+    }
+
+    // Pick a random album from backlog
+    const randomAlbum =
+      backlogAlbums[Math.floor(Math.random() * backlogAlbums.length)];
+
+    return {
+      albumId: randomAlbum.spotifyId,
+      albumName: randomAlbum.name,
+      artistNames: randomAlbum.artistNames,
+      imageUrl: randomAlbum.imageUrl || '',
+      source: 'backlog' as const,
+    };
   }
 }

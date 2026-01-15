@@ -81,28 +81,24 @@ enum ListenTime {
 }
 
 model BacklogItem {
-  id          String      @id @default(cuid())
-  userId      String
-  type        BacklogType
-  spotifyId   String
-  name        String
-  imageUrl    String?
-  artistNames String?
-  addedAt     DateTime    @default(now())
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String
+  spotifyId           String
+  name                String
+  imageUrl            String?
+  artistNames         String
+  addedFromArtistId   String?
+  addedFromArtistName String?
+  addedAt             DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, spotifyId, type])
+  @@unique([userId, spotifyId])
   @@index([userId])
-  @@index([type])
+  @@index([addedFromArtistId])
   @@map("backlog_item")
-}
-
-enum BacklogType {
-  album
-  artist
 }
 
 model Session {
