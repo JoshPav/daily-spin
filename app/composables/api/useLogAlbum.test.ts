@@ -1,6 +1,5 @@
 import type { SimplifiedArtist } from '@spotify/web-api-ts-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
 import { useLogAlbum } from './useLogAlbum';
 
 const mockSearchResult = {
@@ -23,28 +22,28 @@ describe('useLogAlbum', () => {
 
   describe('initial state', () => {
     it('should initialize with undefined selectedAlbum', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum } = useLogAlbum({ date });
 
       expect(selectedAlbum.value).toBeUndefined();
     });
 
     it('should initialize listenOrder as ordered', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { listenOrder } = useLogAlbum({ date });
 
       expect(listenOrder.value).toBe('ordered');
     });
 
     it('should initialize listenMethod as spotify', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { listenMethod } = useLogAlbum({ date });
 
       expect(listenMethod.value).toBe('spotify');
     });
 
     it('should initialize saving as false', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { saving } = useLogAlbum({ date });
 
       expect(saving.value).toBe(false);
@@ -53,7 +52,7 @@ describe('useLogAlbum', () => {
 
   describe('form state updates', () => {
     it('should update selectedAlbum', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum } = useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
@@ -62,7 +61,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should update listenOrder', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { listenOrder } = useLogAlbum({ date });
 
       listenOrder.value = 'shuffled';
@@ -71,7 +70,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should update listenMethod', () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { listenMethod } = useLogAlbum({ date });
 
       listenMethod.value = 'vinyl';
@@ -82,19 +81,9 @@ describe('useLogAlbum', () => {
 
   describe('logAlbumListen', () => {
     it('should not call API if selectedAlbum is undefined', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { logAlbumListen } = useLogAlbum({ date });
 
-      await logAlbumListen();
-
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-
-    it('should not call API if date is undefined', async () => {
-      const date = ref<Date | undefined>(undefined);
-      const { selectedAlbum, logAlbumListen } = useLogAlbum({ date });
-
-      selectedAlbum.value = mockSearchResult;
       await logAlbumListen();
 
       expect(mockFetch).not.toHaveBeenCalled();
@@ -106,7 +95,7 @@ describe('useLogAlbum', () => {
       vi.setSystemTime(new Date('2024-01-15T10:00:00Z'));
 
       const testDate = new Date('2024-01-15');
-      const date = ref(testDate);
+      const date = testDate;
       const { selectedAlbum, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
@@ -134,7 +123,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should set saving to true while loading', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, saving, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
@@ -146,7 +135,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should set saving to false after success', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, saving, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
@@ -158,7 +147,7 @@ describe('useLogAlbum', () => {
     it('should set saving to false after error', async () => {
       vi.mocked(mockFetch).mockRejectedValueOnce(new Error('API Error'));
 
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, saving, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = mockSearchResult;
@@ -168,7 +157,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should reset form after successful save', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, listenOrder, listenMethod, logAlbumListen } =
         useLogAlbum({ date });
 
@@ -185,7 +174,7 @@ describe('useLogAlbum', () => {
 
     it('should call onSuccess callback after successful save', async () => {
       const onSuccess = vi.fn();
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, logAlbumListen } = useLogAlbum({
         date,
         onSuccess,
@@ -201,7 +190,7 @@ describe('useLogAlbum', () => {
       vi.mocked(mockFetch).mockRejectedValueOnce(new Error('API Error'));
 
       const onSuccess = vi.fn();
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, logAlbumListen } = useLogAlbum({
         date,
         onSuccess,
@@ -214,7 +203,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should handle multiple artists correctly', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = {
@@ -240,7 +229,7 @@ describe('useLogAlbum', () => {
     });
 
     it('should handle album with no images', async () => {
-      const date = ref(new Date('2024-01-15'));
+      const date = new Date('2024-01-15');
       const { selectedAlbum, logAlbumListen } = useLogAlbum({ date });
 
       selectedAlbum.value = {
