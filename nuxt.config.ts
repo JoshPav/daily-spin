@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
     spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    public: {
+      spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
+    },
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/image', '@nuxt/ui'],
@@ -25,5 +28,6 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true,
     },
+    ignore: ['**/*.test.ts', '**/*.integration.ts', '**/*.spec.ts'],
   },
 });

@@ -92,11 +92,6 @@ onMounted(async () => {
           </div>
         </div>
       </main>
-
-      <Teleport to="body">
-        <DailyListensModal />
-        <LogAlbumModal />
-      </Teleport>
     </div>
   </template>
 

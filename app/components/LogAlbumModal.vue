@@ -1,126 +1,60 @@
 <template>
-   <Modal :isOpen="isOpen" @close="close" title="Log Album" :modal-subheading="subheadingText">
+  <UModal title="Log Album" :description="subheadingText" :content="{ onOpenAutoFocus: (e) => e.preventDefault() }" >
     <template #body>
-      <div class="modal-body">
+      <div class="flex flex-col gap-6">
         <AlbumSearch v-if="!selectedAlbum" v-model="selectedAlbum" />
 
-        <div v-if="selectedAlbum" class="selected-album-section">
-          <div class="section-header">
-            <h3 class="section-title">Selected Album</h3>
-            <Button variant="secondary" @click="selectedAlbum = undefined">Change</Button>
+        <div v-if="selectedAlbum" class="flex flex-col gap-4">
+          <div class="flex justify-between items-center">
+            <h3 class="m-0 font-montserrat text-lg font-bold text-primary-vibrant">Selected Album</h3>
+            <UButton color="neutral" variant="subtle" size="lg" @click="selectedAlbum = undefined">Change</UButton>
           </div>
 
           <AlbumPreview  :album="selectedAlbum" />
 
-          <RadioSelect label="Listen Method" :options="listenMethodOptions" v-model="listenMethod" />
+          <RadioGroup
+            v-model="listenMethod"
+            label="Listen Method"
+            :items="listenMethodOptions"
+          />
 
-          <RadioSelect label="Time of Day" :options="listenTimeOptions" v-model="listenTime" />
+          <RadioGroup
+            v-model="listenTime"
+            label="Time of Day"
+            :items="listenTimeOptions"
+          />
 
-          <Button variant="primary" @click="logAlbumListen" :loading="saving">
-            Save Listen
-          </Button>
+          <UButton block color="primary" size="lg" @click="logAlbumListen" :loading="saving">
+            Save
+          </UButton>
         </div>
       </div>
     </template>
-  </Modal>
+  </UModal>
+
 </template>
 
 <script lang="ts" setup>
-import { h } from 'vue';
-import type { ListenMethod, ListenTime } from '#shared/schema';
+import {
+  LISTEN_METHOD_CONFIG,
+  LISTEN_TIME_CONFIG,
+  toRadioOptions,
+} from '~/constants/listenMetadata';
 import { formatDate } from '~/utils/dateUtils';
-import { Icons } from './common/icons';
-import type { RadioOption } from './common/RadioSelect.vue';
 
-const { close, dateOfListen, isOpen } = useAddAlbumListenModal();
+const { dateOfListen } = defineProps<{ dateOfListen: Date }>();
+const emit = defineEmits<{ close: [] }>();
 
 const { selectedAlbum, listenMethod, listenTime, saving, logAlbumListen } =
   useLogAlbum({
     date: dateOfListen,
-    onSuccess: close,
+    onSuccess: () => emit('close'),
   });
 
-const listenMethodOptions: RadioOption<ListenMethod>[] = [
-  {
-    text: 'Spotify',
-    value: 'spotify',
-    icon: Icons.SPOTIFY,
-  },
-  {
-    text: 'Vinyl',
-    value: 'vinyl',
-    icon: Icons.VINYL,
-  },
-  {
-    text: 'Streamed',
-    value: 'streamed',
-    icon: Icons.AUDIO_LINES,
-  },
-];
-
-const listenTimeOptions: RadioOption<ListenTime>[] = [
-  {
-    text: 'Morning',
-    value: 'morning',
-    icon: 'i-lucide-sunrise',
-  },
-  {
-    text: 'Afternoon',
-    value: 'noon',
-    icon: 'i-lucide-sun',
-  },
-  {
-    text: 'Evening',
-    value: 'evening',
-    icon: 'i-lucide-sunset',
-  },
-  {
-    text: 'Night',
-    value: 'night',
-    icon: 'i-lucide-moon-star',
-  },
-];
+const listenMethodOptions = toRadioOptions(LISTEN_METHOD_CONFIG);
+const listenTimeOptions = toRadioOptions(LISTEN_TIME_CONFIG);
 
 const subheadingText = computed(() => {
-  return formatDate(dateOfListen.value || new Date());
+  return formatDate(dateOfListen || new Date());
 });
 </script>
-
-<style scoped>
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.selected-album-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-title {
-  margin: 0;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1db954;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  cursor: pointer;
-}
-</style>

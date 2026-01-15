@@ -57,7 +57,10 @@ bun run generate               # Generate static site
 ```
 app/
   components/          # Vue components (auto-imported, no pathPrefix)
+  constants/           # Shared constants and configuration objects
+  composables/         # Composables (auto-imported)
   app.vue             # Root component with main layout
+  app.config.ts       # NuxtUI theme configuration
 server/
   api/                # API route handlers
     listens.get.ts    # Fetch listening history
@@ -113,6 +116,7 @@ prisma/
 ### Environment Variables
 
 Required runtime config (nuxt.config.ts runtimeConfig):
+- `SPOTIFY_CLIENT_ID`: Spotify API client ID (exposed to client via public.spotifyClientId)
 - `DISABLE_AUTO_FETCH`: Set to 'true' to disable automatic fetching of today's listens
 
 Test environment variables go in `.env.test`.

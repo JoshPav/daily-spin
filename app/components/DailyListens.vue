@@ -3,10 +3,7 @@
     ref="albumCoverEl"
     class="album-cover"
     :class="{ today: isToday(), clickable: hasAlbums, future: isFuture }"
-    :style="hasAlbums && viewTransitionName
-          ? { viewTransitionName }
-          : undefined"
-    @click="handleClick"
+    @click="openDailyListensModal"
   >
     <!-- Month banner (only on day 1) -->
     <div v-if="day === 1" class="month-banner">
@@ -25,10 +22,12 @@
 
     <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
-        <button v-if="isToday()" class="add-album-button" @click.stop="() => openAddModal({ date })">
+        <button v-if="isToday()" class="add-album-button" @click.stop="openAddModal">
           <PlusCircleIcon class="icon" />
         </button>
-        <Tooltip v-else-if="!isFuture" text="No albums listened to this day">—</Tooltip>
+        <UTooltip v-else-if="!isFuture" text="No albums listened to this day">
+          <span>—</span>
+        </UTooltip>
       </div>
     </div>
     <div v-else-if="pending" class="skeleton"></div>
@@ -54,6 +53,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { LazyDailyListensModal, LazyLogAlbumModal } from '#components';
 import type { DailyListens } from '#shared/schema';
 
 const { dayListens, pending = false } = defineProps<{
@@ -61,21 +61,23 @@ const { dayListens, pending = false } = defineProps<{
   pending?: boolean;
 }>();
 
-const { open, viewTransitionName } = useDailyListensModal();
-const { open: openAddModal } = useAddAlbumListenModal();
+const overlay = useOverlay();
+const dailyListensModal = overlay.create(LazyDailyListensModal);
+const addAlbumModal = overlay.create(LazyLogAlbumModal);
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
 const firstAlbum = computed(() => dayListens.albums[0]);
 
-const handleClick = () => {
-  if (!hasAlbums.value) return;
+const openAddModal = () => {
+  addAlbumModal.open({ dateOfListen: date.value });
+};
 
-  open({
+const openDailyListensModal = () => {
+  dailyListensModal.open({
     dailyListens: dayListens,
   });
 };
 
-// Date utilities
 const {
   day,
   date,
