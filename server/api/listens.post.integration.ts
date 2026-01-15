@@ -24,14 +24,11 @@ import type { EventHandler } from '~~/tests/mocks/nitroMock';
 describe('POST /api/listens Integration Tests', () => {
   let userId: string;
 
-  const today = new Date('2026-01-01T12:00:00.000Z');
   const startOfDay = new Date('2026-01-01T00:00:00.000Z');
 
   let handler: EventHandler;
 
   beforeAll(async () => {
-    vi.setSystemTime(today);
-
     handler = (await import('./listens.post')).default;
   });
 
