@@ -3,7 +3,6 @@ import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
   Album,
-  BacklogType,
   DailyAlbumListen,
   ListenMetadata,
 } from '~~/shared/schema';
@@ -62,7 +61,7 @@ export const addAlbumListenBody = createFactory<AddAlbumListenBody>(() => ({
 }));
 
 export const addBacklogItemBody = createFactory<AddBacklogItemBody>(() => ({
-  type: 'album' as BacklogType,
+  type: 'album',
   spotifyId: uuid(),
   name: music.songName(),
   imageUrl: url(),
