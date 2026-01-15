@@ -18,10 +18,10 @@ export const createDailyListens = async ({
 }: {
   userId: string;
   date: Date;
-  albumListen?: Omit<Prisma.AlbumListenCreateInput, 'dailyListen'>;
-  albumListens?: Omit<Prisma.AlbumListenCreateInput, 'dailyListen'>[];
+  albumListen?: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>;
+  albumListens?: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>[];
 }) =>
-  getTestPrisma().dailyListen.create({
+  getTestPrisma().dailyListenOld.create({
     data: {
       userId,
       date,
@@ -34,7 +34,7 @@ export const createDailyListens = async ({
   });
 
 export const getAllListensForUser = (userId: string) =>
-  getTestPrisma().dailyListen.findMany({
+  getTestPrisma().dailyListenOld.findMany({
     where: { userId },
     include: { albums: true },
   });
