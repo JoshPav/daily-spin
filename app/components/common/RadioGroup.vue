@@ -21,14 +21,8 @@
 </template>
 
 <script lang="ts" setup generic="T extends string">
-import type { RadioGroupItem } from '@nuxt/ui';
 import type { Component } from 'vue';
-
-export type RadioOption<T> = RadioGroupItem & {
-  icon?: string | Component;
-  value: T;
-  label: string;
-};
+import type { RadioOption } from './RadioGroup.types';
 
 defineProps<{
   label: string;

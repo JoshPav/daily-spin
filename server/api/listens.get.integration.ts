@@ -63,7 +63,7 @@ describe('GET /api/listens Integration Tests', () => {
   });
 
   const getExpectedAlbum = (
-    dbAlbum: Omit<Prisma.AlbumListenCreateInput, 'dailyListen'>,
+    dbAlbum: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>,
   ): DailyAlbumListen => ({
     album: {
       albumId: dbAlbum.albumId,
@@ -149,6 +149,10 @@ describe('GET /api/listens Integration Tests', () => {
   });
 
   describe('auto-fetch today', () => {
+    afterEach(() => {
+      delete mockRuntimeConfig.disableAutoFetch;
+    });
+
     it('should auto-fetch today when today is in range and missing', async () => {
       // Given
       const { album: spotifyAlbum, history } = createFullAlbumPlayHistory({
@@ -230,9 +234,9 @@ describe('GET /api/listens Integration Tests', () => {
       expect(result[0].albums).toHaveLength(1);
     });
 
-    it('should not auto-fetch when DISABLE_AUTO_FETCH is true', async () => {
+    it('should not auto-fetch when disableAutoFetch is true', async () => {
       // Given
-      vi.stubEnv('DISABLE_AUTO_FETCH', 'true');
+      mockRuntimeConfig.disableAutoFetch = 'true';
 
       const startDate = new Date('2026-01-14T00:00:00.000Z');
       const endDate = new Date('2026-01-15T23:59:59.999Z');

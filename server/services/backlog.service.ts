@@ -134,8 +134,12 @@ export class BacklogService {
     }
 
     // Pick a random album from backlog
-    const randomItem =
-      backlogItems[Math.floor(Math.random() * backlogItems.length)];
+    const randomIndex = Math.floor(Math.random() * backlogItems.length);
+    const randomItem = backlogItems[randomIndex];
+
+    if (!randomItem) {
+      return null;
+    }
 
     const artistNames = randomItem.album.artists
       .map((aa) => aa.artist.name)

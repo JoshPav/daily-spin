@@ -1,10 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
-import { config } from 'dotenv';
 import { defineConfig } from 'vitest/config';
-
-// Load test environment variables
-config({ path: '.env.test' });
 
 const aliasConfig = {
   alias: [
@@ -61,6 +57,10 @@ export default defineConfig({
         test: {
           name: 'integration',
           environment: 'node',
+          env: {
+            DATABASE_URL:
+              'postgresql://prisma:prisma@localhost:5433/album_test',
+          },
           include: ['**/*.integration.ts'],
           exclude: ['node_modules/**'],
           setupFiles: ['./tests/integration.setup.ts'],

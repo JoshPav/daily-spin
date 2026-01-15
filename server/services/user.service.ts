@@ -20,6 +20,11 @@ export class UserService {
       'trackListeningHistory',
     );
 
-    return users.map(({ accounts, id }) => ({ id, auth: accounts[0] }));
+    return users
+      .map(({ accounts, id }) => {
+        const auth = accounts[0];
+        return auth ? { id, auth } : null;
+      })
+      .filter((user): user is UserWithAuthTokens => user !== null);
   }
 }

@@ -1,7 +1,7 @@
 import type { Component } from 'vue';
 import type { ListenMethod, ListenOrder, ListenTime } from '#shared/schema';
 import { Icons } from '~/components/common/icons';
-import type { RadioOption } from '~/components/common/RadioGroup.vue';
+import type { RadioOption } from '~/components/common/RadioGroup.types';
 
 export interface ListenMetadataConfig {
   label: string;

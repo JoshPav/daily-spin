@@ -23,7 +23,7 @@ type HandlerEvent = Parameters<EventHandler>[0];
 export const createHandlerEvent = (
   userId: string,
   { body = {}, query = {}, params = {} } = {} as {
-    body?: Record<string, unknown>;
+    body?: unknown;
     query?: Record<string, string>;
     params?: Record<string, string>;
   },
@@ -33,7 +33,7 @@ export const createHandlerEvent = (
     _path: `/path${query ? `?${new URLSearchParams(query).toString()}` : ''}`,
     _routerParams: params,
     context: { userId },
-  });
+  } as unknown as HandlerEvent);
 
 const handlerEvent = createFactory<HandlerEvent>(() => ({}) as HandlerEvent);
 

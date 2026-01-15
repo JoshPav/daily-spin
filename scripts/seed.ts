@@ -1,14 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-import { config } from 'dotenv';
 import pkg from 'pg';
 import albums, { type SeedDay } from './seedData';
 
 const { Pool } = pkg;
-
-// Load environment variables for standalone script
-config({ path: '.env.local' });
-config({ path: '.env' });
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);

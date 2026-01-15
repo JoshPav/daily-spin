@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import type { DailyListens } from '#shared/schema';
 
 export const mapDailyListens = (
-  dailyListens: Prisma.DailyListenGetPayload<{
+  dailyListens: Prisma.DailyListenOldGetPayload<{
     include: { albums: true };
   }>,
 ): DailyListens => ({
