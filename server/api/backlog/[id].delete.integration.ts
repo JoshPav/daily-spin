@@ -11,7 +11,9 @@ import {
   createBacklogItem,
   createDailyListens,
   createUser,
+  getAlbumBySpotifyId,
   getAllListensForUser,
+  getArtistBySpotifyId,
   getBacklogItemsForUser,
 } from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
@@ -129,5 +131,27 @@ describe('DELETE /api/backlog/[id] Integration Tests', () => {
     const dailyListens = await getAllListensForUser(userId);
     expect(dailyListens).toHaveLength(1);
     expect(dailyListens[0].albums[0].albumId).toBe(sharedSpotifyId);
+  });
+
+  it('should not delete the related album and artists', async () => {
+    // Given
+    const item = await createBacklogItem({ userId, item: testAlbumItem });
+
+    // When
+    await handler(createHandlerEvent(userId, { params: { id: item.id } }));
+
+    // Then
+    const remainingItems = await getBacklogItemsForUser(userId);
+    expect(remainingItems).toHaveLength(0);
+
+    // Album should still exist
+    const album = await getAlbumBySpotifyId(testAlbumItem.spotifyId);
+    expect(album).not.toBeNull();
+    expect(album?.name).toBe(testAlbumItem.name);
+
+    // Artist should still exist
+    const artist = await getArtistBySpotifyId(testAlbumItem.artists[0].spotifyId);
+    expect(artist).not.toBeNull();
+    expect(artist?.name).toBe(testAlbumItem.artists[0].name);
   });
 });
