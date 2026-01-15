@@ -11,7 +11,12 @@ import {
   vi,
 } from 'vitest';
 import { getTestPrisma } from '~~/tests/db/setup';
-import { createUser, getAllListensForUser } from '~~/tests/db/utils';
+import {
+  createBacklogItem,
+  createUser,
+  getAllListensForUser,
+  getBacklogItemsForUser,
+} from '~~/tests/db/utils';
 import {
   createAlbumAndTracks,
   createAlbumTracks,
@@ -453,6 +458,177 @@ describe('processListens Task Integration Tests', () => {
               getExpectedAlbum(existingAlbum, { listenTime: 'morning' }),
             ]),
           });
+        });
+      });
+
+      describe('backlog cleanup', () => {
+        it('should remove listened album from backlog', async () => {
+          // Given
+          const { album, history } = createFullAlbumPlayHistory();
+
+          // Add album to user's backlog
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+            },
+          });
+
+          // Verify backlog item exists
+          const backlogBefore = await getBacklogItemsForUser(userId);
+          expect(backlogBefore).toHaveLength(1);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const backlogAfter = await getBacklogItemsForUser(userId);
+          expect(backlogAfter).toHaveLength(0);
+        });
+
+        it('should remove multiple listened albums from backlog', async () => {
+          // Given
+          const { album: album1, history: history1 } =
+            createFullAlbumPlayHistory({ hour: '08' });
+          const { album: album2, history: history2 } =
+            createFullAlbumPlayHistory({ hour: '14' });
+
+          // Add both albums to backlog
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: album1.id,
+              name: album1.name,
+              artists: [
+                {
+                  spotifyId: album1.artists[0].id,
+                  name: album1.artists[0].name,
+                },
+              ],
+            },
+          });
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: album2.id,
+              name: album2.name,
+              artists: [
+                {
+                  spotifyId: album2.artists[0].id,
+                  name: album2.artists[0].name,
+                },
+              ],
+            },
+          });
+
+          // Verify backlog items exist
+          const backlogBefore = await getBacklogItemsForUser(userId);
+          expect(backlogBefore).toHaveLength(2);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: [...history1, ...history2] }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const backlogAfter = await getBacklogItemsForUser(userId);
+          expect(backlogAfter).toHaveLength(0);
+        });
+
+        it('should not affect other albums in backlog', async () => {
+          // Given
+          const { album: listenedAlbum, history } =
+            createFullAlbumPlayHistory();
+
+          // Add listened album and another album to backlog
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: listenedAlbum.id,
+              name: listenedAlbum.name,
+              artists: [
+                {
+                  spotifyId: listenedAlbum.artists[0].id,
+                  name: listenedAlbum.artists[0].name,
+                },
+              ],
+            },
+          });
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: 'other-album-id',
+              name: 'Other Album',
+              artists: [{ spotifyId: 'other-artist-id', name: 'Other Artist' }],
+            },
+          });
+
+          const backlogBefore = await getBacklogItemsForUser(userId);
+          expect(backlogBefore).toHaveLength(2);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const backlogAfter = await getBacklogItemsForUser(userId);
+          expect(backlogAfter).toHaveLength(1);
+          expect(backlogAfter[0].album.spotifyId).toBe('other-album-id');
+        });
+
+        it('should only remove backlog item for the user who listened', async () => {
+          // Given
+          const otherUser = await createUser({ trackListeningHistory: false });
+          const { album, history } = createFullAlbumPlayHistory();
+
+          // Both users have the same album in backlog
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+            },
+          });
+          await createBacklogItem({
+            userId: otherUser.id,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+            },
+          });
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then - only current user's backlog is cleaned
+          const currentUserBacklog = await getBacklogItemsForUser(userId);
+          expect(currentUserBacklog).toHaveLength(0);
+
+          const otherUserBacklog = await getBacklogItemsForUser(otherUser.id);
+          expect(otherUserBacklog).toHaveLength(1);
         });
       });
     });
