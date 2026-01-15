@@ -7,21 +7,21 @@ datasource db {
 }
 
 model User {
-  id                        String             @id @default(cuid())
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
+  id                        String           @id @default(cuid())
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
   dailyListens              DailyListen[]
   dailyListensOld           DailyListenOld[]
   backlogItems              BacklogItem[]
   name                      String
   email                     String
-  emailVerified             Boolean            @default(false)
+  emailVerified             Boolean          @default(false)
   image                     String?
   sessions                  Session[]
   accounts                  Account[]
-  trackListeningHistory     Boolean            @default(true)
-  createTodaysAlbumPlaylist Boolean            @default(true)
-  createSongOfDayPlaylist   Boolean            @default(true)
+  trackListeningHistory     Boolean          @default(true)
+  createTodaysAlbumPlaylist Boolean          @default(true)
+  createSongOfDayPlaylist   Boolean          @default(true)
 
   @@unique([email])
   @@map("user")
@@ -40,7 +40,7 @@ model DailyListenOld {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
-  @@map("DailyListen")
+  @@map("daily_listen_old")
 }
 
 model AlbumListenOld {
@@ -61,7 +61,7 @@ model AlbumListenOld {
   @@unique([dailyListenId, albumId])
   @@index([dailyListenId])
   @@index([albumId])
-  @@map("AlbumListen")
+  @@map("album_listen_old")
 }
 
 enum ListenMethod {

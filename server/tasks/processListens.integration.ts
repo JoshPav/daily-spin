@@ -386,7 +386,7 @@ describe('processListens Task Integration Tests', () => {
         beforeEach(async () => {
           existingAlbum = simplifiedAlbum();
 
-          await getTestPrisma().dailyListen.create({
+          await getTestPrisma().dailyListenOld.create({
             data: {
               userId,
               date: startOfDay,
