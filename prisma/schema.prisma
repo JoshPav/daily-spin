@@ -12,6 +12,7 @@ model User {
   updatedAt                 DateTime         @updatedAt
   dailyListens              DailyListen[]
   backlogItems              BacklogItem[]
+  futureListens             FutureListen[]
   name                      String
   email                     String
   emailVerified             Boolean          @default(false)
@@ -104,9 +105,10 @@ model Album {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  artists      AlbumArtist[]
-  backlogItems BacklogItem[]
-  listens      AlbumListen[]
+  artists       AlbumArtist[]
+  backlogItems  BacklogItem[]
+  listens       AlbumListen[]
+  futureListens FutureListen[]
 
   @@index([spotifyId])
   @@map("album")
@@ -143,6 +145,24 @@ model BacklogItem {
   @@index([userId])
   @@index([albumId])
   @@map("backlog_item")
+}
+
+model FutureListen {
+  id        String   @id @default(cuid())
+  userId    String
+  albumId   String
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([albumId])
+  @@index([date])
+  @@map("future_listen")
 }
 
 model Session {
