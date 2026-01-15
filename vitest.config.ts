@@ -57,10 +57,6 @@ export default defineConfig({
         test: {
           name: 'integration',
           environment: 'node',
-          env: {
-            DATABASE_URL:
-              'postgresql://prisma:prisma@localhost:5433/album_test',
-          },
           include: ['**/*.integration.ts'],
           exclude: ['node_modules/**'],
           setupFiles: ['./tests/integration.setup.ts'],
