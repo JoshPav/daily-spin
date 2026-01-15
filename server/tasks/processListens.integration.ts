@@ -647,13 +647,12 @@ describe('processListens Task Integration Tests', () => {
         });
 
         it('should refresh expired access token before fetching recently played', async () => {
-          // Given - user with expired token
-          const expiredUser = await createUser({
-            trackListeningHistory: true,
-            accounts: {
-              create: {
-                accessTokenExpiresAt: new Date('2025-12-31T00:00:00.000Z'), // Expired
-              },
+          // Given - update existing user's token to be expired
+          const prisma = getTestPrisma();
+          await prisma.account.update({
+            where: { id: userAccount.id },
+            data: {
+              accessTokenExpiresAt: new Date('2025-12-31T00:00:00.000Z'), // Expired
             },
           });
 
@@ -697,23 +696,20 @@ describe('processListens Task Integration Tests', () => {
           const fetchCall = mockFetch.mock.calls[0];
           const body = fetchCall[1].body as URLSearchParams;
           expect(body.get('grant_type')).toBe('refresh_token');
-          expect(body.get('refresh_token')).toBe(
-            expiredUser.accounts[0].refreshToken,
-          );
+          expect(body.get('refresh_token')).toBe(userAccount.refreshToken);
 
           // Then - Spotify API was called with new token
           expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
             access_token: newAccessToken,
             token_type: 'Bearer',
             expires_in: 3600,
-            refresh_token: expiredUser.accounts[0].refreshToken,
+            refresh_token: userAccount.refreshToken,
           });
 
           // Then - database was updated with new token
-          const prisma = getTestPrisma();
           const updatedAccount = await prisma.account.findFirst({
             where: {
-              userId: expiredUser.id,
+              userId,
               providerId: 'spotify',
             },
           });
@@ -724,7 +720,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then - listens were processed successfully
           expect(result).toEqual('Successfully processed 1 user(s)');
-          const [savedListens] = await getAllListensForUser(expiredUser.id);
+          const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
             albums: expect.arrayContaining([getExpectedAlbum(album)]),
@@ -732,13 +728,12 @@ describe('processListens Task Integration Tests', () => {
         });
 
         it('should not refresh token if not expired', async () => {
-          // Given - user with valid token (expires in future)
-          const validUser = await createUser({
-            trackListeningHistory: true,
-            accounts: {
-              create: {
-                accessTokenExpiresAt: new Date('2026-12-31T00:00:00.000Z'), // Future date
-              },
+          // Given - update existing user's token to expire in future
+          const prisma = getTestPrisma();
+          await prisma.account.update({
+            where: { id: userAccount.id },
+            data: {
+              accessTokenExpiresAt: new Date('2026-12-31T00:00:00.000Z'), // Future date
             },
           });
 
@@ -756,21 +751,20 @@ describe('processListens Task Integration Tests', () => {
 
           // Then - Spotify API was called with existing token
           expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
-            access_token: validUser.accounts[0].accessToken,
+            access_token: userAccount.accessToken,
             token_type: 'Bearer',
             expires_in: 3600,
-            refresh_token: validUser.accounts[0].refreshToken,
+            refresh_token: userAccount.refreshToken,
           });
         });
 
         it('should refresh token if expires within 5 minutes', async () => {
-          // Given - user with token expiring soon
-          const soonToExpireUser = await createUser({
-            trackListeningHistory: true,
-            accounts: {
-              create: {
-                accessTokenExpiresAt: new Date(today.getTime() + 4 * 60 * 1000), // Expires in 4 minutes
-              },
+          // Given - update existing user's token to expire soon
+          const prisma = getTestPrisma();
+          await prisma.account.update({
+            where: { id: userAccount.id },
+            data: {
+              accessTokenExpiresAt: new Date(today.getTime() + 4 * 60 * 1000), // Expires in 4 minutes
             },
           });
 
@@ -805,18 +799,17 @@ describe('processListens Task Integration Tests', () => {
             access_token: newAccessToken,
             token_type: 'Bearer',
             expires_in: 3600,
-            refresh_token: soonToExpireUser.accounts[0].refreshToken,
+            refresh_token: userAccount.refreshToken,
           });
         });
 
         it('should handle token refresh failure gracefully', async () => {
-          // Given - user with expired token
-          const expiredUser = await createUser({
-            trackListeningHistory: true,
-            accounts: {
-              create: {
-                accessTokenExpiresAt: new Date('2025-12-31T00:00:00.000Z'),
-              },
+          // Given - update existing user's token to be expired
+          const prisma = getTestPrisma();
+          await prisma.account.update({
+            where: { id: userAccount.id },
+            data: {
+              accessTokenExpiresAt: new Date('2025-12-31T00:00:00.000Z'),
             },
           });
 
@@ -834,7 +827,7 @@ describe('processListens Task Integration Tests', () => {
           expect(result).toEqual('Successfully processed 1 user(s)');
 
           // Then - no listens were saved due to token refresh failure
-          const savedListens = await getAllListensForUser(expiredUser.id);
+          const savedListens = await getAllListensForUser(userId);
           expect(savedListens).toHaveLength(0);
         });
       });
