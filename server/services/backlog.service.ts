@@ -1,8 +1,24 @@
 import type { AddBacklogItemBody, BacklogAlbum } from '#shared/schema';
 import { BacklogRepository } from '../repositories/backlog.repository';
+import { FutureListenRepository } from '../repositories/futureListen.repository';
+
+// Backlog scheduling types
+export type ScheduledItem = {
+  date: string; // ISO string
+  albumId: string;
+  albumName: string;
+};
+
+export type BacklogScheduleResult = {
+  scheduled: ScheduledItem[];
+  skipped: number; // Number of dates that couldn't be filled
+};
 
 export class BacklogService {
-  constructor(private backlogRepo = new BacklogRepository()) {}
+  constructor(
+    private backlogRepo = new BacklogRepository(),
+    private futureListenRepo = new FutureListenRepository(),
+  ) {}
 
   /**
    * Map database BacklogItem (with relations) to API BacklogAlbum type
@@ -152,5 +168,121 @@ export class BacklogService {
       imageUrl: randomItem.album.imageUrl || '',
       source: 'backlog' as const,
     };
+  }
+
+  /**
+   * Automatically schedule backlog albums to future listens
+   * Uses weighted random selection favoring older items
+   * Skips dates that already have schedules and albums already scheduled
+   */
+  async scheduleBacklogToFutureListens(
+    userId: string,
+    daysToSchedule = 7,
+  ): Promise<BacklogScheduleResult> {
+    // Get next N days starting from tomorrow (UTC)
+    const dates = this.getNextNDates(daysToSchedule);
+
+    // Get existing future listens
+    const existingSchedule =
+      await this.futureListenRepo.getFutureListens(userId);
+    const scheduledDates = new Set(
+      existingSchedule.map((fl) => fl.date.toISOString().split('T')[0]),
+    );
+    const scheduledAlbumIds = new Set(existingSchedule.map((fl) => fl.albumId));
+
+    // Filter available dates (skip those with existing schedules)
+    const availableDates = dates.filter(
+      (date) => !scheduledDates.has(date.toISOString().split('T')[0]),
+    );
+
+    // Schedule albums to dates
+    const scheduled: ScheduledItem[] = [];
+    const usedAlbumIds = new Set<string>(scheduledAlbumIds);
+
+    for (const date of availableDates) {
+      // Count eligible backlog items (exclude already used albums)
+      const count = await this.backlogRepo.countUnscheduledBacklogItems(
+        userId,
+        Array.from(usedAlbumIds),
+      );
+
+      if (count === 0) break; // No more items to schedule
+
+      // Get weighted random offset (biased toward older items)
+      const offset = this.getWeightedRandomOffset(count);
+
+      // Fetch one item at the offset
+      const selected = await this.backlogRepo.getBacklogItemAtOffset(
+        userId,
+        Array.from(usedAlbumIds),
+        offset,
+      );
+
+      if (!selected) break;
+
+      try {
+        await this.futureListenRepo.upsertFutureListen(
+          userId,
+          selected.albumId,
+          date,
+        );
+        scheduled.push({
+          date: date.toISOString(),
+          albumId: selected.albumId,
+          albumName: selected.album.name,
+        });
+        usedAlbumIds.add(selected.albumId);
+      } catch (error) {
+        console.error(
+          `Failed to schedule album ${selected.albumId} for ${date}:`,
+          error,
+        );
+        // Continue with next date
+      }
+    }
+
+    return {
+      scheduled,
+      skipped: availableDates.length - scheduled.length,
+    };
+  }
+
+  /**
+   * Calculate weighted random offset using cubic weighting
+   * Biases strongly toward higher indices (older items when ordered by createdAt DESC)
+   */
+  private getWeightedRandomOffset(count: number): number {
+    if (count === 0) return 0;
+    if (count === 1) return 0;
+
+    // Cubic weighting: 1 - (1 - random)^3 biases strongly toward higher indices (older items)
+    // When ordered by createdAt DESC, higher indices = older items (been in backlog longer)
+    // This inverts the cube so values closer to 1 are more likely
+    const random = Math.random();
+    const weightedRandom = 1 - (1 - random) ** 3; // Inverted cube for strong bias toward higher values
+    const offset = Math.floor(weightedRandom * count);
+
+    return offset;
+  }
+
+  /**
+   * Get the next N dates starting from tomorrow (UTC)
+   */
+  private getNextNDates(n: number): Date[] {
+    const dates: Date[] = [];
+    const today = new Date();
+
+    for (let i = 1; i <= n; i++) {
+      const date = new Date(
+        Date.UTC(
+          today.getUTCFullYear(),
+          today.getUTCMonth(),
+          today.getUTCDate() + i,
+        ),
+      );
+      dates.push(date);
+    }
+
+    return dates;
   }
 }

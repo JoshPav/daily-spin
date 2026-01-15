@@ -120,3 +120,52 @@ export type BacklogSuggestion = {
   imageUrl: string;
   source: 'backlog';
 };
+
+// Future listens types
+export type FutureListenAlbum = {
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  artists: Artist[];
+};
+
+export type FutureListenItem = {
+  id: string;
+  date: string;
+  album: FutureListenAlbum;
+};
+
+export type GetFutureListensResponse = {
+  items: FutureListenItem[];
+};
+
+export type GetFutureListens = {
+  query: never;
+  params: never;
+  body: never;
+  response: GetFutureListensResponse;
+};
+
+export type AddFutureListenBody = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+  releaseDate?: string;
+  totalTracks?: number;
+  artists: Artist[];
+  date: string;
+};
+
+export type AddFutureListen = {
+  query: never;
+  params: never;
+  body: AddFutureListenBody;
+  response: FutureListenItem;
+};
+
+export type DeleteFutureListen = {
+  query: never;
+  params: { id: string };
+  body: never;
+  response: never;
+};

@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
+  AddFutureListenBody,
   Album,
   Artist,
   BacklogArtist,
@@ -78,4 +79,14 @@ export const addBacklogItemBody = createFactory<AddBacklogItemBody>(() => ({
   name: music.songName(),
   imageUrl: url(),
   artists: [backlogArtist()],
+}));
+
+export const addFutureListenBody = createFactory<AddFutureListenBody>(() => ({
+  spotifyId: uuid(),
+  name: music.songName(),
+  imageUrl: url(),
+  releaseDate: date.past().toISOString(),
+  totalTracks: faker.number.int({ min: 5, max: 20 }),
+  artists: [backlogArtist()],
+  date: date.future().toISOString(),
 }));
