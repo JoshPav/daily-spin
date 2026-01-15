@@ -1,10 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
-import { config } from 'dotenv';
 import { defineConfig } from 'vitest/config';
-
-// Load test environment variables
-config({ path: '.env.test' });
 
 const aliasConfig = {
   alias: [

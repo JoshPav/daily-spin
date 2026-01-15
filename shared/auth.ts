@@ -4,7 +4,6 @@ import prisma from '../server/clients/prisma';
 
 const clientId = process.env.SPOTIFY_CLIENT_ID || '';
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
-
 const baseUrl = process.env.BASE_URL || '';
 
 export const auth = betterAuth({

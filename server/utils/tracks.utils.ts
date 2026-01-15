@@ -41,7 +41,9 @@ export const areTracksPlayedContinuously = (
 ): boolean => {
   return tracks.every((track, i, arr) => {
     if (i === 0) return true;
-    return track.playIndex === arr[i - 1].playIndex + 1;
+    const prevTrack = arr[i - 1];
+    if (!prevTrack) return false;
+    return track.playIndex === prevTrack.playIndex + 1;
   });
 };
 

@@ -1,3 +1,4 @@
+import { config } from 'dotenv';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import {
   clearTestDatabase,
@@ -7,6 +8,9 @@ import {
 
 import '~~/tests/mocks/nitroMock';
 import '~~/tests/mocks/spotifyMock';
+
+// Load test environment variables
+config({ path: '.env.test' });
 
 export const mockRuntimeConfig: Record<string, unknown> = {};
 

@@ -58,7 +58,7 @@ export class DailyListenService {
       range.end,
     );
 
-    const shouldAutoFetch = process.env.DISABLE_AUTO_FETCH !== 'true';
+    const shouldAutoFetch = useRuntimeConfig().disableAutoFetch !== 'true';
 
     if (
       shouldAutoFetch &&
@@ -71,7 +71,7 @@ export class DailyListenService {
 
       const user = await this.userRepo.getUser(userId);
 
-      if (user) {
+      if (user?.accounts[0]) {
         const todaysListens = await service.processTodaysListens({
           id: user.id,
           auth: user.accounts[0],
@@ -102,7 +102,9 @@ export class DailyListenService {
     // Index existing listens by date
     for (const listen of listens) {
       const dateKey = new Date(listen.date).toISOString().split('T')[0];
-      listensByDate.set(dateKey, listen);
+      if (dateKey) {
+        listensByDate.set(dateKey, listen);
+      }
     }
 
     // Generate all days in range
@@ -116,15 +118,17 @@ export class DailyListenService {
     while (currentDate <= end) {
       const dateKey = currentDate.toISOString().split('T')[0];
 
-      const existingListen = listensByDate.get(dateKey);
-      if (existingListen) {
-        result.push(existingListen);
-      } else {
-        // Create empty entry for missing day
-        result.push({
-          date: new Date(currentDate).toISOString(),
-          albums: [],
-        });
+      if (dateKey) {
+        const existingListen = listensByDate.get(dateKey);
+        if (existingListen) {
+          result.push(existingListen);
+        } else {
+          // Create empty entry for missing day
+          result.push({
+            date: new Date(currentDate).toISOString(),
+            albums: [],
+          });
+        }
       }
 
       currentDate.setDate(currentDate.getDate() + 1);

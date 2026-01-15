@@ -55,8 +55,8 @@ export const albumListenInput = createFactory<
   listenTime: 'morning',
 }));
 
-type AlbumListenModel = Prisma.AlbumListenGetPayload<object>;
-type DailyListenWithAlbums = Prisma.DailyListenGetPayload<{
+type AlbumListenModel = Prisma.AlbumListenOldGetPayload<object>;
+type DailyListenWithAlbums = Prisma.DailyListenOldGetPayload<{
   include: { albums: true };
 }>;
 

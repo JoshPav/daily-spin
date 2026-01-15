@@ -157,15 +157,20 @@ export class RecentlyPlayedService {
       listenOrder = 'shuffled';
     }
 
+    const firstTrack = tracks[0];
+    if (!firstTrack) {
+      throw new Error('No tracks found for album that was listened in full');
+    }
+
     return {
       albumId,
       albumName,
-      imageUrl: getAlbumArtwork(images),
+      imageUrl: getAlbumArtwork(images) ?? '',
       artistNames: artists.map((a) => a.name).join(', '),
       listenedInFull,
       listenOrder,
       listenMethod: 'spotify',
-      listenTime: getTrackListenTime(tracks[0].played_at),
+      listenTime: getTrackListenTime(firstTrack.played_at),
     };
   }
 }
