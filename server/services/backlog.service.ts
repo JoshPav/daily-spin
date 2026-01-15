@@ -1,11 +1,34 @@
-import type { AddBacklogItemBody } from '#shared/schema';
+import type { AddBacklogItemBody, BacklogAlbum } from '#shared/schema';
 import { BacklogRepository } from '../repositories/backlog.repository';
 
 export class BacklogService {
   constructor(private backlogRepo = new BacklogRepository()) {}
 
-  async getBacklog(userId: string) {
-    return await this.backlogRepo.getBacklogItems(userId);
+  /**
+   * Map database BacklogItem (with relations) to API BacklogAlbum type
+   */
+  private mapToBacklogAlbum(
+    item: Awaited<ReturnType<BacklogRepository['getBacklogItems']>>[number],
+  ): BacklogAlbum {
+    const artists = item.album.artists.map((aa) => ({
+      spotifyId: aa.artist.spotifyId,
+      name: aa.artist.name,
+      imageUrl: aa.artist.imageUrl || undefined,
+    }));
+
+    return {
+      id: item.id,
+      spotifyId: item.album.spotifyId,
+      name: item.album.name,
+      imageUrl: item.album.imageUrl,
+      artists,
+      createdAt: item.createdAt.toISOString(),
+    };
+  }
+
+  async getBacklog(userId: string): Promise<BacklogAlbum[]> {
+    const items = await this.backlogRepo.getBacklogItems(userId);
+    return items.map((item) => this.mapToBacklogAlbum(item));
   }
 
   /**
@@ -17,23 +40,56 @@ export class BacklogService {
       return { added: [], skipped: [] };
     }
 
-    // Check which albums already exist
+    // Check which albums already exist in the backlog
     const spotifyIds = items.map((item) => item.spotifyId);
-    const existingIds = await this.backlogRepo.getExistingAlbumIds(
+    const existingIds = await this.backlogRepo.getExistingAlbumSpotifyIds(
       userId,
       spotifyIds,
     );
 
-    // Create items (repository will skip duplicates)
-    const created = await this.backlogRepo.createBacklogItems(
-      items.map((item) => ({
-        userId,
-        ...item,
-      })),
+    // Filter out items that already exist
+    const newItems = items.filter(
+      (item) => !existingIds.includes(item.spotifyId),
     );
 
+    // Create albums and artists first, then create backlog items
+    const createdItems: BacklogAlbum[] = [];
+
+    for (const item of newItems) {
+      try {
+        // Find or create the album with its artists
+        const album = await this.backlogRepo.findOrCreateAlbum({
+          spotifyId: item.spotifyId,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          releaseDate: item.releaseDate,
+          totalTracks: item.totalTracks,
+          artists: item.artists.map((artist) => ({
+            spotifyId: artist.spotifyId,
+            name: artist.name,
+            imageUrl: artist.imageUrl,
+          })),
+        });
+
+        // Create the backlog item
+        const backlogItem = await this.backlogRepo.createBacklogItem(
+          userId,
+          album.id,
+        );
+
+        // Map to API type
+        createdItems.push(this.mapToBacklogAlbum(backlogItem));
+      } catch (error) {
+        console.error(
+          `Error adding album ${item.spotifyId} to backlog:`,
+          error,
+        );
+        // Skip this item if there's an error
+      }
+    }
+
     return {
-      added: created,
+      added: createdItems,
       skipped: existingIds,
     };
   }
@@ -57,21 +113,25 @@ export class BacklogService {
    * Get a random album suggestion from the backlog (used by background task)
    */
   async getRandomSuggestion(userId: string) {
-    const backlogAlbums = await this.backlogRepo.getBacklogItems(userId);
+    const backlogItems = await this.backlogRepo.getBacklogItems(userId);
 
-    if (backlogAlbums.length === 0) {
+    if (backlogItems.length === 0) {
       return null;
     }
 
     // Pick a random album from backlog
-    const randomAlbum =
-      backlogAlbums[Math.floor(Math.random() * backlogAlbums.length)];
+    const randomItem =
+      backlogItems[Math.floor(Math.random() * backlogItems.length)];
+
+    const artistNames = randomItem.album.artists
+      .map((aa) => aa.artist.name)
+      .join(', ');
 
     return {
-      albumId: randomAlbum.spotifyId,
-      albumName: randomAlbum.name,
-      artistNames: randomAlbum.artistNames,
-      imageUrl: randomAlbum.imageUrl || '',
+      albumId: randomItem.album.spotifyId,
+      albumName: randomItem.album.name,
+      artistNames,
+      imageUrl: randomItem.album.imageUrl || '',
       source: 'backlog' as const,
     };
   }

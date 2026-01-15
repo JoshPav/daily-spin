@@ -53,15 +53,19 @@ export type AddListen = {
 };
 
 // Backlog types
+export type BacklogArtist = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+};
+
 export type BacklogAlbum = {
   id: string;
   spotifyId: string;
   name: string;
   imageUrl: string | null;
-  artistNames: string;
-  addedFromArtistId: string | null;
-  addedFromArtistName: string | null;
-  addedAt: string;
+  artists: BacklogArtist[];
+  createdAt: string;
 };
 
 // API endpoint types
@@ -80,9 +84,9 @@ export type AddBacklogItemBody = {
   spotifyId: string;
   name: string;
   imageUrl?: string;
-  artistNames: string;
-  addedFromArtistId?: string;
-  addedFromArtistName?: string;
+  releaseDate?: string;
+  totalTracks?: number;
+  artists: BacklogArtist[];
 };
 
 export type AddBacklogItemsBody = AddBacklogItemBody[];

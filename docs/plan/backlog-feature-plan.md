@@ -11,7 +11,7 @@ The Backlog feature allows users to queue albums for future listening. The syste
 - Frontend handles "add artist" flow by fetching all albums and adding them in bulk
 - POST endpoint accepts **array of albums** for bulk operations (includes bulk delete support)
 - GET endpoint returns **flat list of albums** only
-- Artist context tracked via optional `addedFromArtistId` field
+- Uses normalized Album/Artist tables for data integrity
 
 ---
 
@@ -41,32 +41,26 @@ The Backlog feature allows users to queue albums for future listening. The syste
 **BacklogItem Model:**
 ```prisma
 model BacklogItem {
-  id                  String   @id @default(cuid())
-  userId              String
-  spotifyId           String    // Album ID from Spotify
-  name                String
-  imageUrl            String?
-  artistNames         String    // Comma-separated artist names from album
-  addedFromArtistId   String?   // Optional: Artist ID if added via "add artist" flow
-  addedFromArtistName String?   // Optional: Artist name for display context
-  addedAt             DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  albumId   String   // References Album table
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, spotifyId])
+  @@unique([userId, albumId])
   @@index([userId])
-  @@index([addedFromArtistId])
+  @@index([albumId])
   @@map("backlog_item")
 }
 ```
 
 **Key Points:**
 - No `BacklogType` enum - all items are albums
-- `artistNames` is required (all items have artists)
-- `addedFromArtistId` and `addedFromArtistName` are optional for tracking which artist the album was added from
-- Unique constraint on `userId + spotifyId` prevents duplicate albums
+- References normalized Album table instead of storing inline data
+- Unique constraint on `userId + albumId` prevents duplicate albums
 
 ### Migration Strategy (✅ Complete)
 
@@ -88,20 +82,24 @@ model BacklogItem {
 
 ```typescript
 // Backlog types
+export type BacklogArtist = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+};
+
 export type BacklogAlbum = {
   id: string;
   spotifyId: string;
   name: string;
   imageUrl: string | null;
-  artistNames: string;  // Required - all items are albums
-  addedFromArtistId: string | null;
-  addedFromArtistName: string | null;
-  addedAt: string;
+  artists: BacklogArtist[];  // Full artist objects, not just names
+  createdAt: string;
 };
 
 // API endpoint types
 export type GetBacklogResponse = {
-  albums: BacklogAlbum[];  // Flat list, no artists array
+  albums: BacklogAlbum[];  // Flat list of albums
 };
 
 export type GetBacklog = {
@@ -112,19 +110,19 @@ export type GetBacklog = {
 };
 
 export type AddBacklogItemBody = {
-  spotifyId: string;
-  name: string;
-  imageUrl?: string;
-  artistNames: string;  // Required
-  addedFromArtistId?: string;
-  addedFromArtistName?: string;
+  spotifyId: string;        // Album Spotify ID
+  name: string;             // Album name
+  imageUrl?: string;        // Album image URL
+  releaseDate?: string;     // Album release date
+  totalTracks?: number;     // Total tracks on album
+  artists: BacklogArtist[]; // Array of artists with their data
 };
 
 export type AddBacklogItemsBody = AddBacklogItemBody[];  // Array for bulk operations
 
 export type AddBacklogItemsResponse = {
   added: BacklogAlbum[];
-  skipped: string[];  // Album IDs that were already in backlog
+  skipped: string[];  // Album Spotify IDs that were already in backlog
 };
 
 export type AddBacklogItems = {
@@ -147,16 +145,17 @@ export type BacklogSuggestion = {
   albumName: string;
   artistNames: string;
   imageUrl: string;
-  source: 'backlog';  // Simplified - no differentiation needed
+  source: 'backlog';
 };
 ```
 
 **Changes from Original Plan:**
-- Removed `BacklogType` and `BacklogArtist`
-- `artistNames` is required in `BacklogAlbum`
-- Added artist context fields (`addedFromArtistId`, `addedFromArtistName`)
+- Removed `BacklogType` enum (all items are albums)
+- `BacklogAlbum` includes full `artists` array instead of flattened `artistNames` string
 - Bulk endpoint accepts array: `AddBacklogItemsBody`
 - Response includes `skipped` array for duplicate tracking
+- Uses normalized Album/Artist tables instead of inline data
+- Frontend can group by artist using `artist.spotifyId` and display artist images
 
 ---
 
@@ -165,15 +164,21 @@ export type BacklogSuggestion = {
 **File:** `server/repositories/backlog.repository.ts`
 
 **Implemented with the following key methods:**
+- `findOrCreateArtist()` - Upsert artist by Spotify ID
+- `findOrCreateAlbum()` - Create album with artist relations if it doesn't exist
+- `createBacklogItem()` - Create single backlog item (requires existing album)
 - `createBacklogItems()` - Bulk insert with `skipDuplicates: true`
-- `getExistingAlbumIds()` - Check for duplicates before bulk insert
-- **`deleteBacklogItems()`** - Bulk delete by IDs
-- `deleteBacklogItemBySpotifyId()` - Cleanup by Spotify ID (for listen tracking integration)
-- Removed all type-specific methods (`getBacklogAlbums`, `getBacklogArtists`)
+- `getBacklogItems()` - Get all items with album and artist relations included
+- `getExistingAlbumSpotifyIds()` - Check for duplicates before bulk insert
+- `deleteBacklogItems()` - Bulk delete by IDs
+- `deleteBacklogItemByAlbumSpotifyId()` - Cleanup by album Spotify ID (for listen tracking)
+- `hasBacklogItemByAlbumSpotifyId()` - Check if album is in backlog
 
 **Implementation notes:**
-- Uses Prisma's `createMany` with `skipDuplicates` for efficient bulk inserts
-- Unique constraint on `[userId, spotifyId]` prevents duplicates
+- Uses Prisma's `upsert` for artist creation to avoid duplicates
+- Album creation includes nested `AlbumArtist` join table records
+- Uses Prisma's `include` to fetch related Album and Artist data efficiently
+- Unique constraint on `[userId, albumId]` prevents duplicate backlog entries
 - All methods filter by `userId` for security
 
 ```typescript
@@ -195,7 +200,7 @@ export class BacklogRepository {
   async getBacklogItems(userId: string) {
     return await this.prismaClient.backlogItem.findMany({
       where: { userId },
-      orderBy: { addedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -257,16 +262,20 @@ export class BacklogRepository {
 **File:** `server/services/backlog.service.ts`
 
 **Implemented with the following key methods:**
-- `addBacklogItems()` - Bulk add albums, returns `{ added, skipped }`
-- **`removeBacklogItems()`** - Bulk delete albums by IDs
+- `getBacklog()` - Get all backlog items, maps DB relations to API type
+- `addBacklogItems()` - Bulk add albums, creates Album/Artist records, returns `{ added, skipped }`
+- `removeBacklogItems()` - Bulk delete albums by IDs
 - `removeBacklogItem()` - Single delete for UI interactions
 - `getRandomSuggestion()` - For CRON job integration (future listen generation)
-- Removed all artist-specific logic
+- `mapToBacklogAlbum()` - Private helper to map DB models to API types
 
 **Implementation notes:**
-- Accepts `AddBacklogItemBody[]` for bulk operations
+- Accepts `AddBacklogItemBody[]` with full album and artist data
+- Creates Album and Artist records using `findOrCreateAlbum()` before creating backlog items
+- Maps database relations (BacklogItem → Album → AlbumArtist → Artist) to API type with full artist objects
+- Returns `BacklogAlbum` with `artists` array containing full artist data (spotifyId, name, imageUrl)
 - Returns duplicate information in response for user feedback
-- All methods use repository layer for data access
+- Handles errors gracefully when creating individual albums
 
 ```typescript
 import type { BacklogType } from '@prisma/client';
@@ -366,12 +375,11 @@ export class BacklogService {
 **File:** `server/services/backlogCleanup.service.ts`
 
 **Implemented with the following key methods:**
-- `cleanupListenedAlbum()` - Remove album when user listens to it
-- `cleanupFromDailyListen()` - Integration hook for daily listen processing
-- Removed all artist-specific cleanup logic (no longer needed with albums-only approach)
+- `cleanupListenedAlbum()` - Remove album from backlog when user listens to it
 
 **Implementation notes:**
 - Simple service focused on backlog cleanup when albums are listened to
+- Uses `deleteBacklogItemByAlbumSpotifyId()` from repository to remove items
 - Will be integrated with `DailyListenService` and `RecentlyPlayedService`
 
 ```typescript
@@ -542,7 +550,7 @@ export default defineEventHandler<Promise<GetBacklogResponse>>(async (event) => 
         name: item.name,
         imageUrl: item.imageUrl,
         artistNames: item.artistNames,
-        addedAt: item.addedAt.toISOString(),
+        createdAt: item.createdAt.toISOString(),
       });
     } else {
       artists.push({
@@ -550,7 +558,7 @@ export default defineEventHandler<Promise<GetBacklogResponse>>(async (event) => 
         spotifyId: item.spotifyId,
         name: item.name,
         imageUrl: item.imageUrl,
-        addedAt: item.addedAt.toISOString(),
+        createdAt: item.createdAt.toISOString(),
       });
     }
   }
@@ -585,7 +593,7 @@ export default defineEventHandler<Promise<AddBacklogItemResponse>>(async (event)
     name: item.name,
     imageUrl: item.imageUrl,
     artistNames: item.artistNames,
-    addedAt: item.addedAt.toISOString(),
+    createdAt: item.createdAt.toISOString(),
   };
 });
 ```
@@ -1234,7 +1242,6 @@ export const backlogItem = createFactory<BacklogItem>(() => ({
   name: music.album(),
   imageUrl: faker.image.url(),
   artistNames: music.artist(),
-  addedAt: date.recent(),
   createdAt: date.recent(),
   updatedAt: date.recent(),
 }));
@@ -1443,11 +1450,12 @@ describe('BacklogRepository Integration', () => {
 ## 13. Critical Files Summary
 
 ### ✅ Files Completed:
-- ✅ `server/repositories/backlog.repository.ts` - With bulk operations support
-- ✅ `server/services/backlog.service.ts` - With bulk add/delete methods
-- ✅ `server/services/backlogCleanup.service.ts` - Simplified for albums-only
-- ✅ `prisma/schema.prisma` - Updated BacklogItem model (albums-only)
-- ✅ `shared/schema.ts` - Updated backlog types and API contracts
+- ✅ `prisma/schema.prisma` - Normalized Album, Artist, AlbumArtist, and BacklogItem models
+- ✅ `prisma/migrations/20260115111009_add_backlog_with_normalized_albums_artists/` - Clean migration for all backlog tables
+- ✅ `shared/schema.ts` - Updated types with BacklogArtist and full album data in AddBacklogItemBody
+- ✅ `server/repositories/backlog.repository.ts` - Complete rewrite for normalized structure with upsert logic
+- ✅ `server/services/backlog.service.ts` - Updated to create Album/Artist records and map relations to API types
+- ✅ `server/services/backlogCleanup.service.ts` - Updated method names for new structure
 - ✅ `server/utils/albums.utils.ts` - Added isRealAlbum and filterRealAlbums
 - ✅ `docker-compose.yml` - Added port mapping for test database
 
@@ -1480,18 +1488,22 @@ describe('BacklogRepository Integration', () => {
 
 **Phases 1-4 Complete (Database, Types, Repository, Services):**
 
-✅ **Database Schema** - Simplified to albums-only with artist context tracking
-✅ **Shared Types** - Updated with bulk operations support and duplicate tracking
-✅ **Repository Layer** - Implemented with bulk insert/delete using Prisma's `createMany` and `skipDuplicates`
-✅ **Service Layer** - BacklogService with bulk operations, BacklogCleanupService for integration
+✅ **Database Schema** - Normalized Album, Artist, AlbumArtist, and BacklogItem models
+✅ **Migration** - Clean single migration with all four tables and proper foreign keys
+✅ **Shared Types** - Updated with BacklogArtist type and full album data including artists array
+✅ **Repository Layer** - Complete rewrite with upsert logic for Artists/Albums and relation includes
+✅ **Service Layer** - Updated to create normalized records and map DB relations to flat API types
 ✅ **Album Utilities** - Filtering functions for "real albums" (excludes singles/compilations)
 
 **Key Features Implemented:**
-- Bulk add albums with duplicate detection
-- Bulk delete albums by IDs
-- Artist context tracking (optional `addedFromArtistId` field)
-- Efficient Prisma operations with `skipDuplicates`
-- Album filtering utilities for frontend use
+- Normalized database structure eliminates data duplication
+- Upsert logic ensures Artists and Albums are reused across backlog items
+- Many-to-many AlbumArtist join table with ordering support
+- Efficient Prisma includes to fetch related data in single queries
+- Bulk add albums with duplicate detection (by album Spotify ID)
+- Bulk delete albums by backlog item IDs
+- API returns full artist objects (spotifyId, name, imageUrl) for frontend flexibility
+- Enables frontend to group albums by artist and display artist images
 
 **Next Steps:**
 - API endpoints (being handled separately)

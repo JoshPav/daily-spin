@@ -7,13 +7,6 @@ export class BacklogCleanupService {
    * Remove an album from backlog when user listens to it
    */
   async cleanupListenedAlbum(userId: string, albumId: string) {
-    await this.backlogRepo.deleteBacklogItemBySpotifyId(userId, albumId);
-  }
-
-  /**
-   * Cleanup when processing a daily listen
-   */
-  async cleanupFromDailyListen(userId: string, albumId: string) {
-    await this.cleanupListenedAlbum(userId, albumId);
+    await this.backlogRepo.deleteBacklogItemByAlbumSpotifyId(userId, albumId);
   }
 }
