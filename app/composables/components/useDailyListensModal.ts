@@ -1,5 +1,5 @@
-import type { DailyListens } from '#shared/schema';
 import { LazyDailyListensModal } from '#components';
+import type { DailyListens } from '#shared/schema';
 
 type OpenModalPayload = {
   dailyListens: DailyListens;

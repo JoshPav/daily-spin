@@ -7,25 +7,28 @@ html {
 
 @theme static {
   /* Brand Colors - Spotify Green */
-  --color-spotify-brand-green: rgb(47, 159, 61); /* #2f9f3d */
-  --color-spotify-brand-green-hover: #31aa40; /* #1ed760 */
+  --color-spotify-brand-green: #1db954; /* Spotify brand green */
+  --color-spotify-brand-green-hover: #1ed760; /* Brighter on hover */
 
   --color-brand-primary: var(--color-spotify-brand-green);
   --color-brand-primary-hover: var(--color-spotify-brand-green-hover);
 
-  /* Primary Color Scale - Based on Spotify Green */
-  --color-primary-50: oklch(0.97 0.01 145);
-  --color-primary-100: oklch(0.94 0.02 145);
-  --color-primary-200: #c8dfc8;
-  --color-primary-300: #9bc99b;
-  --color-primary-400: hsl(123, 35%, 53%);
-  --color-primary-500: var(--color-brand-primary);
-  --color-primary-600: #2b8836;
-  --color-primary-600: #1db954;
-  --color-primary-700: hsl(126, 51%, 27%);
-  --color-primary-800: oklch(0.37 0.09 145);
-  --color-primary-900: oklch(0.31 0.07 145);
-  --color-primary-950: oklch(0.19 0.04 145);
+  /* Primary Color Scale - Based on Spotify Green (#1db954) */
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: var(--color-brand-primary); /* #1db954 */
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+  --color-primary-950: #052e16;
+
+  /* Primary Variants */
+  --color-primary-muted: #2f9f3d; /* Desaturated, more subdued */
+  --color-primary-vibrant: #1ed760; /* More saturated, eye-catching */
 
   /* Coral/Red - Secondary/Error Color */
   --color-secondary-50: oklch(0.97 0.02 15);
@@ -41,7 +44,7 @@ html {
   --color-secondary-950: oklch(0.21 0.04 15);
 
   /* Neutral Grays - Based on your background colors */
-  --ui-color-neutral-50:  #f6f6f6;
+  --ui-color-neutral-50: #f6f6f6;
   --ui-color-neutral-100: #e7e7e7;
   --ui-color-neutral-200: #cfcfcf;
   --ui-color-neutral-300: #a8a8a8;
@@ -77,15 +80,6 @@ html {
 
   /* Border colors */
   --ui-border: oklch(0.35 0 0);
-  --ui-border-muted: oklch(0.25 0 0);
-  --ui-border-accented: var(--color-primary-500);
-  --ui-border-inverted: oklch(0.88 0 0);
-
-  /* Border radius */
-  --ui-radius: 8px;
-
-  /* Container width */
-  --ui-container: 1800px;
 
   /* Header height */
   --ui-header-height: --spacing(16);
@@ -98,4 +92,3 @@ html {
   --ui-bg-accented: var(--ui-color-neutral-700);
   --ui-bg-inverted: white;
 }
-

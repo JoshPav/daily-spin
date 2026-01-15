@@ -24,24 +24,24 @@
     <section>
       <h3 class="mb-4 font-semibold">Listen info</h3>
       <!-- Info Chips -->
-      <section class="flex gap-4 mb-2">
+      <section class="flex flex-wrap gap-4 mb-2">
         <ListenInfoItem
           label="Listened"
-          :text="albumListen.listenMetadata.listenOrder === 'ordered' ? 'Ordered' : 'Shuffled'"
-          :icon="albumListen.listenMetadata.listenOrder === 'ordered' ? Icons.ORDERED : Icons.SHUFFLED"
+          :text="LISTEN_ORDER_CONFIG[albumListen.listenMetadata.listenOrder].label"
+          :icon="LISTEN_ORDER_CONFIG[albumListen.listenMetadata.listenOrder].icon"
         />
 
         <ListenInfoItem
           v-if="listenTime"
           label="Time"
-          :text="timeMap[listenTime].text"
-          :icon="timeMap[listenTime].icon"
+          :text="LISTEN_TIME_CONFIG[listenTime].label"
+          :icon="LISTEN_TIME_CONFIG[listenTime].icon"
         />
 
-        <ListenInfoItem 
+        <ListenInfoItem
           label="Listen Method"
-          :text="listenMethodMap[listenMethod].text"
-          :icon="listenMethodMap[listenMethod].icon"
+          :text="LISTEN_METHOD_CONFIG[listenMethod].label"
+          :icon="LISTEN_METHOD_CONFIG[listenMethod].icon"
         />
       </section>
     </section>
@@ -52,10 +52,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ListenMethod } from '@prisma/client';
-import { type Component, h } from 'vue';
-import type { DailyAlbumListen, ListenTime } from '#shared/schema';
-import { Icons } from '../common/icons';
+import type { DailyAlbumListen } from '#shared/schema';
+import {
+  LISTEN_METHOD_CONFIG,
+  LISTEN_ORDER_CONFIG,
+  LISTEN_TIME_CONFIG,
+} from '~/constants/listenMetadata';
 
 const { albumListen } = defineProps<{
   albumListen: DailyAlbumListen;
@@ -63,20 +65,4 @@ const { albumListen } = defineProps<{
 
 const listenTime = computed(() => albumListen.listenMetadata.listenTime);
 const listenMethod = computed(() => albumListen.listenMetadata.listenMethod);
-
-const listenMethodMap: Record<
-  ListenMethod,
-  { text: string; icon: string | Component }
-> = {
-  spotify: { text: 'Spotify', icon: Icons.SPOTIFY },
-  vinyl: { text: 'Vinyl', icon: Icons.VINYL },
-  streamed: { text: 'Streamed', icon: Icons.AUDIO_LINES },
-};
-
-const timeMap: Record<ListenTime, { text: string; icon: string }> = {
-  morning: { text: 'Morning', icon: Icons.SUNRISE },
-  noon: { text: 'Afternoon', icon: Icons.SUN },
-  evening: { text: 'Evening', icon: Icons.SUNSET },
-  night: { text: 'Night', icon: Icons.MOON_STAR },
-};
 </script>

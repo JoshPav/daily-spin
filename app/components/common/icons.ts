@@ -16,17 +16,18 @@ const SpotifyIcon = h(
 );
 
 export const Icons = {
-  SUNRISE: 'i-lucide-sunrise',
-  SUN: 'i-lucide-sun',
-  SUNSET: 'i-lucide-sunset',
-  MOON_STAR: 'i-lucide-moon-star',
-  SPOTIFY: SpotifyIcon,
-  VINYL: 'i-lucide-disc-3',
   AUDIO_LINES: 'i-lucide-audio-lines',
-  ORDERED: 'i-lucide-list-ordered',
-  SHUFFLED: 'i-lucide-shuffle',
-  SETTINGS: 'i-lucide-settings',
   IMPORT: 'i-lucide-import',
+  INTERRUPTED: 'i-lucide-circle-slash',
   LOG_OUT: 'i-lucide-log-out',
+  MOON_STAR: 'i-lucide-moon-star',
+  ORDERED: 'i-lucide-list-ordered',
+  SETTINGS: 'i-lucide-settings',
+  SHUFFLED: 'i-lucide-shuffle',
+  SPOTIFY: SpotifyIcon,
+  SUN: 'i-lucide-sun',
+  SUNRISE: 'i-lucide-sunrise',
+  SUNSET: 'i-lucide-sunset',
+  VINYL: 'i-lucide-disc-3',
   WIFI: 'i-lucide-wifi',
 };
