@@ -1,7 +1,10 @@
 import type { ListenOrder, ListenTime } from '@prisma/client';
 import type { PlayHistory } from '@spotify/web-api-ts-sdk';
 import { getTrackListenTime } from '#shared/utils/listenTime.utils';
-import { DailyListenRepository } from '../repositories/dailyListen.repository';
+import {
+  type CreateAlbum,
+  DailyListenRepository,
+} from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
 import {
@@ -22,17 +25,14 @@ type UnfinishedAlbum = {
 };
 
 type FinishedAlbum = {
-  albumId: string;
-  artistNames: string;
-  imageUrl: string;
-  albumName: string;
+  album: CreateAlbum;
   listenedInFull: true;
   listenOrder: ListenOrder;
   listenMethod: 'spotify';
   listenTime: ListenTime;
 };
 
-type ProcssedGroup = UnfinishedAlbum | FinishedAlbum;
+type ProcessedGroup = UnfinishedAlbum | FinishedAlbum;
 
 const MIN_REQUIRED_TRACKS = 5;
 
@@ -61,7 +61,7 @@ export class RecentlyPlayedService {
       todaysListens.map((listen) =>
         this.backlogService.removeBacklogItemByAlbumSpotifyId(
           userId,
-          listen.albumId,
+          listen.album.spotifyId,
         ),
       ),
     );
@@ -90,7 +90,14 @@ export class RecentlyPlayedService {
       this.processGroupedTracks,
     );
 
-    return processed.filter((group) => group.listenedInFull);
+    return processed
+      .filter((group): group is FinishedAlbum => group.listenedInFull)
+      .map(({ album, listenOrder, listenMethod, listenTime }) => ({
+        album,
+        listenOrder,
+        listenMethod,
+        listenTime,
+      }));
   }
 
   private async getTodaysPlays(
@@ -139,7 +146,7 @@ export class RecentlyPlayedService {
       images,
     },
     tracks,
-  }: GroupedTracks): ProcssedGroup {
+  }: GroupedTracks): ProcessedGroup {
     const uniqueTracks = new Set([...tracks.map(({ track }) => track.id)]);
 
     const listenedInFull =
@@ -171,10 +178,16 @@ export class RecentlyPlayedService {
     }
 
     return {
-      albumId,
-      albumName,
-      imageUrl: getAlbumArtwork(images) ?? '',
-      artistNames: artists.map((a) => a.name).join(', '),
+      album: {
+        spotifyId: albumId,
+        name: albumName,
+        imageUrl: getAlbumArtwork(images),
+        artists: artists.map((artist) => ({
+          spotifyId: artist.id,
+          name: artist.name,
+          // Note: SimplifiedArtist doesn't include images
+        })),
+      },
       listenedInFull,
       listenOrder,
       listenMethod: 'spotify',

@@ -43,36 +43,111 @@ export const userCreateInput = createFactory<Prisma.UserCreateInput>(() => ({
   },
 }));
 
-export const albumListenInput = createFactory<
-  Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>
->(() => ({
-  albumId: uuid(),
-  albumName: album(),
-  artistNames: artist(),
-  imageUrl: imageUrl(),
+export const albumListenInput = createFactory<{
+  album: {
+    spotifyId: string;
+    name: string;
+    imageUrl?: string;
+    artists: { spotifyId: string; name: string; imageUrl?: string }[];
+  };
+  listenOrder?: ListenOrder;
+  listenMethod?: ListenMethod;
+  listenTime?: ListenTime | null;
+}>(() => ({
+  album: {
+    spotifyId: uuid(),
+    name: album(),
+    imageUrl: imageUrl(),
+    artists: [
+      {
+        spotifyId: uuid(),
+        name: artist(),
+        imageUrl: imageUrl(),
+      },
+    ],
+  },
   listenMethod: 'spotify',
   listenOrder: 'ordered',
   listenTime: 'morning',
 }));
 
-type AlbumListenModel = Prisma.AlbumListenOldGetPayload<object>;
-type DailyListenWithAlbums = Prisma.DailyListenOldGetPayload<{
-  include: { albums: true };
+type DailyListenWithAlbums = Prisma.DailyListenGetPayload<{
+  include: {
+    albums: {
+      include: {
+        album: {
+          include: {
+            artists: {
+              include: {
+                artist: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
 }>;
 
-export const albumListen = createFactory<AlbumListenModel>(() => ({
+type AlbumListenWithAlbum = DailyListenWithAlbums['albums'][number];
+
+export const artistModel = createFactory<Prisma.ArtistGetPayload<object>>(
+  () => ({
+    id: uuid(),
+    spotifyId: uuid(),
+    name: artist(),
+    imageUrl: imageUrl(),
+    createdAt: recent(),
+    updatedAt: recent(),
+  }),
+);
+
+export const albumModel = createFactory<
+  Prisma.AlbumGetPayload<{
+    include: {
+      artists: {
+        include: {
+          artist: true;
+        };
+      };
+    };
+  }>
+>(() => ({
   id: uuid(),
-  dailyListenId: uuid(),
-  albumId: uuid(),
-  albumName: album(),
-  artistNames: artist(),
+  spotifyId: uuid(),
+  name: album(),
   imageUrl: imageUrl(),
-  listenOrder: 'ordered' as ListenOrder,
-  listenMethod: 'spotify' as ListenMethod,
-  listenTime: 'morning' as ListenTime,
+  releaseDate: null,
+  totalTracks: null,
   createdAt: recent(),
   updatedAt: recent(),
+  artists: [
+    {
+      id: uuid(),
+      albumId: uuid(),
+      artistId: uuid(),
+      order: 0,
+      createdAt: recent(),
+      updatedAt: recent(),
+      artist: artistModel(),
+    },
+  ],
 }));
+
+export const albumListen = createFactory<AlbumListenWithAlbum>(() => {
+  const albumData = albumModel();
+  return {
+    id: uuid(),
+    dailyListenId: uuid(),
+    albumId: albumData.id,
+    listenOrder: 'ordered' as ListenOrder,
+    listenMethod: 'spotify' as ListenMethod,
+    listenTime: 'morning' as ListenTime,
+    createdAt: recent(),
+    updatedAt: recent(),
+    album: albumData,
+  };
+});
 
 export const dailyListenWithAlbums = createFactory<DailyListenWithAlbums>(
   () => ({

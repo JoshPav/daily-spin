@@ -3,6 +3,7 @@ import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
   Album,
+  Artist,
   BacklogArtist,
   DailyAlbumListen,
   ListenMetadata,
@@ -37,10 +38,15 @@ export const createHandlerEvent = (
 
 const handlerEvent = createFactory<HandlerEvent>(() => ({}) as HandlerEvent);
 
+export const artist = createFactory<Artist>(() => ({
+  name: music.artist(),
+  spotifyId: uuid(),
+}));
+
 export const album = createFactory<Album>(() => ({
   albumId: uuid(),
   albumName: music.songName(),
-  artistNames: music.artist(),
+  artists: [artist()],
   imageUrl: url(),
 }));
 

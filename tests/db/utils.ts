@@ -1,4 +1,8 @@
 import type { Prisma } from '@prisma/client';
+import {
+  type AlbumListenInput,
+  DailyListenRepository,
+} from '~~/server/repositories/dailyListen.repository';
 import { albumListenInput, userCreateInput } from '../factories/prisma.factory';
 import { getTestPrisma } from './setup';
 
@@ -18,25 +22,38 @@ export const createDailyListens = async ({
 }: {
   userId: string;
   date: Date;
-  albumListen?: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>;
-  albumListens?: Omit<Prisma.AlbumListenOldCreateInput, 'dailyListen'>[];
-}) =>
-  getTestPrisma().dailyListenOld.create({
-    data: {
-      userId,
-      date,
-      albums: {
-        create: albumListens
-          ? albumListens.map((al) => albumListenInput(al))
-          : albumListenInput(albumListen),
-      },
-    },
-  });
+  albumListen?: AlbumListenInput;
+  albumListens?: AlbumListenInput[];
+}) => {
+  const repository = new DailyListenRepository(getTestPrisma());
+  const listens = albumListens
+    ? albumListens.map((al) => albumListenInput(al))
+    : [albumListenInput(albumListen)];
+
+  return repository.saveListens(userId, listens, date);
+};
 
 export const getAllListensForUser = (userId: string) =>
-  getTestPrisma().dailyListenOld.findMany({
+  getTestPrisma().dailyListen.findMany({
     where: { userId },
-    include: { albums: true },
+    include: {
+      albums: {
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: {
+                  artist: true,
+                },
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
 export type CreateBacklogItemInput = {

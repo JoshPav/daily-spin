@@ -13,6 +13,7 @@ import {
 import { getTestPrisma } from '~~/tests/db/setup';
 import {
   createBacklogItem,
+  createDailyListens,
   createUser,
   getAllListensForUser,
   getBacklogItemsForUser,
@@ -68,11 +69,19 @@ describe('processListens Task Integration Tests', () => {
     { listenOrder = 'ordered', listenTime = 'noon' } = {},
   ) =>
     expect.objectContaining({
-      albumId: album.id,
+      album: expect.objectContaining({
+        spotifyId: album.id,
+        name: album.name,
+        imageUrl: album.images[1].url,
+        artists: expect.arrayContaining([
+          expect.objectContaining({
+            artist: expect.objectContaining({
+              name: album.artists[0].name,
+            }),
+          }),
+        ]),
+      }),
       listenOrder,
-      imageUrl: album.images[1].url,
-      albumName: album.name,
-      artistNames: album.artists[0].name,
       listenTime,
     });
 
@@ -602,23 +611,24 @@ describe('processListens Task Integration Tests', () => {
         beforeEach(async () => {
           existingAlbum = simplifiedAlbum();
 
-          await getTestPrisma().dailyListenOld.create({
-            data: {
-              userId,
-              date: startOfDay,
-              albums: {
-                create: [
+          await createDailyListens({
+            userId,
+            date: startOfDay,
+            albumListen: {
+              album: {
+                spotifyId: existingAlbum.id,
+                name: existingAlbum.name,
+                imageUrl: existingAlbum.images[1].url,
+                artists: [
                   {
-                    albumId: existingAlbum.id,
-                    albumName: existingAlbum.name,
-                    artistNames: existingAlbum.artists[0].name,
-                    imageUrl: existingAlbum.images[1].url,
-                    listenMethod: 'spotify',
-                    listenOrder: 'ordered',
-                    listenTime: 'morning',
+                    spotifyId: existingAlbum.artists[0].id,
+                    name: existingAlbum.artists[0].name,
                   },
                 ],
               },
+              listenMethod: 'spotify',
+              listenOrder: 'ordered',
+              listenTime: 'morning',
             },
           });
         });

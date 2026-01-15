@@ -38,10 +38,11 @@ export const useLogAlbum = ({
           album: {
             albumId: selectedAlbum.value.id,
             albumName: selectedAlbum.value.name,
-            artistNames: selectedAlbum.value.artists
-              .map((a) => a.name)
-              .join(', '),
             imageUrl: selectedAlbum.value.images[0]?.url || '',
+            artists: selectedAlbum.value.artists.map((a) => ({
+              spotifyId: a.id,
+              name: a.name,
+            })),
           },
           listenMetadata: {
             listenOrder: listenOrder.value,

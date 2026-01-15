@@ -116,7 +116,9 @@ describe('DELETE /api/backlog/[id] Integration Tests', () => {
     await createDailyListens({
       userId,
       date: new Date('2026-01-15'),
-      albumListen: albumListenInput({ albumId: sharedSpotifyId }),
+      albumListen: albumListenInput({
+        album: { spotifyId: sharedSpotifyId },
+      }),
     });
 
     // When
@@ -130,7 +132,7 @@ describe('DELETE /api/backlog/[id] Integration Tests', () => {
 
     const dailyListens = await getAllListensForUser(userId);
     expect(dailyListens).toHaveLength(1);
-    expect(dailyListens[0].albums[0].albumId).toBe(sharedSpotifyId);
+    expect(dailyListens[0].albums[0].album.spotifyId).toBe(sharedSpotifyId);
   });
 
   it('should not delete the related album and artists', async () => {

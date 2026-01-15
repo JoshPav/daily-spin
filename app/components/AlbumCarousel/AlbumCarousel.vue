@@ -2,8 +2,8 @@
   <UCarousel
     :items="albums"
     loop
-    :arrows="albums.length > 1"
-    dots
+    :arrows="hasMultiple"
+    :dots="hasMultiple"
     indicators
     :next="{ size: 'xl'}"
     :prev="{ size: 'xl'}"
@@ -24,7 +24,9 @@
 <script setup lang="ts">
 import type { DailyAlbumListen } from '#shared/schema';
 
-defineProps<{
+const { albums } = defineProps<{
   albums: DailyAlbumListen[];
 }>();
+
+const hasMultiple = computed(() => albums.length > 1);
 </script>
