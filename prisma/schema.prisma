@@ -7,41 +7,43 @@ datasource db {
 }
 
 model User {
-  id                        String        @id @default(cuid())
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
+  id                        String           @id @default(cuid())
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
   dailyListens              DailyListen[]
+  dailyListensOld           DailyListenOld[]
   backlogItems              BacklogItem[]
   name                      String
   email                     String
-  emailVerified             Boolean       @default(false)
+  emailVerified             Boolean          @default(false)
   image                     String?
   sessions                  Session[]
   accounts                  Account[]
-  trackListeningHistory     Boolean       @default(true)
-  createTodaysAlbumPlaylist Boolean       @default(true)
-  createSongOfDayPlaylist   Boolean       @default(true)
+  trackListeningHistory     Boolean          @default(true)
+  createTodaysAlbumPlaylist Boolean          @default(true)
+  createSongOfDayPlaylist   Boolean          @default(true)
 
   @@unique([email])
   @@map("user")
 }
 
-model DailyListen {
-  id        String        @id @default(cuid())
+model DailyListenOld {
+  id        String           @id @default(cuid())
   userId    String
-  date      DateTime      @db.Date
-  albums    AlbumListen[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  date      DateTime         @db.Date
+  albums    AlbumListenOld[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+  @@map("daily_listen_old")
 }
 
-model AlbumListen {
+model AlbumListenOld {
   id            String       @id @default(cuid())
   dailyListenId String
   albumId       String
@@ -54,11 +56,12 @@ model AlbumListen {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
+  dailyListen DailyListenOld @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
 
   @@unique([dailyListenId, albumId])
   @@index([dailyListenId])
   @@index([albumId])
+  @@map("album_listen_old")
 }
 
 enum ListenMethod {
@@ -78,6 +81,43 @@ enum ListenTime {
   noon
   evening
   night
+}
+
+// New normalized tables for DailyListen migration (#38)
+// These use snake_case table names and link to normalized Album table
+model DailyListen {
+  id        String        @id @default(cuid())
+  userId    String
+  date      DateTime      @db.Date
+  albums    AlbumListen[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("daily_listen")
+}
+
+model AlbumListen {
+  id            String       @id @default(cuid())
+  dailyListenId String
+  albumId       String
+  listenOrder   ListenOrder  @default(ordered)
+  listenMethod  ListenMethod @default(spotify)
+  listenTime    ListenTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
+  album       Album       @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyListenId, albumId])
+  @@index([dailyListenId])
+  @@index([albumId])
+  @@map("album_listen")
 }
 
 model Artist {
@@ -106,6 +146,7 @@ model Album {
 
   artists      AlbumArtist[]
   backlogItems BacklogItem[]
+  listens      AlbumListen[]
 
   @@index([spotifyId])
   @@map("album")

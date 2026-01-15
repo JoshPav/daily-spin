@@ -55,7 +55,9 @@ export async function clearTestDatabase() {
     // Order matters due to foreign key constraints
     await testPrisma.$transaction([
       testPrisma.albumListen.deleteMany(),
+      testPrisma.albumListenOld.deleteMany(),
       testPrisma.dailyListen.deleteMany(),
+      testPrisma.dailyListenOld.deleteMany(),
       testPrisma.backlogItem.deleteMany(),
       testPrisma.albumArtist.deleteMany(),
       testPrisma.album.deleteMany(),

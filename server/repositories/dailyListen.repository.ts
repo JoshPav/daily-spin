@@ -1,5 +1,5 @@
 import type {
-  AlbumListen as PrismaAlbumListen,
+  AlbumListenOld as PrismaAlbumListen,
   PrismaClient,
 } from '@prisma/client';
 import prisma from '../clients/prisma';
@@ -19,7 +19,7 @@ export class DailyListenRepository {
   constructor(private prismaClient: PrismaClient = prisma) {}
 
   async getListens(userId: string, startDate: Date, endDate: Date) {
-    return await this.prismaClient.dailyListen.findMany({
+    return await this.prismaClient.dailyListenOld.findMany({
       where: {
         userId,
         date: {
@@ -40,7 +40,7 @@ export class DailyListenRepository {
     const dateOfListens = date || new Date();
     dateOfListens.setUTCHours(0, 0, 0, 0);
 
-    return this.prismaClient.dailyListen.upsert({
+    return this.prismaClient.dailyListenOld.upsert({
       where: {
         userId_date: {
           userId,
