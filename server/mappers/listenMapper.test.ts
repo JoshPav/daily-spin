@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   albumListen,
+  albumModel,
+  artistModel,
   dailyListenWithAlbums,
 } from '~~/tests/factories/prisma.factory';
 import { mapDailyListens } from './listenMapper';
@@ -20,11 +22,26 @@ describe('listenMapper', () => {
     });
 
     it('should map a daily listen with a single album', () => {
-      const album = albumListen({
-        albumId: 'album-123',
-        albumName: 'Test Album',
-        artistNames: 'Test Artist',
+      const artist = artistModel({ name: 'Test Artist' });
+      const album = albumModel({
+        spotifyId: 'album-123',
+        name: 'Test Album',
         imageUrl: 'https://example.com/image.jpg',
+        artists: [
+          {
+            id: 'aa-1',
+            albumId: 'album-123',
+            artistId: artist.id,
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            artist,
+          },
+        ],
+      });
+
+      const albumListenData = albumListen({
+        album,
         listenOrder: 'ordered',
         listenMethod: 'spotify',
         listenTime: 'morning',
@@ -32,7 +49,7 @@ describe('listenMapper', () => {
 
       const dailyListen = dailyListenWithAlbums({
         date: new Date('2024-06-15'),
-        albums: [album],
+        albums: [albumListenData],
       });
 
       const result = mapDailyListens(dailyListen);
@@ -43,7 +60,12 @@ describe('listenMapper', () => {
         album: {
           albumId: 'album-123',
           albumName: 'Test Album',
-          artistNames: 'Test Artist',
+          artists: [
+            {
+              name: 'Test Artist',
+              spotifyId: artist.spotifyId,
+            },
+          ],
           imageUrl: 'https://example.com/image.jpg',
         },
         listenMetadata: {
@@ -55,23 +77,49 @@ describe('listenMapper', () => {
     });
 
     it('should map a daily listen with multiple albums', () => {
-      const album1 = albumListen({
-        albumId: 'album-1',
-        albumName: 'First Album',
-        artistNames: 'Artist One',
+      const artist1 = artistModel({ name: 'Artist One' });
+      const artist2 = artistModel({ name: 'Artist Two' });
+
+      const album1 = albumModel({
+        spotifyId: 'album-1',
+        name: 'First Album',
         imageUrl: 'https://example.com/image1.jpg',
+        artists: [
+          {
+            id: 'aa-1',
+            albumId: 'album-1',
+            artistId: artist1.id,
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            artist: artist1,
+          },
+        ],
       });
 
-      const album2 = albumListen({
-        albumId: 'album-2',
-        albumName: 'Second Album',
-        artistNames: 'Artist Two',
+      const album2 = albumModel({
+        spotifyId: 'album-2',
+        name: 'Second Album',
         imageUrl: 'https://example.com/image2.jpg',
+        artists: [
+          {
+            id: 'aa-2',
+            albumId: 'album-2',
+            artistId: artist2.id,
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            artist: artist2,
+          },
+        ],
       });
 
       const dailyListen = dailyListenWithAlbums({
         date: new Date('2024-06-15'),
-        albums: [album1, album2],
+        albums: [
+          albumListen({ album: album1 }),
+          albumListen({ album: album2 }),
+        ],
       });
 
       const result = mapDailyListens(dailyListen);
@@ -162,10 +210,14 @@ describe('listenMapper', () => {
     });
 
     it('should preserve album order in the result', () => {
+      const album1 = albumModel({ spotifyId: 'first', name: 'First' });
+      const album2 = albumModel({ spotifyId: 'second', name: 'Second' });
+      const album3 = albumModel({ spotifyId: 'third', name: 'Third' });
+
       const albums = [
-        albumListen({ albumId: 'first', albumName: 'First' }),
-        albumListen({ albumId: 'second', albumName: 'Second' }),
-        albumListen({ albumId: 'third', albumName: 'Third' }),
+        albumListen({ album: album1 }),
+        albumListen({ album: album2 }),
+        albumListen({ album: album3 }),
       ];
 
       const dailyListen = dailyListenWithAlbums({
@@ -212,7 +264,7 @@ describe('listenMapper', () => {
       expect(Object.keys(result.albums[0].album)).toEqual([
         'albumId',
         'albumName',
-        'artistNames',
+        'artists',
         'imageUrl',
       ]);
 

@@ -1,27 +1,20 @@
-import type { Prisma } from '@prisma/client';
 import type { DailyListens } from '#shared/schema';
+import type { DailyListenWithAlbums } from '../repositories/dailyListen.repository';
 
 export const mapDailyListens = (
-  dailyListens: Prisma.DailyListenOldGetPayload<{
-    include: { albums: true };
-  }>,
+  dailyListens: DailyListenWithAlbums,
 ): DailyListens => ({
   date: dailyListens.date.toISOString(),
   albums: dailyListens.albums.map(
-    ({
-      albumId,
-      albumName,
-      artistNames,
-      imageUrl,
-      listenOrder,
-      listenMethod,
-      listenTime,
-    }) => ({
+    ({ album, listenOrder, listenMethod, listenTime }) => ({
       album: {
-        albumId,
-        albumName,
-        artistNames,
-        imageUrl,
+        albumId: album.spotifyId,
+        albumName: album.name,
+        artists: album.artists.map(({ artist: { name, spotifyId } }) => ({
+          spotifyId,
+          name,
+        })),
+        imageUrl: album.imageUrl ?? '',
       },
       listenMetadata: {
         listenOrder,

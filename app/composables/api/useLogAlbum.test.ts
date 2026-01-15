@@ -5,7 +5,7 @@ import { useLogAlbum } from './useLogAlbum';
 const mockSearchResult = {
   id: 'test-album-id',
   name: 'Test Album',
-  artists: [{ name: 'Test Artist' }],
+  artists: [{ name: 'Test Artist', id: 'artistId' }],
   images: [{ url: 'https://example.com/image.jpg' }],
 } as SearchResult;
 
@@ -108,7 +108,12 @@ describe('useLogAlbum', () => {
           album: {
             albumId: 'test-album-id',
             albumName: 'Test Album',
-            artistNames: 'Test Artist',
+            artists: [
+              {
+                name: 'Test Artist',
+                spotifyId: 'artistId',
+              },
+            ],
             imageUrl: 'https://example.com/image.jpg',
           },
           listenMetadata: {
@@ -221,7 +226,11 @@ describe('useLogAlbum', () => {
         expect.objectContaining({
           body: expect.objectContaining({
             album: expect.objectContaining({
-              artistNames: 'Artist 1, Artist 2, Artist 3',
+              artists: [
+                expect.objectContaining({ name: 'Artist 1' }),
+                expect.objectContaining({ name: 'Artist 2' }),
+                expect.objectContaining({ name: 'Artist 3' }),
+              ],
             }),
           }),
         }),

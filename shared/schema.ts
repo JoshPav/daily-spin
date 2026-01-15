@@ -4,11 +4,17 @@ export type ListenMetadata = {
   listenTime: ListenTime | null;
 };
 
+export type Artist = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+};
+
 export type Album = {
   albumId: string;
   albumName: string;
-  artistNames: string;
   imageUrl: string;
+  artists: Artist[];
 };
 
 export type DailyAlbumListen = {
@@ -53,11 +59,7 @@ export type AddListen = {
 };
 
 // Backlog types
-export type BacklogArtist = {
-  spotifyId: string;
-  name: string;
-  imageUrl?: string;
-};
+export type BacklogArtist = Artist;
 
 export type BacklogAlbum = {
   id: string;

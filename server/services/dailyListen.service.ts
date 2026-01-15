@@ -1,7 +1,7 @@
 import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
 import { mapDailyListens } from '../mappers/listenMapper';
 import {
-  type AlbumListen,
+  type AlbumListenInput,
   DailyListenRepository,
 } from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
@@ -33,18 +33,26 @@ export class DailyListenService {
   }
 
   private mapAddAlbumBody({
-    album: { albumId, albumName, artistNames, imageUrl },
+    album: { albumId, albumName, imageUrl, artists },
     listenMetadata: {
       listenOrder = 'ordered',
       listenMethod = 'spotify',
       listenTime,
     },
-  }: AddAlbumListenBody): AlbumListen {
+  }: AddAlbumListenBody): AlbumListenInput {
     return {
-      albumId,
-      albumName,
-      artistNames,
-      imageUrl,
+      album: {
+        spotifyId: albumId,
+        name: albumName,
+        imageUrl,
+        artists: artists
+          ? artists.map((artist) => ({
+              spotifyId: artist.spotifyId,
+              name: artist.name,
+              imageUrl: artist.imageUrl,
+            }))
+          : [],
+      },
       listenOrder,
       listenMethod,
       listenTime,
