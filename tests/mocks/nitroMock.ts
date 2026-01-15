@@ -32,3 +32,7 @@ vi.stubGlobal(
     return error;
   },
 );
+
+vi.stubGlobal('setResponseStatus', (event: HandlerEvent, status: number) => {
+  (event as unknown as { _responseStatus: number })._responseStatus = status;
+});
