@@ -127,3 +127,13 @@ export const getBacklogItemsForUser = (userId: string) =>
       },
     },
   });
+
+export const getAlbumBySpotifyId = (spotifyId: string) =>
+  getTestPrisma().album.findUnique({
+    where: { spotifyId },
+  });
+
+export const getArtistBySpotifyId = (spotifyId: string) =>
+  getTestPrisma().artist.findUnique({
+    where: { spotifyId },
+  });

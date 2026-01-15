@@ -17,3 +17,22 @@ vi.stubGlobal('getQuery', (event: HandlerEvent) => {
   const path = event._path;
   return Object.fromEntries(new URLSearchParams(path?.split('?')[1]).entries());
 });
+
+vi.stubGlobal('getRouterParam', (event: HandlerEvent, param: string) => {
+  const params = (event as unknown as { _routerParams: Record<string, string> })
+    ._routerParams;
+  return params?.[param];
+});
+
+vi.stubGlobal(
+  'createError',
+  (options: { statusCode: number; message: string }) => {
+    const error = new Error(options.message);
+    Object.assign(error, options);
+    return error;
+  },
+);
+
+vi.stubGlobal('setResponseStatus', (event: HandlerEvent, status: number) => {
+  (event as unknown as { _responseStatus: number })._responseStatus = status;
+});
