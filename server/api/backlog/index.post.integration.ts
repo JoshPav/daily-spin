@@ -8,7 +8,7 @@ import {
   vi,
 } from 'vitest';
 import type { AddBacklogItemsResponse } from '~~/shared/schema';
-import { createUser, getAllBacklogItemsForUser } from '~~/tests/db/utils';
+import { createUser, getBacklogItemsForUser } from '~~/tests/db/utils';
 import {
   addBacklogItemBody,
   backlogArtist,
@@ -49,7 +49,7 @@ describe('POST /api/backlog Integration Tests', () => {
     expect(result.added).toHaveLength(1);
     expect(result.skipped).toHaveLength(0);
 
-    const savedItems = await getAllBacklogItemsForUser(userId);
+    const savedItems = await getBacklogItemsForUser(userId);
     expect(savedItems).toHaveLength(1);
 
     expect(result.added[0]).toMatchObject({
@@ -71,7 +71,7 @@ describe('POST /api/backlog Integration Tests', () => {
     expect(result.added).toHaveLength(2);
     expect(result.skipped).toHaveLength(0);
 
-    const savedItems = await getAllBacklogItemsForUser(userId);
+    const savedItems = await getBacklogItemsForUser(userId);
     expect(savedItems).toHaveLength(2);
   });
 
@@ -116,7 +116,7 @@ describe('POST /api/backlog Integration Tests', () => {
     expect(result.added).toHaveLength(0);
     expect(result.skipped).toContain(item.spotifyId);
 
-    const savedItems = await getAllBacklogItemsForUser(userId);
+    const savedItems = await getBacklogItemsForUser(userId);
     expect(savedItems).toHaveLength(1);
   });
 
@@ -130,8 +130,8 @@ describe('POST /api/backlog Integration Tests', () => {
     await handler(createHandlerEvent(userId, { body }));
 
     // Then
-    const userItems = await getAllBacklogItemsForUser(userId);
-    const otherUserItems = await getAllBacklogItemsForUser(otherUserId);
+    const userItems = await getBacklogItemsForUser(userId);
+    const otherUserItems = await getBacklogItemsForUser(otherUserId);
 
     expect(userItems).toHaveLength(1);
     expect(otherUserItems).toHaveLength(0);
@@ -148,7 +148,7 @@ describe('POST /api/backlog Integration Tests', () => {
     expect(result.added).toHaveLength(0);
     expect(result.skipped).toHaveLength(0);
 
-    const savedItems = await getAllBacklogItemsForUser(userId);
+    const savedItems = await getBacklogItemsForUser(userId);
     expect(savedItems).toHaveLength(0);
   });
 
