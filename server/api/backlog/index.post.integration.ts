@@ -151,12 +151,13 @@ describe('POST /api/backlog Integration Tests', () => {
     expect(savedItems.map((item) => item.type)).toContain('artist');
   });
 
-  it('should handle optional fields being undefined', async () => {
+  it('should handle optional fields being omitted', async () => {
     // Given
-    const body = addBacklogItemBody({
-      imageUrl: undefined,
-      artistNames: undefined,
-    });
+    const body = {
+      type: 'album' as const,
+      spotifyId: 'test-spotify-id',
+      name: 'Test Album',
+    };
 
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
