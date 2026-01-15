@@ -1,12 +1,4 @@
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GetBacklogResponse } from '~~/shared/schema';
 import {
   type CreateBacklogItemInput,
@@ -19,10 +11,6 @@ import type { EventHandler } from '~~/tests/mocks/nitroMock';
 describe('GET /api/backlog Integration Tests', () => {
   let userId: string;
   let handler: EventHandler<GetBacklogResponse>;
-
-  beforeAll(async () => {
-    vi.setSystemTime(new Date('2026-01-15T12:00:00.000Z'));
-  });
 
   beforeEach(async () => {
     const user = await createUser();

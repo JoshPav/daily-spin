@@ -150,7 +150,9 @@ describe('DELETE /api/backlog/[id] Integration Tests', () => {
     expect(album?.name).toBe(testAlbumItem.name);
 
     // Artist should still exist
-    const artist = await getArtistBySpotifyId(testAlbumItem.artists[0].spotifyId);
+    const artist = await getArtistBySpotifyId(
+      testAlbumItem.artists[0].spotifyId,
+    );
     expect(artist).not.toBeNull();
     expect(artist?.name).toBe(testAlbumItem.artists[0].name);
   });
