@@ -1,9 +1,7 @@
 import type { ListenOrder, ListenTime } from '@prisma/client';
 import type { PlayHistory } from '@spotify/web-api-ts-sdk';
 import { getTrackListenTime } from '#shared/utils/listenTime.utils';
-import { getSpotifyClientForUser } from '../clients/spotify';
 import {
-  type AlbumListenInput,
   type CreateAlbum,
   DailyListenRepository,
 } from '../repositories/dailyListen.repository';
@@ -17,6 +15,7 @@ import {
   type PlayHistoryWithIndex,
 } from '../utils/tracks.utils';
 import { BacklogService } from './backlog.service';
+import { SpotifyService } from './spotify.service';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
 
 type UnfinishedAlbum = {
@@ -41,10 +40,11 @@ export class RecentlyPlayedService {
   constructor(
     private dailyListenRepo = new DailyListenRepository(),
     private backlogService = new BacklogService(),
+    private spotifyService = new SpotifyService(),
   ) {}
 
   async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
-    const todaysListens = await this.getTodaysFullListens(auth);
+    const todaysListens = await this.getTodaysFullListens(userId, auth);
 
     if (!todaysListens.length) {
       console.debug('No finished albums found today.');
@@ -69,10 +69,8 @@ export class RecentlyPlayedService {
     return result;
   }
 
-  private async getTodaysFullListens(
-    auth: AuthDetails,
-  ): Promise<AlbumListenInput[]> {
-    const todaysTracks = await this.getTodaysPlays(auth);
+  private async getTodaysFullListens(userId: string, auth: AuthDetails) {
+    const todaysTracks = await this.getTodaysPlays(userId, auth);
 
     if (!todaysTracks.length) {
       return [];
@@ -102,11 +100,17 @@ export class RecentlyPlayedService {
       }));
   }
 
-  private async getTodaysPlays(auth: AuthDetails): Promise<PlayHistory[]> {
+  private async getTodaysPlays(
+    userId: string,
+    auth: AuthDetails,
+  ): Promise<PlayHistory[]> {
     const today = new Date();
 
     try {
-      const spotifyApi = getSpotifyClientForUser(auth);
+      const spotifyApi = await this.spotifyService.getClientForUser(
+        userId,
+        auth,
+      );
 
       const recentlyPlayed = await spotifyApi.player.getRecentlyPlayedTracks(
         50,
@@ -128,6 +132,7 @@ export class RecentlyPlayedService {
         );
     } catch (err) {
       console.error('An error occured fetching recently played songs', { err });
+
       return [];
     }
   }
