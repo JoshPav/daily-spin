@@ -3,6 +3,7 @@ import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
   Album,
+  BacklogArtist,
   DailyAlbumListen,
   ListenMetadata,
 } from '~~/shared/schema';
@@ -60,10 +61,15 @@ export const addAlbumListenBody = createFactory<AddAlbumListenBody>(() => ({
   date: date.recent().toISOString(),
 }));
 
+export const backlogArtist = createFactory<BacklogArtist>(() => ({
+  spotifyId: uuid(),
+  name: music.artist(),
+  imageUrl: url(),
+}));
+
 export const addBacklogItemBody = createFactory<AddBacklogItemBody>(() => ({
-  type: 'album',
   spotifyId: uuid(),
   name: music.songName(),
   imageUrl: url(),
-  artistNames: music.artist(),
+  artists: [backlogArtist()],
 }));

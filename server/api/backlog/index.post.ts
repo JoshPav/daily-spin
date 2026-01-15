@@ -1,26 +1,16 @@
 import type {
-  AddBacklogItemBody,
-  AddBacklogItemResponse,
+  AddBacklogItemsBody,
+  AddBacklogItemsResponse,
 } from '~~/shared/schema';
 import { BacklogService } from '../../services/backlog.service';
 
 export default defineEventHandler(
-  async (event): Promise<AddBacklogItemResponse> => {
+  async (event): Promise<AddBacklogItemsResponse> => {
     const service = new BacklogService();
     const userId = event.context.userId;
 
-    const body = await readBody<AddBacklogItemBody>(event);
+    const body = await readBody<AddBacklogItemsBody>(event);
 
-    const item = await service.addBacklogItem(userId, body);
-
-    return {
-      id: item.id,
-      type: item.type,
-      spotifyId: item.spotifyId,
-      name: item.name,
-      imageUrl: item.imageUrl,
-      artistNames: item.artistNames,
-      addedAt: item.addedAt.toISOString(),
-    };
+    return await service.addBacklogItems(userId, body);
   },
 );
