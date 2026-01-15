@@ -50,7 +50,7 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
 </script>
 
 <template>
-  <UHeader title="DailySpin">
+  <UHeader title="DailySpin" :to="loggedIn ? Route.DASHBOARD : Route.LANDING_PAGE">
 
     <template #toggle>
       <USkeleton v-if="loading" class="h-8 w-8 rounded-full mr-1.5"/>

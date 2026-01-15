@@ -76,10 +76,18 @@ import featureSongOfTheDay from '~/assets/img/feature-song-of-the-day.png';
 import featureTodaysAlbum from '~/assets/img/feature-todays-album.png';
 import featureTodaysListens from '~/assets/img/feature-todays-listens.png';
 import showcaseImage from '~/assets/img/showcase.png';
+import { Route } from './routes';
 
 // Page meta
 definePageMeta({
   layout: false,
+  middleware: (_to, _from) => {
+    const { loggedIn } = useAuth();
+
+    if (loggedIn.value) {
+      useRouter().push(Route.DASHBOARD);
+    }
+  },
 });
 
 // Parallax scroll effect
