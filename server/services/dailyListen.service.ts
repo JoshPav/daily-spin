@@ -1,7 +1,7 @@
 import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
 import { mapDailyListens } from '../mappers/listenMapper';
 import {
-  type AlbumListen,
+  type AlbumListenInput,
   DailyListenRepository,
 } from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
@@ -33,18 +33,24 @@ export class DailyListenService {
   }
 
   private mapAddAlbumBody({
-    album: { albumId, albumName, artistNames, imageUrl },
+    album: { albumId, albumName, imageUrl },
     listenMetadata: {
       listenOrder = 'ordered',
       listenMethod = 'spotify',
       listenTime,
     },
-  }: AddAlbumListenBody): AlbumListen {
+  }: AddAlbumListenBody): AlbumListenInput {
+    // Note: Manual logging only has artistNames as a comma-separated string
+    // without Spotify IDs, so we create the album without artist relations.
+    // The artist names are preserved in the Album name/display but not linked
+    // to Artist records. Future API update could accept artist objects with IDs.
     return {
-      albumId,
-      albumName,
-      artistNames,
-      imageUrl,
+      album: {
+        spotifyId: albumId,
+        name: albumName,
+        imageUrl,
+        artists: [], // No artist relations for manual logging
+      },
       listenOrder,
       listenMethod,
       listenTime,

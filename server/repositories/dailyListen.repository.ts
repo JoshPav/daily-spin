@@ -1,25 +1,41 @@
 import type {
-  AlbumListenOld as PrismaAlbumListen,
+  ListenMethod,
+  ListenOrder,
+  ListenTime,
   PrismaClient,
 } from '@prisma/client';
 import prisma from '../clients/prisma';
 
-export type AlbumListen = Pick<
-  PrismaAlbumListen,
-  | 'listenOrder'
-  | 'albumId'
-  | 'albumName'
-  | 'imageUrl'
-  | 'artistNames'
-  | 'listenMethod'
-  | 'listenTime'
->;
+export type CreateArtist = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+};
+
+export type CreateAlbum = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+  artists: CreateArtist[];
+};
+
+export type AlbumListenInput = {
+  album: CreateAlbum;
+  listenOrder?: ListenOrder;
+  listenMethod?: ListenMethod;
+  listenTime?: ListenTime | null;
+};
+
+// Type for the result of getListens with all relations included
+export type DailyListenWithAlbums = Awaited<
+  ReturnType<DailyListenRepository['getListens']>
+>[number];
 
 export class DailyListenRepository {
   constructor(private prismaClient: PrismaClient = prisma) {}
 
   async getListens(userId: string, startDate: Date, endDate: Date) {
-    return await this.prismaClient.dailyListenOld.findMany({
+    return await this.prismaClient.dailyListen.findMany({
       where: {
         userId,
         date: {
@@ -28,7 +44,22 @@ export class DailyListenRepository {
         },
       },
       include: {
-        albums: true,
+        albums: {
+          include: {
+            album: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true,
+                  },
+                  orderBy: {
+                    order: 'asc',
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         date: 'asc',
@@ -36,11 +67,28 @@ export class DailyListenRepository {
     });
   }
 
-  async saveListens(userId: string, todaysListens: AlbumListen[], date?: Date) {
+  async saveListens(
+    userId: string,
+    albumListens: AlbumListenInput[],
+    date?: Date,
+  ) {
     const dateOfListens = date || new Date();
     dateOfListens.setUTCHours(0, 0, 0, 0);
 
-    return this.prismaClient.dailyListenOld.upsert({
+    // First, find or create all albums
+    const albumRecords = await Promise.all(
+      albumListens.map((input) => this.findOrCreateAlbum(input.album)),
+    );
+
+    // Build the album listen data with album IDs
+    const albumListenData = albumListens.map((input, index) => ({
+      albumId: albumRecords[index].id,
+      listenOrder: input.listenOrder ?? 'ordered',
+      listenMethod: input.listenMethod ?? 'spotify',
+      listenTime: input.listenTime,
+    }));
+
+    return this.prismaClient.dailyListen.upsert({
       where: {
         userId_date: {
           userId,
@@ -51,55 +99,94 @@ export class DailyListenRepository {
         userId,
         date: dateOfListens,
         albums: {
-          create: todaysListens.map(
-            ({
-              albumId,
-              albumName,
-              artistNames,
-              imageUrl,
-              listenOrder,
-              listenMethod,
-              listenTime,
-            }) => ({
-              albumId,
-              albumName,
-              artistNames,
-              imageUrl,
-              listenOrder,
-              listenMethod,
-              listenTime,
-            }),
-          ),
+          create: albumListenData,
         },
       },
       update: {
         albums: {
           createMany: {
-            data: todaysListens.map(
-              ({
-                albumId,
-                albumName,
-                artistNames,
-                imageUrl,
-                listenOrder,
-                listenMethod,
-                listenTime,
-              }) => ({
-                albumId,
-                albumName,
-                artistNames,
-                imageUrl,
-                listenOrder,
-                listenMethod,
-                listenTime,
-              }),
-            ),
+            data: albumListenData,
             skipDuplicates: true,
           },
         },
       },
       include: {
-        albums: true,
+        albums: {
+          include: {
+            album: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true,
+                  },
+                  orderBy: {
+                    order: 'asc',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  private async findOrCreateArtist(artist: CreateArtist) {
+    return await this.prismaClient.artist.upsert({
+      where: { spotifyId: artist.spotifyId },
+      update: {
+        name: artist.name,
+        imageUrl: artist.imageUrl,
+      },
+      create: {
+        spotifyId: artist.spotifyId,
+        name: artist.name,
+        imageUrl: artist.imageUrl,
+      },
+    });
+  }
+
+  private async findOrCreateAlbum(album: CreateAlbum) {
+    // Check if album already exists
+    const existing = await this.prismaClient.album.findUnique({
+      where: { spotifyId: album.spotifyId },
+      include: {
+        artists: {
+          include: {
+            artist: true,
+          },
+        },
+      },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    // Create or find all artists first
+    const artists = await Promise.all(
+      album.artists.map((artist) => this.findOrCreateArtist(artist)),
+    );
+
+    // Create album with artist relations
+    return await this.prismaClient.album.create({
+      data: {
+        spotifyId: album.spotifyId,
+        name: album.name,
+        imageUrl: album.imageUrl,
+        artists: {
+          create: artists.map((artist, index) => ({
+            artistId: artist.id,
+            order: index,
+          })),
+        },
+      },
+      include: {
+        artists: {
+          include: {
+            artist: true,
+          },
+        },
       },
     });
   }
