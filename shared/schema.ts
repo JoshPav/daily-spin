@@ -53,28 +53,24 @@ export type AddListen = {
 };
 
 // Backlog types
-export type BacklogType = 'album' | 'artist';
+export type BacklogArtist = {
+  spotifyId: string;
+  name: string;
+  imageUrl?: string;
+};
 
 export type BacklogAlbum = {
   id: string;
   spotifyId: string;
   name: string;
   imageUrl: string | null;
-  artistNames: string | null;
-  addedAt: string;
+  artists: BacklogArtist[];
+  createdAt: string;
 };
 
-export type BacklogArtist = {
-  id: string;
-  spotifyId: string;
-  name: string;
-  imageUrl: string | null;
-  addedAt: string;
-};
-
+// API endpoint types
 export type GetBacklogResponse = {
   albums: BacklogAlbum[];
-  artists: BacklogArtist[];
 };
 
 export type GetBacklog = {
@@ -85,28 +81,26 @@ export type GetBacklog = {
 };
 
 export type AddBacklogItemBody = {
-  type: BacklogType;
   spotifyId: string;
   name: string;
   imageUrl?: string;
-  artistNames?: string;
+  releaseDate?: string;
+  totalTracks?: number;
+  artists: BacklogArtist[];
 };
 
-export type AddBacklogItemResponse = {
-  id: string;
-  type: BacklogType;
-  spotifyId: string;
-  name: string;
-  imageUrl: string | null;
-  artistNames: string | null;
-  addedAt: string;
+export type AddBacklogItemsBody = AddBacklogItemBody[];
+
+export type AddBacklogItemsResponse = {
+  added: BacklogAlbum[];
+  skipped: string[]; // Album IDs that were already in backlog
 };
 
-export type AddBacklogItem = {
+export type AddBacklogItems = {
   query: never;
   params: never;
-  body: AddBacklogItemBody;
-  response: AddBacklogItemResponse;
+  body: AddBacklogItemsBody;
+  response: AddBacklogItemsResponse;
 };
 
 export type DeleteBacklogItem = {
@@ -114,4 +108,13 @@ export type DeleteBacklogItem = {
   params: { id: string };
   body: never;
   response: never;
+};
+
+// Type for background task suggestions
+export type BacklogSuggestion = {
+  albumId: string;
+  albumName: string;
+  artistNames: string;
+  imageUrl: string;
+  source: 'backlog';
 };

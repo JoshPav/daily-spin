@@ -7,20 +7,20 @@ datasource db {
 }
 
 model User {
-  id                         String        @id @default(cuid())
-  createdAt                  DateTime      @default(now())
-  updatedAt                  DateTime      @updatedAt
-  dailyListens               DailyListen[]
-  backlogItems               BacklogItem[]
-  name                       String
-  email                      String
-  emailVerified              Boolean       @default(false)
-  image                      String?
-  sessions                   Session[]
-  accounts                   Account[]
-  trackListeningHistory      Boolean       @default(true)
-  createTodaysAlbumPlaylist  Boolean       @default(true)
-  createSongOfDayPlaylist    Boolean       @default(true)
+  id                        String        @id @default(cuid())
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  dailyListens              DailyListen[]
+  backlogItems              BacklogItem[]
+  name                      String
+  email                     String
+  emailVerified             Boolean       @default(false)
+  image                     String?
+  sessions                  Session[]
+  accounts                  Account[]
+  trackListeningHistory     Boolean       @default(true)
+  createTodaysAlbumPlaylist Boolean       @default(true)
+  createSongOfDayPlaylist   Boolean       @default(true)
 
   @@unique([email])
   @@map("user")
@@ -80,29 +80,68 @@ enum ListenTime {
   night
 }
 
-model BacklogItem {
-  id          String      @id @default(cuid())
-  userId      String
-  type        BacklogType
-  spotifyId   String
-  name        String
-  imageUrl    String?
-  artistNames String?
-  addedAt     DateTime    @default(now())
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+model Artist {
+  id        String   @id @default(cuid())
+  spotifyId String   @unique
+  name      String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albums AlbumArtist[]
 
-  @@unique([userId, spotifyId, type])
-  @@index([userId])
-  @@index([type])
-  @@map("backlog_item")
+  @@index([spotifyId])
+  @@map("artist")
 }
 
-enum BacklogType {
-  album
-  artist
+model Album {
+  id          String   @id @default(cuid())
+  spotifyId   String   @unique
+  name        String
+  imageUrl    String?
+  releaseDate String?
+  totalTracks Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  artists      AlbumArtist[]
+  backlogItems BacklogItem[]
+
+  @@index([spotifyId])
+  @@map("album")
+}
+
+model AlbumArtist {
+  id        String   @id @default(cuid())
+  albumId   String
+  artistId  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  album  Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, artistId])
+  @@index([albumId])
+  @@index([artistId])
+  @@map("album_artist")
+}
+
+model BacklogItem {
+  id        String   @id @default(cuid())
+  userId    String
+  albumId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
+  @@index([albumId])
+  @@map("backlog_item")
 }
 
 model Session {
