@@ -247,3 +247,30 @@ export const getFutureListensForUser = (userId: string) =>
       },
     },
   });
+
+export const createUserPlaylist = async ({
+  userId,
+  playlistType,
+  spotifyPlaylistId,
+}: {
+  userId: string;
+  playlistType: 'album_of_the_day' | 'song_of_the_day';
+  spotifyPlaylistId: string;
+}) =>
+  getTestPrisma().userPlaylist.create({
+    data: {
+      userId,
+      playlistType,
+      spotifyPlaylistId,
+    },
+  });
+
+export const getUserPlaylistByType = (
+  userId: string,
+  playlistType: 'album_of_the_day' | 'song_of_the_day',
+) =>
+  getTestPrisma().userPlaylist.findUnique({
+    where: {
+      userId_playlistType: { userId, playlistType },
+    },
+  });
