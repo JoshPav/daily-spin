@@ -82,7 +82,7 @@ html {
   --ui-border: oklch(0.35 0 0);
 
   /* Header height */
-  --ui-header-height: --spacing(16);
+  --ui-header-height: 3.5rem;
 }
 
 .dark {
