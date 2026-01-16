@@ -1,5 +1,8 @@
 import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
 import { FutureListenRepository } from '../repositories/futureListen.repository';
+import { createTaggedLogger } from '../utils/logger';
+
+const logger = createTaggedLogger('Service:FutureListen');
 
 export class FutureListenService {
   constructor(private futureListenRepo = new FutureListenRepository()) {}
@@ -31,7 +34,15 @@ export class FutureListenService {
   }
 
   async getFutureListens(userId: string): Promise<FutureListenItem[]> {
+    logger.debug('Fetching future listens', { userId });
+
     const items = await this.futureListenRepo.getFutureListens(userId);
+
+    logger.debug('Fetched future listens', {
+      userId,
+      count: items.length,
+    });
+
     return items.map((item) => this.mapToFutureListenItem(item));
   }
 
@@ -39,6 +50,12 @@ export class FutureListenService {
     userId: string,
     item: AddFutureListenBody,
   ): Promise<FutureListenItem> {
+    logger.info('Adding future listen', {
+      userId,
+      albumSpotifyId: item.spotifyId,
+      date: item.date,
+    });
+
     // Find or create the album with its artists
     const album = await this.futureListenRepo.findOrCreateAlbum({
       spotifyId: item.spotifyId,
@@ -60,14 +77,49 @@ export class FutureListenService {
       new Date(item.date),
     );
 
+    logger.info('Successfully added future listen', {
+      userId,
+      futureListenId: futureListen.id,
+    });
+
     return this.mapToFutureListenItem(futureListen);
   }
 
   async removeFutureListen(userId: string, itemId: string) {
-    return await this.futureListenRepo.deleteFutureListen(itemId, userId);
+    logger.info('Removing future listen', {
+      userId,
+      futureListenId: itemId,
+    });
+
+    const result = await this.futureListenRepo.deleteFutureListen(
+      itemId,
+      userId,
+    );
+
+    logger.info('Successfully removed future listen', {
+      userId,
+      futureListenId: itemId,
+    });
+
+    return result;
   }
 
   async removeFutureListenByDate(userId: string, date: Date) {
-    return await this.futureListenRepo.deleteFutureListenByDate(userId, date);
+    logger.info('Removing future listen by date', {
+      userId,
+      date: date.toISOString(),
+    });
+
+    const result = await this.futureListenRepo.deleteFutureListenByDate(
+      userId,
+      date,
+    );
+
+    logger.info('Successfully removed future listen by date', {
+      userId,
+      date: date.toISOString(),
+    });
+
+    return result;
   }
 }
