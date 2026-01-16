@@ -7,8 +7,11 @@ import {
 } from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
+import { createTaggedLogger } from '../utils/logger';
 import { BacklogService } from './backlog.service';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
+
+const logger = createTaggedLogger('Service:DailyListen');
 
 export class DailyListenService {
   constructor(
@@ -19,6 +22,12 @@ export class DailyListenService {
 
   async addAlbumListen(userId: string, body: AddAlbumListenBody) {
     const dateOfListens = new Date(body.date);
+
+    logger.info('Adding album listen', {
+      userId,
+      albumId: body.album.albumId,
+      date: body.date,
+    });
 
     await this.dailyListenRepo.saveListens(
       userId,
@@ -31,6 +40,11 @@ export class DailyListenService {
       userId,
       body.album.albumId,
     );
+
+    logger.info('Successfully added album listen', {
+      userId,
+      albumId: body.album.albumId,
+    });
   }
 
   private mapAddAlbumBody({
@@ -61,6 +75,12 @@ export class DailyListenService {
   }
 
   async getListensInRange(userId: string, range: { start: Date; end: Date }) {
+    logger.debug('Fetching listens in date range', {
+      userId,
+      startDate: range.start.toISOString(),
+      endDate: range.end.toISOString(),
+    });
+
     const listens = await this.dailyListenRepo.getListens(
       userId,
       range.start,
@@ -75,7 +95,9 @@ export class DailyListenService {
       !listens.find((listen) => isToday(listen.date))
     ) {
       // If today is in desired range and we don't have it yet, lets try calc that.
-      console.info("Missing today's data, attempting to calculate it...");
+      logger.info("Missing today's data, attempting to calculate it", {
+        userId,
+      });
       const service = new RecentlyPlayedService();
 
       const user = await this.userRepo.getUser(userId);
@@ -87,15 +109,24 @@ export class DailyListenService {
         });
 
         if (todaysListens) {
-          console.info('Found data for today, appending to results...');
+          logger.info('Found data for today, appending to results', {
+            userId,
+          });
           listens.push(todaysListens);
         } else {
-          console.info('No data found for data');
+          logger.info('No data found for today', {
+            userId,
+          });
         }
       }
     }
 
     const mappedListens = listens.map(mapDailyListens);
+
+    logger.debug('Fetched listens successfully', {
+      userId,
+      listenCount: mappedListens.length,
+    });
 
     // Fill in missing days with empty albums array
     return this.fillMissingDays(mappedListens, range.start, range.end);

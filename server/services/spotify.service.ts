@@ -1,6 +1,9 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { UserRepository } from '../repositories/user.repository';
+import { createTaggedLogger } from '../utils/logger';
 import type { AuthDetails } from './user.service';
+
+const logger = createTaggedLogger('Service:Spotify');
 
 type TokenRefreshResponse = {
   access_token: string;
@@ -32,7 +35,10 @@ export class SpotifyService {
       : now;
 
     if (now >= expiryWithBuffer) {
-      console.log('Access token expired, refreshing...');
+      logger.info('Access token expired, refreshing', {
+        userId,
+        expiresAt: accessTokenExpiresAt?.toISOString(),
+      });
       const newAuth = await this.refreshAccessToken(userId, refreshToken);
       return this.createSpotifyClient(newAuth);
     }
@@ -84,7 +90,10 @@ export class SpotifyService {
         scope: data.scope,
       });
 
-      console.log('Access token refreshed successfully');
+      logger.info('Access token refreshed successfully', {
+        userId,
+        expiresAt: expiresAt.toISOString(),
+      });
 
       return {
         accessToken: data.access_token,
@@ -93,7 +102,11 @@ export class SpotifyService {
         scope: data.scope,
       };
     } catch (error) {
-      console.error('Error refreshing access token:', error);
+      logger.error('Failed to refresh access token', {
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new Error(
         `Failed to refresh Spotify access token: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
