@@ -1,4 +1,5 @@
 import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
+import { DatabaseError, NotFoundError } from '../utils/errors';
 import { createTaggedLogger } from '../utils/logger';
 
 const logger = createTaggedLogger('Repository:Backlog');
@@ -408,13 +409,31 @@ export class BacklogRepository {
 
       return result;
     } catch (error) {
+      // Check for Prisma "record not found" error
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundError('Backlog item', {
+          userId,
+          backlogItemId: id,
+        });
+      }
+
       logger.error('Failed to delete backlog item', {
         userId,
         backlogItemId: id,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw error;
+
+      throw new DatabaseError('delete backlog item', {
+        userId,
+        backlogItemId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 

@@ -1,5 +1,6 @@
 import type { AddAlbumListenBody } from '~~/shared/schema';
 import { DailyListenService } from '../services/dailyListen.service';
+import { handleError } from '../utils/errorHandler';
 import { createTaggedLogger } from '../utils/logger';
 import { getLogContext } from '../utils/requestContext';
 
@@ -28,12 +29,9 @@ export default defineEventHandler(async (event) => {
       albumId: body.album.albumId,
     });
   } catch (error) {
-    logger.error('Failed to log album listen', {
+    throw handleError(error, {
       ...logContext,
       albumId: body.album.albumId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    throw error;
   }
 });
