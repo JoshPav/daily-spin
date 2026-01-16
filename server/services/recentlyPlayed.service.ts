@@ -7,6 +7,7 @@ import {
 } from '../repositories/dailyListen.repository';
 import { getAlbumArtwork } from '../utils/albums.utils';
 import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
+import { createTaggedLogger } from '../utils/logger';
 import {
   areTracksInOrder,
   areTracksPlayedContinuously,
@@ -17,6 +18,8 @@ import {
 import { BacklogService } from './backlog.service';
 import { SpotifyService } from './spotify.service';
 import type { AuthDetails, UserWithAuthTokens } from './user.service';
+
+const logger = createTaggedLogger('Service:RecentlyPlayed');
 
 type UnfinishedAlbum = {
   albumId: string;
@@ -44,12 +47,19 @@ export class RecentlyPlayedService {
   ) {}
 
   async processTodaysListens({ id: userId, auth }: UserWithAuthTokens) {
+    logger.info("Processing today's listens", { userId });
+
     const todaysListens = await this.getTodaysFullListens(userId, auth);
 
     if (!todaysListens.length) {
-      console.debug('No finished albums found today.');
+      logger.debug('No finished albums found today', { userId });
       return;
     }
+
+    logger.info('Found finished albums', {
+      userId,
+      albumCount: todaysListens.length,
+    });
 
     const result = await this.dailyListenRepo.saveListens(
       userId,
@@ -65,6 +75,11 @@ export class RecentlyPlayedService {
         ),
       ),
     );
+
+    logger.info("Successfully processed today's listens", {
+      userId,
+      albumCount: todaysListens.length,
+    });
 
     return result;
   }
@@ -105,6 +120,12 @@ export class RecentlyPlayedService {
     auth: AuthDetails,
   ): Promise<PlayHistory[]> {
     const today = new Date();
+    const afterTimestamp = getStartOfDayTimestamp(today);
+
+    logger.debug("Fetching today's plays from Spotify", {
+      userId,
+      afterTimestamp,
+    });
 
     try {
       const spotifyApi = await this.spotifyService.getClientForUser(
@@ -116,11 +137,11 @@ export class RecentlyPlayedService {
         50,
         {
           type: 'after',
-          timestamp: getStartOfDayTimestamp(today),
+          timestamp: afterTimestamp,
         },
       );
 
-      return recentlyPlayed.items
+      const filteredTracks = recentlyPlayed.items
         .filter(
           (item) =>
             isPlayedToday(item.played_at, today) &&
@@ -130,8 +151,20 @@ export class RecentlyPlayedService {
           (a, b) =>
             new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
         );
+
+      logger.debug("Fetched and filtered today's plays", {
+        userId,
+        totalTracks: recentlyPlayed.items.length,
+        filteredTracks: filteredTracks.length,
+      });
+
+      return filteredTracks;
     } catch (err) {
-      console.error('An error occured fetching recently played songs', { err });
+      logger.error('Failed to fetch recently played songs from Spotify', {
+        userId,
+        error: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
 
       return [];
     }
