@@ -1,4 +1,4 @@
-import { nextTick, onMounted, type Ref, ref } from 'vue';
+import { nextTick, onMounted, type Ref, ref, watch } from 'vue';
 
 export interface UseScrollToTodayOptions {
   isReady: Ref<boolean>;
