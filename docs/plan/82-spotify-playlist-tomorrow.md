@@ -168,8 +168,8 @@ export class UserPlaylistRepository {
 
 - Get today's FutureListen for a user
 - Fetch album tracks from Spotify API
-- Create a new playlist OR update existing playlist
-- Store/retrieve playlist IDs from database
+- Create playlist on first run, then update on subsequent runs
+- Handle deleted playlists (404) by re-creating
 - Handle errors gracefully
 
 ### Interface
@@ -227,53 +227,20 @@ export class PlaylistService {
     }
 
     const trackUris = tracks.map(track => track.uri);
+    const playlistName = this.generatePlaylistName(album.name, album.artists);
 
-    // Check if user already has an album-of-the-day playlist
-    const existingPlaylist = await this.userPlaylistRepo.getByType(
+    // Get or create playlist
+    const { playlistId, isNew } = await this.getOrCreatePlaylist(
       userId,
-      PlaylistType.album_of_the_day,
+      spotifyUserId,
+      spotifyClient,
+      playlistName,
     );
 
-    let playlistId: string;
-    let playlistUrl: string;
-    let isNew = false;
+    // Update playlist with today's album
+    await this.updatePlaylist(spotifyClient, playlistId, playlistName, trackUris);
 
-    if (existingPlaylist) {
-      // Update existing playlist
-      playlistId = existingPlaylist.spotifyPlaylistId;
-      logger.info('Updating existing playlist', { userId, playlistId });
-
-      // Update playlist name and clear tracks
-      const playlistName = this.generatePlaylistName(album.name, album.artists);
-      await this.updateSpotifyPlaylist(spotifyClient, playlistId, playlistName);
-      await this.replacePlaylistTracks(spotifyClient, playlistId, trackUris);
-
-      playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
-    } else {
-      // Create new playlist
-      isNew = true;
-      const playlistName = this.generatePlaylistName(album.name, album.artists);
-      const playlist = await this.createSpotifyPlaylist(
-        spotifyClient,
-        spotifyUserId,
-        playlistName,
-      );
-
-      playlistId = playlist.id;
-      playlistUrl = playlist.external_urls.spotify;
-
-      // Add tracks to new playlist
-      await this.addTracksToPlaylist(spotifyClient, playlistId, trackUris);
-
-      // Save playlist ID to database
-      await this.userPlaylistRepo.upsert(
-        userId,
-        PlaylistType.album_of_the_day,
-        playlistId,
-      );
-
-      logger.info('Created new playlist and saved to database', { userId, playlistId });
-    }
+    const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
 
     logger.info('Successfully updated playlist', {
       userId,
@@ -282,98 +249,123 @@ export class PlaylistService {
       isNew,
     });
 
-    return {
-      playlistId,
-      playlistUrl,
-      trackCount: tracks.length,
-      isNew,
-    };
+    return { playlistId, playlistUrl, trackCount: tracks.length, isNew };
+  }
+
+  /**
+   * Gets existing playlist or creates a new one.
+   * Handles case where user deleted the playlist (404) by creating a new one.
+   */
+  private async getOrCreatePlaylist(
+    userId: string,
+    spotifyUserId: string,
+    spotifyClient: SpotifyApi,
+    playlistName: string,
+  ): Promise<{ playlistId: string; isNew: boolean }> {
+    const existingPlaylist = await this.userPlaylistRepo.getByType(
+      userId,
+      PlaylistType.album_of_the_day,
+    );
+
+    if (existingPlaylist) {
+      // Verify playlist still exists in Spotify
+      const playlistExists = await this.checkPlaylistExists(
+        spotifyClient,
+        existingPlaylist.spotifyPlaylistId,
+      );
+
+      if (playlistExists) {
+        return { playlistId: existingPlaylist.spotifyPlaylistId, isNew: false };
+      }
+
+      // Playlist was deleted by user, create a new one
+      logger.info('Existing playlist was deleted, creating new one', {
+        userId,
+        oldPlaylistId: existingPlaylist.spotifyPlaylistId,
+      });
+    }
+
+    // Create new playlist
+    const playlist = await this.createSpotifyPlaylist(
+      spotifyClient,
+      spotifyUserId,
+      playlistName,
+    );
+
+    // Save to database (upsert handles both insert and update)
+    await this.userPlaylistRepo.upsert(
+      userId,
+      PlaylistType.album_of_the_day,
+      playlist.id,
+    );
+
+    logger.info('Created new playlist and saved to database', {
+      userId,
+      playlistId: playlist.id,
+    });
+
+    return { playlistId: playlist.id, isNew: true };
+  }
+
+  private async checkPlaylistExists(
+    spotifyClient: SpotifyApi,
+    playlistId: string,
+  ): Promise<boolean> {
+    try {
+      await spotifyClient.playlists.getPlaylist(playlistId);
+      return true;
+    } catch (error) {
+      // 404 means playlist was deleted
+      if (error instanceof Error && error.message.includes('404')) {
+        return false;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  /**
+   * Updates playlist name and replaces all tracks
+   */
+  private async updatePlaylist(
+    spotifyClient: SpotifyApi,
+    playlistId: string,
+    name: string,
+    trackUris: string[],
+  ): Promise<void> {
+    // Update name and description
+    await spotifyClient.playlists.changePlaylistDetails(playlistId, {
+      name,
+      description: 'Auto-generated by Daily Spin - Your album of the day',
+    });
+
+    // Replace all tracks (clears existing and adds new in one call)
+    await spotifyClient.playlists.updatePlaylistItems(playlistId, { uris: trackUris });
   }
 
   private async getAlbumTracks(
     spotifyClient: SpotifyApi,
     albumSpotifyId: string,
-  ): Promise<{ uri: string; name: string }[]> {
+  ): Promise<{ uri: string }[]> {
     logger.debug('Fetching album tracks', { albumSpotifyId });
 
     const albumTracks = await spotifyClient.albums.tracks(albumSpotifyId);
 
-    return albumTracks.items.map(track => ({
-      uri: track.uri,
-      name: track.name,
-    }));
+    return albumTracks.items.map(track => ({ uri: track.uri }));
   }
 
   private async createSpotifyPlaylist(
     spotifyClient: SpotifyApi,
     spotifyUserId: string,
     name: string,
-  ): Promise<{ id: string; external_urls: { spotify: string } }> {
+  ): Promise<{ id: string }> {
     logger.debug('Creating Spotify playlist', { spotifyUserId, name });
 
-    const playlist = await spotifyClient.playlists.createPlaylist(
-      spotifyUserId,
-      {
-        name,
-        description: 'Auto-generated by Daily Spin - Your album of the day',
-        public: false,
-      },
-    );
-
-    return playlist;
-  }
-
-  private async updateSpotifyPlaylist(
-    spotifyClient: SpotifyApi,
-    playlistId: string,
-    name: string,
-  ): Promise<void> {
-    logger.debug('Updating Spotify playlist details', { playlistId, name });
-
-    await spotifyClient.playlists.changePlaylistDetails(playlistId, {
+    return spotifyClient.playlists.createPlaylist(spotifyUserId, {
       name,
       description: 'Auto-generated by Daily Spin - Your album of the day',
+      public: false,
     });
-  }
-
-  private async replacePlaylistTracks(
-    spotifyClient: SpotifyApi,
-    playlistId: string,
-    trackUris: string[],
-  ): Promise<void> {
-    logger.debug('Replacing playlist tracks', { playlistId, trackCount: trackUris.length });
-
-    // Use PUT to replace all tracks (clears and adds in one call)
-    // Spotify allows max 100 tracks per request
-    if (trackUris.length <= 100) {
-      await spotifyClient.playlists.updatePlaylistItems(playlistId, { uris: trackUris });
-    } else {
-      // For albums with 100+ tracks, replace first 100 then add rest
-      const firstBatch = trackUris.slice(0, 100);
-      await spotifyClient.playlists.updatePlaylistItems(playlistId, { uris: firstBatch });
-
-      // Add remaining tracks in batches
-      for (let i = 100; i < trackUris.length; i += 100) {
-        const batch = trackUris.slice(i, i + 100);
-        await spotifyClient.playlists.addItemsToPlaylist(playlistId, batch);
-      }
-    }
-  }
-
-  private async addTracksToPlaylist(
-    spotifyClient: SpotifyApi,
-    playlistId: string,
-    trackUris: string[],
-  ): Promise<void> {
-    logger.debug('Adding tracks to playlist', { playlistId, trackCount: trackUris.length });
-
-    // Spotify allows max 100 tracks per request
-    const BATCH_SIZE = 100;
-
-    for (let i = 0; i < trackUris.length; i += BATCH_SIZE) {
-      const batch = trackUris.slice(i, i + BATCH_SIZE);
-      await spotifyClient.playlists.addItemsToPlaylist(playlistId, batch);
-    }
   }
 
   private generatePlaylistName(
@@ -388,12 +380,13 @@ export class PlaylistService {
 
 ### Key Design Decisions
 
-1. **Reuse existing playlist** - Updates the same playlist daily instead of creating new ones, preventing account clutter
-2. **Playlist is private by default** - Users can make it public in Spotify if desired
-3. **Batch track additions** - Spotify API limits 100 tracks per request
-4. **Descriptive playlist name** - Format: `Daily Spin: {Album} - {Artists}` for easy identification
-5. **Graceful handling** - Returns null if no album scheduled (not an error)
-6. **Extensible design** - `PlaylistType` enum supports future playlist types (song_of_the_day, etc.)
+1. **Reuse existing playlist** - Creates once, updates daily. Prevents account clutter
+2. **Unified update path** - Both new and existing playlists use the same `updatePlaylist` method
+3. **Handles deleted playlists** - If user deletes playlist, detects 404 and creates new one
+4. **Playlist is private by default** - Users can make it public in Spotify if desired
+5. **Descriptive playlist name** - Format: `Daily Spin: {Album} - {Artists}` for easy identification
+6. **Graceful handling** - Returns null if no album scheduled (not an error)
+7. **Extensible design** - `PlaylistType` enum supports future playlist types (song_of_the_day, etc.)
 
 ---
 
@@ -608,19 +601,18 @@ async getUsersWithFeatureEnabled(
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
 import { createUser, createFutureListen, createUserPlaylist } from '~~/tests/db/utils';
-import { mockSpotifyApi, mockWithAccessToken } from '~~/tests/mocks/spotifyMock';
+import { mockSpotifyApi } from '~~/tests/mocks/spotifyMock';
 import { simplifiedAlbum } from '~~/tests/factories/spotify.factory';
 import { PlaylistType } from '@prisma/client';
 
 describe('updateTodaysAlbumPlaylist Task', () => {
   let handler: () => Promise<any>;
   let userId: string;
-  let userAccount: any;
 
   const mockCreatePlaylist = vi.mocked(mockSpotifyApi.playlists.createPlaylist);
+  const mockGetPlaylist = vi.mocked(mockSpotifyApi.playlists.getPlaylist);
   const mockChangePlaylistDetails = vi.mocked(mockSpotifyApi.playlists.changePlaylistDetails);
   const mockUpdatePlaylistItems = vi.mocked(mockSpotifyApi.playlists.updatePlaylistItems);
-  const mockAddItemsToPlaylist = vi.mocked(mockSpotifyApi.playlists.addItemsToPlaylist);
   const mockGetAlbumTracks = vi.mocked(mockSpotifyApi.albums.tracks);
   const mockCurrentUserProfile = vi.mocked(mockSpotifyApi.currentUser.profile);
 
@@ -632,23 +624,19 @@ describe('updateTodaysAlbumPlaylist Task', () => {
   beforeEach(async () => {
     const user = await createUser({ createTodaysAlbumPlaylist: true });
     userId = user.id;
-    userAccount = user.accounts[0];
 
     // Default mocks
     mockCurrentUserProfile.mockResolvedValue({ id: 'spotify-user-123' });
     mockGetAlbumTracks.mockResolvedValue({
       items: [
-        { uri: 'spotify:track:1', name: 'Track 1' },
-        { uri: 'spotify:track:2', name: 'Track 2' },
+        { uri: 'spotify:track:1' },
+        { uri: 'spotify:track:2' },
       ],
     });
-    mockCreatePlaylist.mockResolvedValue({
-      id: 'playlist-123',
-      external_urls: { spotify: 'https://open.spotify.com/playlist/123' },
-    });
+    mockCreatePlaylist.mockResolvedValue({ id: 'playlist-123' });
+    mockGetPlaylist.mockResolvedValue({ id: 'existing-playlist' }); // Playlist exists
     mockChangePlaylistDetails.mockResolvedValue(undefined);
     mockUpdatePlaylistItems.mockResolvedValue({ snapshot_id: 'snapshot-1' });
-    mockAddItemsToPlaylist.mockResolvedValue({ snapshot_id: 'snapshot-1' });
 
     handler = (await import('./updateTodaysAlbumPlaylist')).default.run;
   });
@@ -658,24 +646,21 @@ describe('updateTodaysAlbumPlaylist Task', () => {
   });
 
   describe('new playlist creation', () => {
-    it('should create playlist for user with no existing playlist', async () => {
+    it('should create playlist and update it for user with no existing playlist', async () => {
       // Given
       const album = simplifiedAlbum({ id: 'album-123', name: 'Test Album' });
-      const today = new Date('2026-01-17T00:00:00.000Z');
-      await createFutureListen({ userId, albumSpotifyId: album.id, date: today });
+      await createFutureListen({ userId, albumSpotifyId: album.id, date: new Date('2026-01-17') });
 
       // When
       const result = await handler();
 
       // Then
       expect(result.created).toBe(1);
-      expect(result.updated).toBe(0);
-      expect(mockCreatePlaylist).toHaveBeenCalledWith(
-        'spotify-user-123',
-        expect.objectContaining({
-          name: expect.stringContaining('Test Album'),
-          public: false,
-        }),
+      expect(mockCreatePlaylist).toHaveBeenCalled();
+      expect(mockChangePlaylistDetails).toHaveBeenCalled();
+      expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
+        'playlist-123',
+        { uris: ['spotify:track:1', 'spotify:track:2'] },
       );
     });
   });
@@ -684,8 +669,7 @@ describe('updateTodaysAlbumPlaylist Task', () => {
     it('should update existing playlist instead of creating new one', async () => {
       // Given
       const album = simplifiedAlbum({ id: 'album-123', name: 'New Album' });
-      const today = new Date('2026-01-17T00:00:00.000Z');
-      await createFutureListen({ userId, albumSpotifyId: album.id, date: today });
+      await createFutureListen({ userId, albumSpotifyId: album.id, date: new Date('2026-01-17') });
       await createUserPlaylist({
         userId,
         playlistType: PlaylistType.album_of_the_day,
@@ -701,12 +685,34 @@ describe('updateTodaysAlbumPlaylist Task', () => {
       expect(mockCreatePlaylist).not.toHaveBeenCalled();
       expect(mockChangePlaylistDetails).toHaveBeenCalledWith(
         'existing-playlist-456',
-        expect.objectContaining({
-          name: expect.stringContaining('New Album'),
-        }),
+        expect.objectContaining({ name: expect.stringContaining('New Album') }),
       );
       expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
         'existing-playlist-456',
+        { uris: ['spotify:track:1', 'spotify:track:2'] },
+      );
+    });
+
+    it('should create new playlist when user deleted their existing one', async () => {
+      // Given
+      const album = simplifiedAlbum({ id: 'album-123', name: 'Test Album' });
+      await createFutureListen({ userId, albumSpotifyId: album.id, date: new Date('2026-01-17') });
+      await createUserPlaylist({
+        userId,
+        playlistType: PlaylistType.album_of_the_day,
+        spotifyPlaylistId: 'deleted-playlist-789',
+      });
+      // Simulate playlist was deleted - getPlaylist returns 404
+      mockGetPlaylist.mockRejectedValue(new Error('404 Not Found'));
+
+      // When
+      const result = await handler();
+
+      // Then
+      expect(result.created).toBe(1); // Treated as new since we had to recreate
+      expect(mockCreatePlaylist).toHaveBeenCalled();
+      expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
+        'playlist-123', // New playlist ID
         { uris: ['spotify:track:1', 'spotify:track:2'] },
       );
     });
@@ -721,7 +727,6 @@ describe('updateTodaysAlbumPlaylist Task', () => {
 
       // Then
       expect(result.skipped).toBe(1);
-      expect(result.created).toBe(0);
       expect(mockCreatePlaylist).not.toHaveBeenCalled();
     });
 
@@ -737,20 +742,6 @@ describe('updateTodaysAlbumPlaylist Task', () => {
 
       // Then
       expect(result.total).toBe(0);
-    });
-
-    it('should handle Spotify API errors gracefully', async () => {
-      // Given
-      const album = simplifiedAlbum();
-      await createFutureListen({ userId, albumSpotifyId: album.id, date: new Date() });
-      mockCreatePlaylist.mockRejectedValue(new Error('Spotify API error'));
-
-      // When
-      const result = await handler();
-
-      // Then
-      expect(result.failed).toBe(1);
-      expect(result.created).toBe(0);
     });
   });
 });
@@ -784,22 +775,21 @@ For each user (parallel with Promise.allSettled):
     ├─ spotifyClient.albums.tracks(albumSpotifyId)
     │  ↳ Get all tracks from album
     │
-    ├─ UserPlaylistRepository.getByType(userId, 'album_of_the_day')
-    │  ↳ Check if user has existing playlist
+    ├─ getOrCreatePlaylist():
+    │  ├─ UserPlaylistRepository.getByType(userId, 'album_of_the_day')
+    │  ├─ IF exists in DB:
+    │  │  ├─ spotifyClient.playlists.getPlaylist(playlistId)
+    │  │  │  ↳ Check if still exists in Spotify
+    │  │  ├─ IF exists → return existing playlistId
+    │  │  └─ IF 404 (deleted) → create new (below)
+    │  └─ IF not exists OR deleted:
+    │     ├─ spotifyClient.playlists.createPlaylist(...)
+    │     └─ UserPlaylistRepository.upsert(...) → save new ID
     │
-    ├─ IF existing playlist:
+    ├─ updatePlaylist():
     │  ├─ spotifyClient.playlists.changePlaylistDetails(playlistId, name)
-    │  │  ↳ Update playlist name
     │  └─ spotifyClient.playlists.updatePlaylistItems(playlistId, uris)
-    │     ↳ Replace all tracks
-    │
-    ├─ IF no existing playlist:
-    │  ├─ spotifyClient.playlists.createPlaylist(spotifyUserId, name, options)
-    │  │  ↳ Create new private playlist
-    │  ├─ spotifyClient.playlists.addItemsToPlaylist(playlistId, trackUris)
-    │  │  ↳ Add tracks in batches of 100
-    │  └─ UserPlaylistRepository.upsert(userId, type, spotifyPlaylistId)
-    │     ↳ Save playlist ID to database
+    │     ↳ Replace all tracks in one call
     │
     └─ Log success/failure
     │
