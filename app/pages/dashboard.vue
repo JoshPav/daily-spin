@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue';
+import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type { DailyListens } from '~~/shared/schema';
 
 const { data, pending, error, refresh } = useListens();
@@ -37,36 +37,16 @@ const listens = computed<DailyListens[]>(() => {
   ];
 });
 
-// Refs for scrolling
-const scrollContainer = ref<HTMLElement | null>(null);
-const todayItem = ref<HTMLElement | null>(null);
 const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
 
-// Smooth scroll function
-const scrollToToday = () => {
-  const container = scrollContainer.value;
-  const item = todayItem.value;
-
-  if (container && item) {
-    const top = item.offsetTop - container.offsetTop;
-    container.scrollTo({
-      top: top - container.offsetHeight / 2 + item.offsetHeight / 2,
-      behavior: 'smooth',
-    });
-  }
-};
-
-// Also scroll on page refresh
-onMounted(async () => {
-  if (listens.value && listens.value.length > 0) {
-    await nextTick();
-    scrollToToday();
-  }
+const isReady = computed(() => listens.value && listens.value.length > 0);
+const { scrollContainer, todayElement: todayItem } = useScrollToToday({
+  isReady,
 });
 </script>
 
 <template>
-    <div class="fixed inset-0 flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto pt-(--ui-header-height)">
+    <div ref="scrollContainer" class="fixed inset-0 flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto pt-(--ui-header-height)">
       <!-- Loading / Error / Empty states -->
       <div v-if="pending" class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]">Loading...</div>
       <div v-else-if="error" class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]">Error: {{ error }}</div>
@@ -75,7 +55,7 @@ onMounted(async () => {
       </div>
 
       <!-- Scrollable grid -->
-      <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8" ref="scrollContainer">
+      <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8">
           <StickyMonthHeader />
           <DailyListens
             v-for="day in listens"
