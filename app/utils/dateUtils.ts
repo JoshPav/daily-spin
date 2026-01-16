@@ -1,5 +1,12 @@
+import {
+  getDaysInMonth as dfnsGetDaysInMonth,
+  format,
+  getDate,
+} from 'date-fns';
+
+// Note: month is 1-indexed (1=January, 2=February, etc.)
 export const getDaysInMonth = (year: number, month: number) =>
-  new Date(year, month, 0).getDate();
+  dfnsGetDaysInMonth(new Date(year, month - 1));
 
 const getOrdinalSuffix = (day: number): string => {
   if (day > 3 && day < 21) return 'th';
@@ -16,10 +23,7 @@ const getOrdinalSuffix = (day: number): string => {
 };
 
 export const formatDate = (date: Date): string => {
-  const day = date.getDate();
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
-  const year = date.getFullYear();
+  const day = getDate(date);
   const ordinal = getOrdinalSuffix(day);
-
-  return `${month} ${day}${ordinal} ${year}`;
+  return format(date, `MMMM d'${ordinal}' yyyy`);
 };

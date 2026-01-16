@@ -1,3 +1,5 @@
+import { getHours, parseISO } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import type { ListenTime } from '#shared/schema';
 
 type HourRange = { start: number; end: number };
@@ -15,7 +17,9 @@ const inHourRange =
     hour >= start && hour < end;
 
 export const getTrackListenTime = (playedAt: string): ListenTime => {
-  const inRange = inHourRange(new Date(playedAt).getHours());
+  // Spotify returns UTC timestamps, so we use UTC hours for classification
+  const utcDate = toZonedTime(parseISO(playedAt), 'UTC');
+  const inRange = inHourRange(getHours(utcDate));
 
   if (inRange(TIME_RANGES.morning)) {
     return 'morning';
