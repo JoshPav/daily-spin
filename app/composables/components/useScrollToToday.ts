@@ -22,10 +22,6 @@ export const useScrollToToday = ({ isReady }: UseScrollToTodayOptions) => {
       containerStyle.overflowY === 'scroll';
 
     if (!isScrollable) {
-      console.warn(
-        'scrollContainer ref is not on a scrollable element. ' +
-          'Ensure the ref is placed on the element with overflow-y: auto/scroll.',
-      );
       return;
     }
 

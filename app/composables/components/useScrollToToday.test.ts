@@ -24,6 +24,7 @@ describe('useScrollToToday', () => {
     element.scrollTo = vi.fn();
 
     // Store overflowY value for the mock getComputedStyle
+    // biome-ignore lint/suspicious/noExplicitAny: needed to set overflow
     (element as any).__overflowY = overrides.overflowY ?? 'visible';
 
     return element;
@@ -34,6 +35,7 @@ describe('useScrollToToday', () => {
     // Mock getComputedStyle to return our test values
     window.getComputedStyle = vi.fn((el: Element) => {
       return {
+        // biome-ignore lint/suspicious/noExplicitAny: needed to set overflow
         overflowY: (el as any).__overflowY ?? 'visible',
       } as CSSStyleDeclaration;
     });
@@ -96,10 +98,6 @@ describe('useScrollToToday', () => {
     });
 
     it('should warn and not scroll if container is not scrollable', async () => {
-      const consoleWarnSpy = vi
-        .spyOn(console, 'warn')
-        .mockImplementation(() => {});
-
       const isReady = ref(false);
       const { scrollContainer, todayElement, scrollToToday } = useScrollToToday(
         { isReady },
@@ -113,14 +111,7 @@ describe('useScrollToToday', () => {
 
       scrollToToday();
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'scrollContainer ref is not on a scrollable element',
-        ),
-      );
       expect(container.scrollTo).not.toHaveBeenCalled();
-
-      consoleWarnSpy.mockRestore();
     });
 
     it('should scroll when container has overflow-y: scroll', async () => {
