@@ -1,9 +1,11 @@
+import { tz } from '@date-fns/tz';
 import type {
   ListenMethod,
   ListenOrder,
   ListenTime,
   PrismaClient,
 } from '@prisma/client';
+import { startOfDay } from 'date-fns';
 import prisma from '../clients/prisma';
 
 export type CreateArtist = {
@@ -72,8 +74,8 @@ export class DailyListenRepository {
     albumListens: AlbumListenInput[],
     date?: Date,
   ) {
-    const dateOfListens = date || new Date();
-    dateOfListens.setUTCHours(0, 0, 0, 0);
+    // Normalize to UTC midnight for consistent date storage
+    const dateOfListens = startOfDay(date || new Date(), { in: tz('UTC') });
 
     // First, find or create all albums
     const albumRecords = await Promise.all(
