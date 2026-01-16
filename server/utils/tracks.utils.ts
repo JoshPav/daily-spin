@@ -15,6 +15,18 @@ export const areTracksInOrder = (tracks: PlayHistoryWithIndex[]): boolean => {
       continue;
     }
 
+    // Check if album is restarting from the beginning (disc 1, track 1 after we've played some tracks)
+    if (
+      currentDiscNumber === 1 &&
+      currentTrackNumber === 1 &&
+      previousTrackNumber > 0
+    ) {
+      // Album restarted, reset tracking
+      previousTrackNumber = 1;
+      previousDiscNumber = 1;
+      continue;
+    }
+
     if (currentDiscNumber < previousDiscNumber) {
       // Went backwards to a previous disc - not in order
       return false;

@@ -475,6 +475,44 @@ describe('processListens Task Integration Tests', () => {
             ]),
           });
         });
+
+        it('should save as ordered when album restarts from beginning after completing', async () => {
+          // Given
+          const { album, tracks } = createAlbumAndTracks({ tracksInAlbum: 5 });
+
+          // First listen through: tracks 1-5
+          const firstListen = toPlayHistory({
+            tracks,
+            date: '2026-01-01',
+            hour: '12',
+          });
+          // Album restarts: tracks 1-3 again
+          const restartListen = tracks.slice(0, 3).map((t, i) =>
+            playHistory({
+              track: t,
+              played_at: `2026-01-01T12:${15 + i}:00.000Z`,
+            }),
+          );
+
+          const history = [...firstListen, ...restartListen];
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          const { result } = await processEvent();
+
+          // Then
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
+          const [savedListens] = await getAllListensForUser(userId);
+          expect(savedListens).toMatchObject({
+            date: startOfDay,
+            albums: expect.arrayContaining([
+              getExpectedAlbum(album, { listenOrder: 'ordered' }),
+            ]),
+          });
+        });
       });
 
       describe('listen time', () => {

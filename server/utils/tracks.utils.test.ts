@@ -147,6 +147,127 @@ describe('tracks.utils', () => {
 
       expect(areTracksInOrder(tracks)).toBe(true);
     });
+
+    it('should return true when album restarts from beginning after completing', () => {
+      const tracks: PlayHistoryWithIndex[] = [
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:00:00Z',
+          context: context(),
+          playIndex: 1,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 2 }),
+          played_at: '2024-01-01T10:05:00Z',
+          context: context(),
+          playIndex: 2,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 3 }),
+          played_at: '2024-01-01T10:10:00Z',
+          context: context(),
+          playIndex: 3,
+        },
+        // Album restarts
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:15:00Z',
+          context: context(),
+          playIndex: 4,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 2 }),
+          played_at: '2024-01-01T10:20:00Z',
+          context: context(),
+          playIndex: 5,
+        },
+      ];
+
+      expect(areTracksInOrder(tracks)).toBe(true);
+    });
+
+    it('should return true when multi-disc album restarts from beginning', () => {
+      const tracks: PlayHistoryWithIndex[] = [
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:00:00Z',
+          context: context(),
+          playIndex: 1,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 2 }),
+          played_at: '2024-01-01T10:05:00Z',
+          context: context(),
+          playIndex: 2,
+        },
+        {
+          track: track({ disc_number: 2, track_number: 1 }),
+          played_at: '2024-01-01T10:10:00Z',
+          context: context(),
+          playIndex: 3,
+        },
+        {
+          track: track({ disc_number: 2, track_number: 2 }),
+          played_at: '2024-01-01T10:15:00Z',
+          context: context(),
+          playIndex: 4,
+        },
+        // Album restarts from disc 1
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:20:00Z',
+          context: context(),
+          playIndex: 5,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 2 }),
+          played_at: '2024-01-01T10:25:00Z',
+          context: context(),
+          playIndex: 6,
+        },
+      ];
+
+      expect(areTracksInOrder(tracks)).toBe(true);
+    });
+
+    it('should return false when album restarts but then plays out of order', () => {
+      const tracks: PlayHistoryWithIndex[] = [
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:00:00Z',
+          context: context(),
+          playIndex: 1,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 2 }),
+          played_at: '2024-01-01T10:05:00Z',
+          context: context(),
+          playIndex: 2,
+        },
+        {
+          track: track({ disc_number: 1, track_number: 3 }),
+          played_at: '2024-01-01T10:10:00Z',
+          context: context(),
+          playIndex: 3,
+        },
+        // Album restarts
+        {
+          track: track({ disc_number: 1, track_number: 1 }),
+          played_at: '2024-01-01T10:15:00Z',
+          context: context(),
+          playIndex: 4,
+        },
+        // Skipped track 2, jumped to track 4
+        {
+          track: track({ disc_number: 1, track_number: 4 }),
+          played_at: '2024-01-01T10:20:00Z',
+          context: context(),
+          playIndex: 5,
+        },
+      ];
+
+      expect(areTracksInOrder(tracks)).toBe(false);
+    });
   });
 
   describe('groupTracksByAlbum', () => {
