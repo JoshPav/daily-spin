@@ -1,11 +1,16 @@
 import { faker } from '@faker-js/faker';
 import type {
   Context,
+  Page,
   PlayHistory,
+  Playlist,
   RecentlyPlayedTracksPage,
   SimplifiedAlbum,
   SimplifiedArtist,
+  SimplifiedTrack,
   Track,
+  TrackItem,
+  UserProfile,
 } from '@spotify/web-api-ts-sdk';
 import { createFactory } from './factory';
 
@@ -124,19 +129,13 @@ export const simplifiedArtist = createFactory<SimplifiedArtist>(() => ({
   uri: `spotify:artist:${uuid()}`,
 }));
 
-export const track = createFactory<Track>(() => ({
-  album: simplifiedAlbum(),
+export const simplifiedTrack = createFactory<SimplifiedTrack>(() => ({
   artists: [simplifiedArtist()],
   available_markets: ['US', 'GB', 'CA'],
   disc_number: 1,
   duration_ms: int({ min: 120000, max: 360000 }), // 2-6 minutes
   episode: false,
   explicit: faker.datatype.boolean(),
-  external_ids: {
-    isrc: `US${int({ min: 10000000000, max: 99999999999 })}`,
-    ean: int({ min: 1000000000000, max: 9999999999999 }).toString(),
-    upc: int({ min: 100000000000, max: 999999999999 }).toString(),
-  },
   external_urls: {
     spotify: url(),
   },
@@ -144,12 +143,22 @@ export const track = createFactory<Track>(() => ({
   id: uuid(),
   is_local: false,
   name: songName(),
-  popularity: int({ min: 0, max: 100 }),
   preview_url: url(),
   track: true,
   track_number: int({ min: 1, max: 15 }),
   type: 'track',
   uri: `spotify:track:${uuid()}`,
+}));
+
+export const track = createFactory<Track>(() => ({
+  ...simplifiedTrack(),
+  album: simplifiedAlbum(),
+  external_ids: {
+    isrc: `US${int({ min: 10000000000, max: 99999999999 })}`,
+    ean: int({ min: 1000000000000, max: 9999999999999 }).toString(),
+    upc: int({ min: 100000000000, max: 999999999999 }).toString(),
+  },
+  popularity: int({ min: 0, max: 100 }),
 }));
 
 export const context = createFactory<Context>(() => ({
@@ -172,4 +181,89 @@ export const recentlyPlayed = createFactory<RecentlyPlayedTracksPage>(() => ({
   limit: 0,
   next: '',
   total: 0,
+}));
+
+export const page = createFactory<Page<SimplifiedTrack>>(() => ({
+  href: url(),
+  limit: 50,
+  next: null,
+  offset: 0,
+  previous: null,
+  total: 0,
+  items: [],
+}));
+
+export const playlist = createFactory<Playlist<TrackItem>>(() => ({
+  collaborative: false,
+  description: faker.lorem.sentence(),
+  external_urls: {
+    spotify: url(),
+  },
+  followers: {
+    href: null,
+    total: int({ min: 0, max: 10000 }),
+  },
+  href: url(),
+  id: uuid(),
+  images: [
+    {
+      url: imageUrl(),
+      height: 640,
+      width: 640,
+    },
+  ],
+  name: faker.music.songName(),
+  owner: {
+    display_name: faker.person.fullName(),
+    external_urls: {
+      spotify: url(),
+    },
+    href: url(),
+    id: uuid(),
+    type: 'user',
+    uri: `spotify:user:${uuid()}`,
+  },
+  primary_color: '',
+  public: false,
+  snapshot_id: uuid(),
+  tracks: {
+    href: url(),
+    limit: 50,
+    next: null,
+    offset: 0,
+    previous: null,
+    total: 0,
+    items: [],
+  },
+  type: 'playlist',
+  uri: `spotify:playlist:${uuid()}`,
+}));
+
+export const userProfile = createFactory<UserProfile>(() => ({
+  country: 'US',
+  display_name: faker.person.fullName(),
+  email: faker.internet.email(),
+  explicit_content: {
+    filter_enabled: false,
+    filter_locked: false,
+  },
+  external_urls: {
+    spotify: url(),
+  },
+  followers: {
+    href: null,
+    total: int({ min: 0, max: 1000 }),
+  },
+  href: url(),
+  id: uuid(),
+  images: [
+    {
+      url: imageUrl(),
+      height: 300,
+      width: 300,
+    },
+  ],
+  product: 'premium',
+  type: 'user',
+  uri: `spotify:user:${uuid()}`,
 }));

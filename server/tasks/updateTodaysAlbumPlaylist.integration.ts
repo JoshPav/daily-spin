@@ -16,7 +16,13 @@ import {
   createUserPlaylist,
   getUserPlaylistByType,
 } from '~~/tests/db/utils';
-import { simplifiedAlbum } from '~~/tests/factories/spotify.factory';
+import {
+  page,
+  playlist,
+  simplifiedAlbum,
+  simplifiedTrack,
+  userProfile,
+} from '~~/tests/factories/spotify.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
 import {
   mockSpotifyApi,
@@ -24,6 +30,16 @@ import {
 } from '~~/tests/mocks/spotifyMock';
 
 vi.stubGlobal('defineTask', (task: Task<string>) => task);
+
+type TaskResult = {
+  result: string;
+  total?: number;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  failed?: number;
+  duration: number;
+};
 
 describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
   const mockCreatePlaylist = vi.mocked(mockSpotifyApi.playlists.createPlaylist);
@@ -43,7 +59,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
   const spotifyClientId = 'test-spotify-client-id';
   const spotifyUserId = 'spotify-user-123';
 
-  let processEvent: () => ReturnType<Task['run']>;
+  let processEvent: () => Promise<TaskResult>;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
@@ -52,21 +68,29 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
     const eventHandler = (await import('./updateTodaysAlbumPlaylist')).default
       .run;
     processEvent = () =>
-      eventHandler({ name: 'event', context: {}, payload: {} });
+      eventHandler({
+        name: 'event',
+        context: {},
+        payload: {},
+      }) as Promise<TaskResult>;
   });
 
   beforeEach(async () => {
     // Default mocks
-    mockCurrentUserProfile.mockResolvedValue({ id: spotifyUserId });
-    mockGetAlbumTracks.mockResolvedValue({
-      items: [
-        { uri: 'spotify:track:1' },
-        { uri: 'spotify:track:2' },
-        { uri: 'spotify:track:3' },
-      ],
-    });
-    mockCreatePlaylist.mockResolvedValue({ id: 'new-playlist-123' });
-    mockGetPlaylist.mockResolvedValue({ id: 'existing-playlist' });
+    mockCurrentUserProfile.mockResolvedValue(
+      userProfile({ id: spotifyUserId }),
+    );
+    mockGetAlbumTracks.mockResolvedValue(
+      page({
+        items: [
+          simplifiedTrack({ uri: 'spotify:track:1' }),
+          simplifiedTrack({ uri: 'spotify:track:2' }),
+          simplifiedTrack({ uri: 'spotify:track:3' }),
+        ],
+      }),
+    );
+    mockCreatePlaylist.mockResolvedValue(playlist({ id: 'new-playlist-123' }));
+    mockGetPlaylist.mockResolvedValue(playlist({ id: 'existing-playlist' }));
     mockChangePlaylistDetails.mockResolvedValue(undefined);
     mockUpdatePlaylistItems.mockResolvedValue({ snapshot_id: 'snapshot-1' });
   });
@@ -186,7 +210,9 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
           playlistType: 'album_of_the_day',
           spotifyPlaylistId: 'existing-playlist-456',
         });
-        mockGetPlaylist.mockResolvedValue({ id: 'existing-playlist-456' });
+        mockGetPlaylist.mockResolvedValue(
+          playlist({ id: 'existing-playlist-456' }),
+        );
 
         // When
         const result = await processEvent();
@@ -282,7 +308,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
             date: startOfToday,
           },
         });
-        mockGetAlbumTracks.mockResolvedValue({ items: [] });
+        mockGetAlbumTracks.mockResolvedValue(page({ items: [] }));
 
         // When
         const result = await processEvent();
@@ -389,9 +415,11 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
         // Make album tracks fail for first album only
         mockGetAlbumTracks
           .mockRejectedValueOnce(new Error('Spotify API error'))
-          .mockResolvedValueOnce({
-            items: [{ uri: 'spotify:track:1' }],
-          });
+          .mockResolvedValueOnce(
+            page({
+              items: [simplifiedTrack({ uri: 'spotify:track:1' })],
+            }),
+          );
 
         // When
         const result = await processEvent();
