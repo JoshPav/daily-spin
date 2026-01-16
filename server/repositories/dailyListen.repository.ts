@@ -1,12 +1,7 @@
 import { tz } from '@date-fns/tz';
-import type {
-  ListenMethod,
-  ListenOrder,
-  ListenTime,
-  PrismaClient,
-} from '@prisma/client';
+import type { ListenMethod, ListenOrder, ListenTime } from '@prisma/client';
 import { startOfDay } from 'date-fns';
-import prisma from '../clients/prisma';
+import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 
 const logger = createTaggedLogger('Repository:DailyListen');
@@ -37,10 +32,9 @@ export type DailyListenWithAlbums = Awaited<
 >[number];
 
 export class DailyListenRepository {
-  constructor(private prismaClient: PrismaClient = prisma) {}
+  constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   async getListens(userId: string, startDate: Date, endDate: Date) {
-    const startTime = Date.now();
     logger.debug('Fetching daily listens', {
       userId,
       startDate: startDate.toISOString(),
@@ -79,19 +73,9 @@ export class DailyListenRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getListens',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched daily listens', {
         userId,
         count: result.length,
-        duration: `${duration}ms`,
       });
 
       return result;
@@ -112,7 +96,6 @@ export class DailyListenRepository {
     albumListens: AlbumListenInput[],
     date?: Date,
   ) {
-    const startTime = Date.now();
     // Normalize to UTC midnight for consistent date storage
     const dateOfListens = startOfDay(date || new Date(), { in: tz('UTC') });
 
@@ -184,20 +167,10 @@ export class DailyListenRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'saveListens',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully saved daily listens', {
         userId,
         date: dateOfListens.toISOString(),
         albumCount: albumListens.length,
-        duration: `${duration}ms`,
       });
 
       return result;

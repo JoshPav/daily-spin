@@ -1,5 +1,5 @@
-import type { PrismaClient, User } from '@prisma/client';
-import prisma from '../clients/prisma';
+import type { User } from '@prisma/client';
+import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 
 const logger = createTaggedLogger('Repository:User');
@@ -12,10 +12,9 @@ type UserFeature = keyof Pick<
 >;
 
 export class UserRepository {
-  constructor(private prismaClient: PrismaClient = prisma) {}
+  constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   async getUser(userId: string) {
-    const startTime = Date.now();
     logger.debug('Fetching user', { userId });
 
     try {
@@ -39,20 +38,10 @@ export class UserRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getUser',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched user', {
         userId,
         found: !!result,
         hasSpotifyAccount: result ? result.accounts.length > 0 : false,
-        duration: `${duration}ms`,
       });
 
       return result;
@@ -67,7 +56,6 @@ export class UserRepository {
   }
 
   async getUsersWithFeatureEnabled(feature: UserFeature) {
-    const startTime = Date.now();
     logger.debug('Fetching users with feature enabled', { feature });
 
     try {
@@ -91,19 +79,9 @@ export class UserRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          operation: 'getUsersWithFeatureEnabled',
-          feature,
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched users with feature enabled', {
         feature,
         count: result.length,
-        duration: `${duration}ms`,
       });
 
       return result;

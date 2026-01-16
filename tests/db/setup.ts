@@ -1,10 +1,12 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import pkg from 'pg';
+import type { ExtendedPrismaClient } from '~~/server/clients/prisma';
+import { loggingExtension } from '~~/server/clients/prismaExtensions';
 
 const { Pool } = pkg;
 
-let testPrisma: PrismaClient | null = null;
+let testPrisma: ExtendedPrismaClient | null = null;
 let pool: pkg.Pool | null = null;
 
 export async function setupTestDatabase() {
@@ -20,7 +22,7 @@ export async function setupTestDatabase() {
   testPrisma = new PrismaClient({
     adapter,
     log: ['error'],
-  });
+  }).$extends(loggingExtension);
 
   try {
     await testPrisma.$connect();

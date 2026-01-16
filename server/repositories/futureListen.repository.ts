@@ -1,18 +1,16 @@
-import type { PrismaClient } from '@prisma/client';
-import prisma from '../clients/prisma';
+import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 import type { CreateAlbum } from './backlog.repository';
 
 const logger = createTaggedLogger('Repository:FutureListen');
 
 export class FutureListenRepository {
-  constructor(private prismaClient: PrismaClient = prisma) {}
+  constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   /**
    * Get all future listens for a user with related album and artist data
    */
   async getFutureListens(userId: string) {
-    const startTime = Date.now();
     logger.debug('Fetching future listens', { userId });
 
     try {
@@ -35,19 +33,9 @@ export class FutureListenRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getFutureListens',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched future listens', {
         userId,
         count: result.length,
-        duration: `${duration}ms`,
       });
 
       return result;
@@ -65,7 +53,6 @@ export class FutureListenRepository {
    * Get a future listen by date for a user
    */
   async getFutureListenByDate(userId: string, date: Date) {
-    const startTime = Date.now();
     logger.debug('Fetching future listen by date', {
       userId,
       date: date.toISOString(),
@@ -95,20 +82,10 @@ export class FutureListenRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getFutureListenByDate',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched future listen by date', {
         userId,
         date: date.toISOString(),
         found: !!result,
-        duration: `${duration}ms`,
       });
 
       return result;

@@ -1,5 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
-import prisma from '../clients/prisma';
+import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 
 const logger = createTaggedLogger('Repository:Backlog');
@@ -20,13 +19,12 @@ export type CreateAlbum = {
 };
 
 export class BacklogRepository {
-  constructor(private prismaClient: PrismaClient = prisma) {}
+  constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   /**
    * Get all backlog items for a user with related album and artist data
    */
   async getBacklogItems(userId: string) {
-    const startTime = Date.now();
     logger.debug('Fetching backlog items', { userId });
 
     try {
@@ -49,19 +47,9 @@ export class BacklogRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getBacklogItems',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched backlog items', {
         userId,
         count: result.length,
-        duration: `${duration}ms`,
       });
 
       return result;
@@ -76,7 +64,6 @@ export class BacklogRepository {
   }
 
   async getBacklogItemById(id: string, userId: string) {
-    const startTime = Date.now();
     logger.debug('Fetching backlog item by ID', { userId, backlogItemId: id });
 
     try {
@@ -98,20 +85,10 @@ export class BacklogRepository {
         },
       });
 
-      const duration = Date.now() - startTime;
-      if (duration > 100) {
-        logger.warn('Slow query detected', {
-          userId,
-          operation: 'getBacklogItemById',
-          duration: `${duration}ms`,
-        });
-      }
-
       logger.debug('Successfully fetched backlog item', {
         userId,
         backlogItemId: id,
         found: !!result,
-        duration: `${duration}ms`,
       });
 
       return result;
