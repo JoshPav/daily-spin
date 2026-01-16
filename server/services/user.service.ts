@@ -1,4 +1,7 @@
 import { UserRepository } from '../repositories/user.repository';
+import { createTaggedLogger } from '../utils/logger';
+
+const logger = createTaggedLogger('Service:User');
 
 export type AuthDetails = {
   accessToken: string | null;
@@ -16,15 +19,23 @@ export class UserService {
   constructor(private userRepo = new UserRepository()) {}
 
   async fetchUsersForRecentlyPlayedProcessing(): Promise<UserWithAuthTokens[]> {
+    logger.debug('Fetching users for recently played processing');
+
     const users = await this.userRepo.getUsersWithFeatureEnabled(
       'trackListeningHistory',
     );
 
-    return users
+    const usersWithAuth = users
       .map(({ accounts, id }) => {
         const auth = accounts[0];
         return auth ? { id, auth } : null;
       })
       .filter((user): user is UserWithAuthTokens => user !== null);
+
+    logger.debug('Fetched users with auth tokens', {
+      userCount: usersWithAuth.length,
+    });
+
+    return usersWithAuth;
   }
 }

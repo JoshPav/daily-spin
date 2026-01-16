@@ -1,6 +1,9 @@
 import type { AddBacklogItemBody, BacklogAlbum } from '#shared/schema';
 import { BacklogRepository } from '../repositories/backlog.repository';
 import { FutureListenRepository } from '../repositories/futureListen.repository';
+import { createTaggedLogger } from '../utils/logger';
+
+const logger = createTaggedLogger('Service:Backlog');
 
 // Backlog scheduling types
 export type ScheduledItem = {
@@ -56,6 +59,11 @@ export class BacklogService {
       return { added: [], skipped: [] };
     }
 
+    logger.debug('Adding backlog items', {
+      userId,
+      itemCount: items.length,
+    });
+
     // Check which albums already exist in the backlog
     const spotifyIds = items.map((item) => item.spotifyId);
     const existingIds = await this.backlogRepo.getExistingAlbumSpotifyIds(
@@ -67,6 +75,12 @@ export class BacklogService {
     const newItems = items.filter(
       (item) => !existingIds.includes(item.spotifyId),
     );
+
+    logger.debug('Filtered existing items', {
+      userId,
+      newItemsCount: newItems.length,
+      existingCount: existingIds.length,
+    });
 
     // Create albums and artists first, then create backlog items
     const createdItems: BacklogAlbum[] = [];
@@ -96,13 +110,21 @@ export class BacklogService {
         // Map to API type
         createdItems.push(this.mapToBacklogAlbum(backlogItem));
       } catch (error) {
-        console.error(
-          `Error adding album ${item.spotifyId} to backlog:`,
-          error,
-        );
+        logger.error('Failed to add album to backlog', {
+          userId,
+          albumSpotifyId: item.spotifyId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         // Skip this item if there's an error
       }
     }
+
+    logger.info('Successfully added backlog items', {
+      userId,
+      addedCount: createdItems.length,
+      skippedCount: existingIds.length,
+    });
 
     return {
       added: createdItems,
@@ -179,6 +201,11 @@ export class BacklogService {
     userId: string,
     daysToSchedule = 7,
   ): Promise<BacklogScheduleResult> {
+    logger.info('Scheduling backlog albums to future listens', {
+      userId,
+      daysToSchedule,
+    });
+
     // Get next N days starting from tomorrow (UTC)
     const dates = this.getNextNDates(daysToSchedule);
 
@@ -194,6 +221,12 @@ export class BacklogService {
     const availableDates = dates.filter(
       (date) => !scheduledDates.has(date.toISOString().split('T')[0]),
     );
+
+    logger.debug('Available dates for scheduling', {
+      userId,
+      totalDates: dates.length,
+      availableDates: availableDates.length,
+    });
 
     // Schedule albums to dates
     const scheduled: ScheduledItem[] = [];
@@ -233,13 +266,22 @@ export class BacklogService {
         });
         usedAlbumIds.add(selected.albumId);
       } catch (error) {
-        console.error(
-          `Failed to schedule album ${selected.albumId} for ${date}:`,
-          error,
-        );
+        logger.error('Failed to schedule album to future listen', {
+          userId,
+          albumId: selected.albumId,
+          date: date.toISOString(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         // Continue with next date
       }
     }
+
+    logger.info('Completed scheduling backlog albums', {
+      userId,
+      scheduledCount: scheduled.length,
+      skippedCount: availableDates.length - scheduled.length,
+    });
 
     return {
       scheduled,
