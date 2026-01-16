@@ -31,6 +31,7 @@ export default defineTask({
       return {
         result: 'No users with playlist creation enabled',
         duration,
+        total: 0,
       };
     }
 
