@@ -113,22 +113,71 @@ For each day's tracks:
    - Group tracks by `artistName`
    - Filter artists with fewer than 5 unique track names
 
-2. **Resolve Tracks to Albums (Spotify API)**
+2. **Resolve Tracks to Albums (Album-First Strategy)**
+
+   **Optimization**: Instead of searching for each track individually (10 API calls for a 10-track album), we search for ONE track, fetch its album's track list, then match remaining tracks against that list (2 API calls total).
+
    ```typescript
-   // For each (artistName, trackName) pair:
-   // 1. Search Spotify: GET /v1/search?q=track:{trackName}+artist:{artistName}&type=track
-   // 2. Extract album ID from first result
-   // 3. Cache results to minimize API calls
+   // Album-first resolution algorithm:
+   // Input: Array of tracks grouped by artist for one day
+   // Output: Map of albumId -> matched tracks
+
+   function resolveTracksToAlbums(artistTracks: ParsedTrack[]): Map<string, ResolvedTrack[]> {
+     const unresolved = new Set(artistTracks);
+     const albumMatches = new Map<string, ResolvedTrack[]>();
+
+     while (unresolved.size > 0) {
+       // 1. Pick first unresolved track
+       const track = unresolved.values().next().value;
+
+       // 2. Search Spotify for this ONE track (1 API call)
+       const searchResult = await searchTrack(track.artistName, track.trackName);
+       if (!searchResult) {
+         unresolved.delete(track);
+         continue;
+       }
+
+       // 3. Fetch full album track list (1 API call)
+       const album = await getAlbum(searchResult.album.id);
+
+       // 4. Match remaining unresolved tracks against album's track list
+       const matched: ResolvedTrack[] = [];
+       for (const candidate of unresolved) {
+         const albumTrack = findTrackInAlbum(album, candidate.trackName);
+         if (albumTrack) {
+           matched.push({ ...candidate, spotifyTrack: albumTrack, album });
+           unresolved.delete(candidate);
+         }
+       }
+
+       // 5. Store matches for this album
+       if (matched.length > 0) {
+         albumMatches.set(album.id, matched);
+       }
+     }
+
+     return albumMatches;
+   }
+
+   // Helper: Fuzzy match track name against album tracks
+   function findTrackInAlbum(album: Album, trackName: string): Track | null {
+     return album.tracks.items.find(t =>
+       normalizeTrackName(t.name) === normalizeTrackName(trackName)
+     );
+   }
    ```
 
-3. **Group by Resolved Album**
-   - Group tracks by album ID
-   - Filter albums with fewer than 5 tracks total
+   **API Call Reduction**:
+   | Scenario | Naive Approach | Album-First |
+   |----------|---------------|-------------|
+   | 10-track album, all tracks | 10 search + 1 album = 11 calls | 1 search + 1 album = 2 calls |
+   | 2 albums (10 + 8 tracks) | 18 search + 2 album = 20 calls | 2 search + 2 album = 4 calls |
+   | Same album across 5 days | 50 calls (with caching: varies) | 10 calls + cache hits |
 
-4. **Check Full Album Listen**
-   - Fetch album details: GET /v1/albums/{id}
-   - Compare unique listened tracks vs total album tracks
-   - Album is complete if all tracks were played
+3. **Check Full Album Listen**
+   - From step 2, we already have album details with track list
+   - Compare unique matched tracks vs `album.total_tracks`
+   - Album is complete if all tracks were matched
 
 5. **Determine Listen Metadata**
    - `listenOrder`: Check if tracks were played in track_number order
@@ -148,7 +197,50 @@ Use existing `DailyListenRepository.saveListens()` with conflict handling:
 
 ## Challenges & Edge Cases
 
-### 1. Track-to-Album Resolution
+### 1. Concurrent Upload Prevention
+
+**Problem**: Users should not be able to upload new files while a previous upload is being processed.
+
+**Proposed Solution**:
+- Track processing state per user in database (new `BulkUploadJob` table)
+- Before accepting upload, check for existing `pending` or `processing` jobs for user
+- Return error with job status if already processing
+- Allow cancellation of stuck jobs after timeout (e.g., 1 hour)
+
+```typescript
+model BulkUploadJob {
+  id        String   @id @default(cuid())
+  userId    String
+  status    JobStatus  // pending | processing | complete | failed | cancelled
+  progress  Int        @default(0)  // 0-100 percentage
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+}
+
+enum JobStatus { pending | processing | complete | failed | cancelled }
+```
+
+**API Behavior**:
+```typescript
+// POST /api/bulk-upload/parse
+// 1. Check for existing active job
+const activeJob = await findActiveJobForUser(userId);
+if (activeJob) {
+  throw createError({
+    statusCode: 409,  // Conflict
+    message: 'Upload already in progress',
+    data: { jobId: activeJob.id, progress: activeJob.progress }
+  });
+}
+// 2. Create new job, proceed with upload
+```
+
+### 2. Track-to-Album Resolution
 
 **Problem**: Spotify history only provides track names, not IDs. A track name + artist may match:
 - The original album
@@ -195,11 +287,20 @@ Use existing `DailyListenRepository.saveListens()` with conflict handling:
 **Problem**: Resolving thousands of tracks requires many Spotify API calls.
 
 **Mitigation Strategies**:
-- **Caching**: Cache track name -> album ID mappings
-- **Batching**: Use batch endpoints where available
-- **Deduplication**: Only resolve unique (artist, track) pairs
-- **Background Processing**: Process uploads asynchronously
-- **Rate Limiting**: Implement exponential backoff
+- **Album-First Resolution**: Reduces calls from O(tracks) to O(albums) - see Phase 3 algorithm above
+- **Caching**: Cache album track lists and search results to database
+  - Key: `(artistName, trackName)` normalized → `albumId`
+  - Key: `albumId` → full album with track list
+- **Batching**: Use `GET /v1/albums?ids=` endpoint for up to 20 albums at once
+- **Deduplication**: Only resolve unique (artist, track) pairs across all files
+- **Background Processing**: Process uploads asynchronously with progress updates
+- **Rate Limiting**: Implement exponential backoff on 429 responses
+
+**Estimated API Calls** (with album-first strategy):
+| Data Size | Naive | Album-First | With Caching |
+|-----------|-------|-------------|--------------|
+| 1 year, ~100 albums | ~2000 | ~200 | ~100 (50% cache hit) |
+| 1 year, ~500 albums | ~10000 | ~1000 | ~300 (70% cache hit) |
 
 ### 6. Track Name Variations
 
