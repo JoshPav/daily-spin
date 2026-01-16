@@ -1,0 +1,630 @@
+# Auto-Generate Spotify Playlist from Tomorrow's Scheduled Album
+
+## Overview
+
+This feature automatically creates a Spotify playlist containing all tracks from the album scheduled for today (from the FutureListen table). The playlist is created/updated by a daily CRON job, allowing users to have their planned listening ready in their Spotify app.
+
+**GitHub Issue:** [#82](https://github.com/JoshPav/daily-spin/issues/82)
+**Parent Issue:** [#16 - Future Listens (Backlog System)](https://github.com/JoshPav/daily-spin/issues/16)
+
+---
+
+## Implementation Status
+
+| Phase | Description | Status | PR |
+|-------|-------------|--------|-----|
+| 1 | PlaylistService - Core playlist creation logic | 🔲 Not Started | - |
+| 2 | Scheduled Task - Daily CRON job | 🔲 Not Started | - |
+| 3 | User Service Extension - Feature flag filtering | 🔲 Not Started | - |
+| 4 | Integration Tests | 🔲 Not Started | - |
+| 5 | Unit Tests | 🔲 Not Started | - |
+
+---
+
+## Prerequisites
+
+### OAuth Scopes (Already Configured)
+
+The required Spotify OAuth scopes are already configured in `/shared/auth.ts`:
+
+```typescript
+scope: [
+  'user-read-recently-played',
+  'playlist-modify-public',      // Can create playlists
+  'playlist-modify-private',     // Can modify playlists
+]
+```
+
+No OAuth changes needed.
+
+### Feature Flag (Already Exists)
+
+The User model already has a feature flag:
+
+```prisma
+model User {
+  createTodaysAlbumPlaylist Boolean @default(true)
+}
+```
+
+---
+
+## 1. PlaylistService
+
+**File:** `server/services/playlist.service.ts`
+
+### Responsibilities
+
+- Get today's FutureListen for a user
+- Fetch album tracks from Spotify API
+- Create a playlist on Spotify (or update existing)
+- Add tracks to the playlist
+- Handle errors gracefully
+
+### Interface
+
+```typescript
+import { createTaggedLogger } from '../utils/logger';
+import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { FutureListenRepository } from '../repositories/futureListen.repository';
+import { SpotifyService } from './spotify.service';
+
+const logger = createTaggedLogger('Service:Playlist');
+
+export class PlaylistService {
+  constructor(
+    private futureListenRepo = new FutureListenRepository(),
+    private spotifyService = new SpotifyService(),
+  ) {}
+
+  /**
+   * Creates a playlist for today's scheduled album
+   * @returns Playlist details or null if no album scheduled
+   */
+  async createTodaysAlbumPlaylist(
+    userId: string,
+    spotifyUserId: string,
+    spotifyClient: SpotifyApi,
+  ): Promise<{ playlistId: string; playlistUrl: string; trackCount: number } | null> {
+    logger.info('Creating today\'s album playlist', { userId });
+
+    // Get today's scheduled album
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const futureListen = await this.futureListenRepo.getFutureListenByDate(userId, today);
+
+    if (!futureListen) {
+      logger.debug('No album scheduled for today', { userId, date: today.toISOString() });
+      return null;
+    }
+
+    const { album } = futureListen;
+    logger.info('Found scheduled album', {
+      userId,
+      albumId: album.spotifyId,
+      albumName: album.name
+    });
+
+    // Fetch album tracks from Spotify
+    const tracks = await this.getAlbumTracks(spotifyClient, album.spotifyId);
+
+    if (tracks.length === 0) {
+      logger.warn('Album has no tracks', { userId, albumId: album.spotifyId });
+      return null;
+    }
+
+    // Create playlist
+    const playlistName = this.generatePlaylistName(today, album.name, album.artists);
+    const playlist = await this.createSpotifyPlaylist(
+      spotifyClient,
+      spotifyUserId,
+      playlistName,
+    );
+
+    // Add tracks to playlist
+    const trackUris = tracks.map(track => track.uri);
+    await this.addTracksToPlaylist(spotifyClient, playlist.id, trackUris);
+
+    logger.info('Successfully created playlist', {
+      userId,
+      playlistId: playlist.id,
+      trackCount: tracks.length,
+    });
+
+    return {
+      playlistId: playlist.id,
+      playlistUrl: playlist.external_urls.spotify,
+      trackCount: tracks.length,
+    };
+  }
+
+  private async getAlbumTracks(
+    spotifyClient: SpotifyApi,
+    albumSpotifyId: string,
+  ): Promise<{ uri: string; name: string }[]> {
+    logger.debug('Fetching album tracks', { albumSpotifyId });
+
+    const albumTracks = await spotifyClient.albums.tracks(albumSpotifyId);
+
+    return albumTracks.items.map(track => ({
+      uri: track.uri,
+      name: track.name,
+    }));
+  }
+
+  private async createSpotifyPlaylist(
+    spotifyClient: SpotifyApi,
+    spotifyUserId: string,
+    name: string,
+  ): Promise<{ id: string; external_urls: { spotify: string } }> {
+    logger.debug('Creating Spotify playlist', { spotifyUserId, name });
+
+    const playlist = await spotifyClient.playlists.createPlaylist(
+      spotifyUserId,
+      {
+        name,
+        description: 'Auto-generated by Daily Spin',
+        public: false,
+      },
+    );
+
+    return playlist;
+  }
+
+  private async addTracksToPlaylist(
+    spotifyClient: SpotifyApi,
+    playlistId: string,
+    trackUris: string[],
+  ): Promise<void> {
+    logger.debug('Adding tracks to playlist', { playlistId, trackCount: trackUris.length });
+
+    // Spotify allows max 100 tracks per request
+    const BATCH_SIZE = 100;
+
+    for (let i = 0; i < trackUris.length; i += BATCH_SIZE) {
+      const batch = trackUris.slice(i, i + BATCH_SIZE);
+      await spotifyClient.playlists.addItemsToPlaylist(playlistId, batch);
+    }
+  }
+
+  private generatePlaylistName(
+    date: Date,
+    albumName: string,
+    artists: { name: string }[],
+  ): string {
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const artistNames = artists.map(a => a.name).join(', ');
+    return `[${dateStr}] ${albumName} - ${artistNames}`;
+  }
+}
+```
+
+### Key Design Decisions
+
+1. **Playlist is private by default** - Users can make it public in Spotify if desired
+2. **Batch track additions** - Spotify API limits 100 tracks per request
+3. **Descriptive playlist name** - Includes date, album name, and artists for easy identification
+4. **Graceful handling** - Returns null if no album scheduled (not an error)
+
+---
+
+## 2. Scheduled Task
+
+**File:** `server/tasks/createTodaysAlbumPlaylist.ts`
+
+### Implementation
+
+```typescript
+import { createTaggedLogger } from '../utils/logger';
+import { UserService } from '../services/user.service';
+import { PlaylistService } from '../services/playlist.service';
+import { SpotifyService } from '../services/spotify.service';
+
+const logger = createTaggedLogger('Task:CreateTodaysAlbumPlaylist');
+
+export default defineTask({
+  meta: {
+    name: 'createTodaysAlbumPlaylist',
+    description: 'Creates Spotify playlists for users with albums scheduled for today',
+  },
+  run: async () => {
+    const startTime = Date.now();
+    logger.info('Starting createTodaysAlbumPlaylist task');
+
+    const userService = new UserService();
+    const playlistService = new PlaylistService();
+    const spotifyService = new SpotifyService();
+
+    // Fetch users with the feature enabled
+    const users = await userService.fetchUsersForPlaylistCreation();
+    logger.info('Found users for playlist creation', { userCount: users.length });
+
+    if (users.length === 0) {
+      return {
+        result: 'No users with playlist creation enabled',
+        duration: Date.now() - startTime,
+      };
+    }
+
+    // Process users in parallel
+    const results = await Promise.allSettled(
+      users.map(async (user) => {
+        const { id: userId, accounts } = user;
+        const spotifyAccount = accounts[0];
+
+        if (!spotifyAccount) {
+          logger.warn('User has no Spotify account', { userId });
+          return { userId, status: 'skipped', reason: 'no_spotify_account' };
+        }
+
+        try {
+          // Get Spotify client for user
+          const spotifyClient = await spotifyService.getClientForUser(
+            userId,
+            spotifyAccount,
+          );
+
+          // Get Spotify user ID
+          const spotifyUser = await spotifyClient.currentUser.profile();
+          const spotifyUserId = spotifyUser.id;
+
+          // Create playlist
+          const result = await playlistService.createTodaysAlbumPlaylist(
+            userId,
+            spotifyUserId,
+            spotifyClient,
+          );
+
+          if (result) {
+            return {
+              userId,
+              status: 'created',
+              playlistId: result.playlistId,
+              trackCount: result.trackCount,
+            };
+          } else {
+            return { userId, status: 'skipped', reason: 'no_album_scheduled' };
+          }
+        } catch (error) {
+          logger.error('Failed to create playlist for user', {
+            userId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+          return { userId, status: 'failed', error: String(error) };
+        }
+      }),
+    );
+
+    // Aggregate results
+    const summary = {
+      total: results.length,
+      created: 0,
+      skipped: 0,
+      failed: 0,
+    };
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const value = result.value;
+        if (value.status === 'created') summary.created++;
+        else if (value.status === 'skipped') summary.skipped++;
+        else if (value.status === 'failed') summary.failed++;
+      } else {
+        summary.failed++;
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    logger.info('Completed createTodaysAlbumPlaylist task', { ...summary, duration });
+
+    return {
+      result: `Created ${summary.created}, skipped ${summary.skipped}, failed ${summary.failed}`,
+      ...summary,
+      duration,
+    };
+  },
+});
+```
+
+### CRON Registration
+
+**File:** `nuxt.config.ts`
+
+Add to `nitro.scheduledTasks`:
+
+```typescript
+scheduledTasks: {
+  '0 * * * *': ['processListens'],
+  '0 3 * * *': ['scheduleBacklogListens'],
+  '0 6 * * *': ['createTodaysAlbumPlaylist'],  // Daily at 6 AM UTC
+}
+```
+
+The 6 AM UTC timing ensures:
+- FutureListen scheduling (3 AM) has already run
+- Playlist is ready before most users start their day
+
+---
+
+## 3. User Service Extension
+
+**File:** `server/services/user.service.ts`
+
+### New Method
+
+```typescript
+/**
+ * Fetches users who have the createTodaysAlbumPlaylist feature enabled
+ */
+async fetchUsersForPlaylistCreation(): Promise<UserWithAuthTokens[]> {
+  logger.debug('Fetching users for playlist creation');
+
+  const users = await this.userRepo.getUsersWithFeatureEnabled('createTodaysAlbumPlaylist');
+
+  logger.info('Found users for playlist creation', { count: users.length });
+  return users;
+}
+```
+
+### Repository Method
+
+**File:** `server/repositories/user.repository.ts`
+
+```typescript
+/**
+ * Gets users with a specific feature flag enabled
+ */
+async getUsersWithFeatureEnabled(
+  featureName: 'createTodaysAlbumPlaylist',
+): Promise<UserWithAuthTokens[]> {
+  logger.debug('Fetching users with feature enabled', { featureName });
+
+  const users = await prisma.user.findMany({
+    where: {
+      [featureName]: true,
+      accounts: {
+        some: {
+          provider: 'spotify',
+        },
+      },
+    },
+    include: {
+      accounts: {
+        where: { provider: 'spotify' },
+        select: {
+          accessToken: true,
+          refreshToken: true,
+          accessTokenExpiresAt: true,
+        },
+      },
+    },
+  });
+
+  return users;
+}
+```
+
+---
+
+## 4. Integration Tests
+
+**File:** `server/tasks/createTodaysAlbumPlaylist.integration.ts`
+
+### Test Cases
+
+```typescript
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import { createUser, createFutureListen } from '~~/tests/db/utils';
+import { mockSpotifyApi, mockWithAccessToken } from '~~/tests/mocks/spotifyMock';
+import { simplifiedAlbum } from '~~/tests/factories/spotify.factory';
+import type { EventHandler } from '~~/tests/mocks/nitroMock';
+
+describe('createTodaysAlbumPlaylist Task', () => {
+  let handler: () => Promise<any>;
+  let userId: string;
+  let userAccount: any;
+
+  const mockCreatePlaylist = vi.mocked(mockSpotifyApi.playlists.createPlaylist);
+  const mockAddItemsToPlaylist = vi.mocked(mockSpotifyApi.playlists.addItemsToPlaylist);
+  const mockGetAlbumTracks = vi.mocked(mockSpotifyApi.albums.tracks);
+  const mockCurrentUserProfile = vi.mocked(mockSpotifyApi.currentUser.profile);
+
+  beforeAll(async () => {
+    vi.setSystemTime(new Date('2026-01-17T08:00:00.000Z'));
+    mockRuntimeConfig.spotifyClientId = 'test-spotify-client-id';
+  });
+
+  beforeEach(async () => {
+    const user = await createUser({ createTodaysAlbumPlaylist: true });
+    userId = user.id;
+    userAccount = user.accounts[0];
+
+    // Default mocks
+    mockCurrentUserProfile.mockResolvedValue({ id: 'spotify-user-123' });
+    mockGetAlbumTracks.mockResolvedValue({
+      items: [
+        { uri: 'spotify:track:1', name: 'Track 1' },
+        { uri: 'spotify:track:2', name: 'Track 2' },
+      ],
+    });
+    mockCreatePlaylist.mockResolvedValue({
+      id: 'playlist-123',
+      external_urls: { spotify: 'https://open.spotify.com/playlist/123' },
+    });
+    mockAddItemsToPlaylist.mockResolvedValue({ snapshot_id: 'snapshot-1' });
+
+    handler = (await import('./createTodaysAlbumPlaylist')).default.run;
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('happy path', () => {
+    it('should create playlist for user with scheduled album', async () => {
+      // Given
+      const album = simplifiedAlbum({ id: 'album-123', name: 'Test Album' });
+      const today = new Date('2026-01-17T00:00:00.000Z');
+      await createFutureListen({ userId, albumSpotifyId: album.id, date: today });
+
+      // When
+      const result = await handler();
+
+      // Then
+      expect(result.created).toBe(1);
+      expect(mockCreatePlaylist).toHaveBeenCalledWith(
+        'spotify-user-123',
+        expect.objectContaining({
+          name: expect.stringContaining('Test Album'),
+          public: false,
+        }),
+      );
+      expect(mockAddItemsToPlaylist).toHaveBeenCalledWith(
+        'playlist-123',
+        ['spotify:track:1', 'spotify:track:2'],
+      );
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should skip user with no scheduled album', async () => {
+      // Given - no FutureListen for today
+
+      // When
+      const result = await handler();
+
+      // Then
+      expect(result.skipped).toBe(1);
+      expect(result.created).toBe(0);
+      expect(mockCreatePlaylist).not.toHaveBeenCalled();
+    });
+
+    it('should skip user with feature disabled', async () => {
+      // Given
+      await prisma.user.update({
+        where: { id: userId },
+        data: { createTodaysAlbumPlaylist: false },
+      });
+
+      // When
+      const result = await handler();
+
+      // Then
+      expect(result.total).toBe(0);
+    });
+
+    it('should handle Spotify API errors gracefully', async () => {
+      // Given
+      const album = simplifiedAlbum();
+      await createFutureListen({ userId, albumSpotifyId: album.id, date: new Date() });
+      mockCreatePlaylist.mockRejectedValue(new Error('Spotify API error'));
+
+      // When
+      const result = await handler();
+
+      // Then
+      expect(result.failed).toBe(1);
+      expect(result.created).toBe(0);
+    });
+  });
+});
+```
+
+---
+
+## 5. Data Flow Diagram
+
+```
+6:00 AM UTC Daily CRON Trigger
+    │
+    ▼
+createTodaysAlbumPlaylist Task runs
+    │
+    ▼
+UserService.fetchUsersForPlaylistCreation()
+    │  ↳ Returns users with createTodaysAlbumPlaylist = true
+    │
+    ▼
+For each user (parallel with Promise.allSettled):
+    │
+    ├─ SpotifyService.getClientForUser(userId, auth)
+    │
+    ├─ spotifyClient.currentUser.profile()
+    │  ↳ Get Spotify user ID
+    │
+    ├─ FutureListenRepository.getFutureListenByDate(userId, today)
+    │  ↳ If no album scheduled → skip user
+    │
+    ├─ spotifyClient.albums.tracks(albumSpotifyId)
+    │  ↳ Get all tracks from album
+    │
+    ├─ spotifyClient.playlists.createPlaylist(spotifyUserId, name, options)
+    │  ↳ Create new private playlist
+    │
+    ├─ spotifyClient.playlists.addItemsToPlaylist(playlistId, trackUris)
+    │  ↳ Add tracks in batches of 100
+    │
+    └─ Log success/failure
+    │
+    ▼
+Return summary: { created, skipped, failed, duration }
+```
+
+---
+
+## 6. Error Handling
+
+| Scenario | Handling |
+|----------|----------|
+| No album scheduled for today | Skip user, return `null` |
+| Album has 0 tracks | Skip user, log warning |
+| Spotify API rate limit | Caught, logged, user marked as failed |
+| Invalid/expired token | SpotifyService handles refresh automatically |
+| User revoked permissions | Caught, logged, user marked as failed |
+| Network errors | Caught, logged, user marked as failed |
+
+All errors are caught per-user so one failure doesn't block other users.
+
+---
+
+## 7. Future Enhancements (Out of Scope)
+
+These are potential improvements for future iterations:
+
+1. **Reuse existing playlist** - Update same playlist daily instead of creating new ones
+2. **Playlist cleanup** - Delete old playlists after X days
+3. **User preferences** - Allow custom playlist names, public/private toggle
+4. **Track playlist IDs** - Store in database for audit/management
+5. **Notification** - Notify user when playlist is created (push notification, email)
+
+---
+
+## 8. Files Summary
+
+### New Files
+
+| File | Description |
+|------|-------------|
+| `server/services/playlist.service.ts` | Core playlist creation logic |
+| `server/tasks/createTodaysAlbumPlaylist.ts` | CRON task implementation |
+| `server/services/playlist.service.test.ts` | Unit tests |
+| `server/tasks/createTodaysAlbumPlaylist.integration.ts` | Integration tests |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `nuxt.config.ts` | Add CRON task registration |
+| `server/services/user.service.ts` | Add `fetchUsersForPlaylistCreation()` method |
+| `server/repositories/user.repository.ts` | Add `getUsersWithFeatureEnabled()` method |
+
+---
+
+## 9. Dependencies
+
+- FutureListen scheduling must be working (#16 core functionality)
+- Users must have connected Spotify account with `playlist-modify-private` scope
+- `createTodaysAlbumPlaylist` feature flag must exist in User model (already exists)
