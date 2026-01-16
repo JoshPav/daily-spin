@@ -1,3 +1,4 @@
+import { eachDayOfInterval, format, startOfDay } from 'date-fns';
 import type { AddAlbumListenBody, DailyListens } from '#shared/schema';
 import { mapDailyListens } from '../mappers/listenMapper';
 import {
@@ -109,39 +110,27 @@ export class DailyListenService {
 
     // Index existing listens by date
     for (const listen of listens) {
-      const dateKey = new Date(listen.date).toISOString().split('T')[0];
-      if (dateKey) {
-        listensByDate.set(dateKey, listen);
-      }
+      const dateKey = format(new Date(listen.date), 'yyyy-MM-dd');
+      listensByDate.set(dateKey, listen);
     }
 
-    // Generate all days in range
-    const result: DailyListens[] = [];
-    const currentDate = new Date(startDate);
-    currentDate.setHours(0, 0, 0, 0);
+    // Generate all days in range and fill missing days
+    return eachDayOfInterval({
+      start: startOfDay(startDate),
+      end: startOfDay(endDate),
+    }).map((day) => {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      const existingListen = listensByDate.get(dateKey);
 
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-
-    while (currentDate <= end) {
-      const dateKey = currentDate.toISOString().split('T')[0];
-
-      if (dateKey) {
-        const existingListen = listensByDate.get(dateKey);
-        if (existingListen) {
-          result.push(existingListen);
-        } else {
-          // Create empty entry for missing day
-          result.push({
-            date: new Date(currentDate).toISOString(),
-            albums: [],
-          });
-        }
+      if (existingListen) {
+        return existingListen;
       }
 
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return result;
+      // Create empty entry for missing day
+      return {
+        date: day.toISOString(),
+        albums: [],
+      };
+    });
   }
 }

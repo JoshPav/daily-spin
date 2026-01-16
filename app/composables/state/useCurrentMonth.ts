@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { computed, ref } from 'vue';
 
 // Shared state for the currently visible month
@@ -9,10 +10,7 @@ export const useCurrentMonth = () => {
   };
 
   const formattedMonth = computed(() =>
-    currentMonth.value.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric',
-    }),
+    format(currentMonth.value, 'MMMM yyyy'),
   );
 
   return {
