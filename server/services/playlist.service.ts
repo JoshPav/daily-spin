@@ -1,0 +1,221 @@
+import { PlaylistType } from '@prisma/client';
+import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { FutureListenRepository } from '../repositories/futureListen.repository';
+import { UserPlaylistRepository } from '../repositories/userPlaylist.repository';
+import { createTaggedLogger } from '../utils/logger';
+
+const logger = createTaggedLogger('Service:Playlist');
+
+export class PlaylistService {
+  constructor(
+    private futureListenRepo = new FutureListenRepository(),
+    private userPlaylistRepo = new UserPlaylistRepository(),
+  ) {}
+
+  /**
+   * Creates or updates the album-of-the-day playlist for today's scheduled album
+   * @returns Playlist details or null if no album scheduled
+   */
+  async updateTodaysAlbumPlaylist(
+    userId: string,
+    spotifyUserId: string,
+    spotifyClient: SpotifyApi,
+  ): Promise<{
+    playlistId: string;
+    playlistUrl: string;
+    trackCount: number;
+    isNew: boolean;
+  } | null> {
+    logger.info("Updating today's album playlist", { userId });
+
+    // Get today's scheduled album
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const futureListen = await this.futureListenRepo.getFutureListenByDate(
+      userId,
+      today,
+    );
+
+    if (!futureListen) {
+      logger.debug('No album scheduled for today', {
+        userId,
+        date: today.toISOString(),
+      });
+      return null;
+    }
+
+    const { album } = futureListen;
+    const artists = album.artists.map((a) => ({ name: a.artist.name }));
+
+    logger.info('Found scheduled album', {
+      userId,
+      albumId: album.spotifyId,
+      albumName: album.name,
+    });
+
+    // Fetch album tracks from Spotify
+    const tracks = await this.getAlbumTracks(spotifyClient, album.spotifyId);
+
+    if (tracks.length === 0) {
+      logger.warn('Album has no tracks', { userId, albumId: album.spotifyId });
+      return null;
+    }
+
+    const trackUris = tracks.map((track) => track.uri);
+    const playlistName = this.generatePlaylistName(album.name, artists);
+
+    // Get or create playlist
+    const { playlistId, isNew } = await this.getOrCreatePlaylist(
+      userId,
+      spotifyUserId,
+      spotifyClient,
+      playlistName,
+    );
+
+    // Update playlist with today's album
+    await this.updatePlaylist(
+      spotifyClient,
+      playlistId,
+      playlistName,
+      trackUris,
+    );
+
+    const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
+
+    logger.info('Successfully updated playlist', {
+      userId,
+      playlistId,
+      trackCount: tracks.length,
+      isNew,
+    });
+
+    return { playlistId, playlistUrl, trackCount: tracks.length, isNew };
+  }
+
+  /**
+   * Gets existing playlist or creates a new one.
+   * Handles case where user deleted the playlist (404) by creating a new one.
+   */
+  private async getOrCreatePlaylist(
+    userId: string,
+    spotifyUserId: string,
+    spotifyClient: SpotifyApi,
+    playlistName: string,
+  ): Promise<{ playlistId: string; isNew: boolean }> {
+    const existingPlaylist = await this.userPlaylistRepo.getByType(
+      userId,
+      PlaylistType.album_of_the_day,
+    );
+
+    if (existingPlaylist) {
+      // Verify playlist still exists in Spotify
+      const playlistExists = await this.checkPlaylistExists(
+        spotifyClient,
+        existingPlaylist.spotifyPlaylistId,
+      );
+
+      if (playlistExists) {
+        return { playlistId: existingPlaylist.spotifyPlaylistId, isNew: false };
+      }
+
+      // Playlist was deleted by user, create a new one
+      logger.info('Existing playlist was deleted, creating new one', {
+        userId,
+        oldPlaylistId: existingPlaylist.spotifyPlaylistId,
+      });
+    }
+
+    // Create new playlist
+    const playlist = await this.createSpotifyPlaylist(
+      spotifyClient,
+      spotifyUserId,
+      playlistName,
+    );
+
+    // Save to database (upsert handles both insert and update)
+    await this.userPlaylistRepo.upsert(
+      userId,
+      PlaylistType.album_of_the_day,
+      playlist.id,
+    );
+
+    logger.info('Created new playlist and saved to database', {
+      userId,
+      playlistId: playlist.id,
+    });
+
+    return { playlistId: playlist.id, isNew: true };
+  }
+
+  private async checkPlaylistExists(
+    spotifyClient: SpotifyApi,
+    playlistId: string,
+  ): Promise<boolean> {
+    try {
+      await spotifyClient.playlists.getPlaylist(playlistId);
+      return true;
+    } catch (error) {
+      // 404 means playlist was deleted
+      if (error instanceof Error && error.message.includes('404')) {
+        return false;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  /**
+   * Updates playlist name and replaces all tracks
+   */
+  private async updatePlaylist(
+    spotifyClient: SpotifyApi,
+    playlistId: string,
+    name: string,
+    trackUris: string[],
+  ): Promise<void> {
+    // Update name and description
+    await spotifyClient.playlists.changePlaylistDetails(playlistId, {
+      name,
+      description: 'Auto-generated by Daily Spin - Your album of the day',
+    });
+
+    // Replace all tracks (clears existing and adds new in one call)
+    await spotifyClient.playlists.updatePlaylistItems(playlistId, {
+      uris: trackUris,
+    });
+  }
+
+  private async getAlbumTracks(
+    spotifyClient: SpotifyApi,
+    albumSpotifyId: string,
+  ): Promise<{ uri: string }[]> {
+    logger.debug('Fetching album tracks', { albumSpotifyId });
+
+    const albumTracks = await spotifyClient.albums.tracks(albumSpotifyId);
+
+    return albumTracks.items.map((track) => ({ uri: track.uri }));
+  }
+
+  private async createSpotifyPlaylist(
+    spotifyClient: SpotifyApi,
+    spotifyUserId: string,
+    name: string,
+  ): Promise<{ id: string }> {
+    logger.debug('Creating Spotify playlist', { spotifyUserId, name });
+
+    return spotifyClient.playlists.createPlaylist(spotifyUserId, {
+      name,
+      description: 'Auto-generated by Daily Spin - Your album of the day',
+      public: false,
+    });
+  }
+
+  private generatePlaylistName(
+    albumName: string,
+    artists: { name: string }[],
+  ): string {
+    const artistNames = artists.map((a) => a.name).join(', ');
+    return `Daily Spin: ${albumName} - ${artistNames}`;
+  }
+}
