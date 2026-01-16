@@ -39,6 +39,12 @@ export const useScrollToToday = ({ isReady }: UseScrollToTodayOptions) => {
     }
   });
 
+  watch(isReady, (ready) => {
+    if (ready) {
+      nextTick().then(() => scrollToToday());
+    }
+  });
+
   return {
     scrollContainer,
     todayElement,
