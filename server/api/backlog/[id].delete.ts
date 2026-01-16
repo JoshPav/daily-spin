@@ -1,4 +1,6 @@
 import { BacklogService } from '../../services/backlog.service';
+import { handleError } from '../../utils/errorHandler';
+import { ValidationError } from '../../utils/errors';
 import { createTaggedLogger } from '../../utils/logger';
 import { getLogContext } from '../../utils/requestContext';
 
@@ -9,11 +11,7 @@ export default defineEventHandler(async (event) => {
   const logContext = getLogContext(event);
 
   if (!id) {
-    logger.error('Missing id parameter', logContext);
-    throw createError({
-      statusCode: 400,
-      message: 'Missing id parameter',
-    });
+    throw handleError(new ValidationError('Missing id parameter'), logContext);
   }
 
   const { userId } = event.context;
@@ -31,19 +29,13 @@ export default defineEventHandler(async (event) => {
       ...logContext,
       backlogItemId: id,
     });
+
+    setResponseStatus(event, 204);
+    return null;
   } catch (error) {
-    logger.error('Failed to remove item from backlog', {
+    throw handleError(error, {
       ...logContext,
       backlogItemId: id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw createError({
-      statusCode: 404,
-      message: 'Backlog item not found',
     });
   }
-
-  setResponseStatus(event, 204);
-  return null;
 });

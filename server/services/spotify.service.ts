@@ -1,5 +1,10 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { UserRepository } from '../repositories/user.repository';
+import {
+  ExternalServiceError,
+  UnauthorizedError,
+  ValidationError,
+} from '../utils/errors';
 import { createTaggedLogger } from '../utils/logger';
 import type { AuthDetails } from './user.service';
 
@@ -25,7 +30,11 @@ export class SpotifyService {
     const { accessToken, refreshToken, accessTokenExpiresAt } = auth;
 
     if (!accessToken || !refreshToken) {
-      throw new Error('User tokens invalid');
+      throw new UnauthorizedError('User tokens invalid', {
+        userId,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+      });
     }
 
     // Check if token is expired (with 5 minute buffer)
@@ -57,7 +66,9 @@ export class SpotifyService {
     const { spotifyClientId, spotifyClientSecret } = config;
 
     if (!spotifyClientSecret) {
-      throw new Error('SPOTIFY_CLIENT_SECRET not configured');
+      throw new ValidationError('SPOTIFY_CLIENT_SECRET not configured', {
+        userId,
+      });
     }
 
     try {
@@ -75,7 +86,11 @@ export class SpotifyService {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(`Failed to refresh token: ${response.status} ${error}`);
+        throw new ExternalServiceError('Spotify', 'refresh token', {
+          userId,
+          status: response.status,
+          error,
+        });
       }
 
       const data: TokenRefreshResponse = await response.json();
@@ -107,9 +122,17 @@ export class SpotifyService {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw new Error(
-        `Failed to refresh Spotify access token: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+
+      // Re-throw if already our custom error
+      if (error instanceof ExternalServiceError) {
+        throw error;
+      }
+
+      // Wrap unexpected errors
+      throw new ExternalServiceError('Spotify', 'refresh token', {
+        userId,
+        originalError: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -120,7 +143,10 @@ export class SpotifyService {
     const { accessToken, refreshToken } = auth;
 
     if (!accessToken || !refreshToken) {
-      throw new Error('User tokens invalid');
+      throw new UnauthorizedError('User tokens invalid', {
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+      });
     }
 
     return SpotifyApi.withAccessToken(useRuntimeConfig().spotifyClientId, {
