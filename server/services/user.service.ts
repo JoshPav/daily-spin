@@ -38,4 +38,25 @@ export class UserService {
 
     return usersWithAuth;
   }
+
+  async fetchUsersForPlaylistCreation(): Promise<UserWithAuthTokens[]> {
+    logger.debug('Fetching users for playlist creation');
+
+    const users = await this.userRepo.getUsersWithFeatureEnabled(
+      'createTodaysAlbumPlaylist',
+    );
+
+    const usersWithAuth = users
+      .map(({ accounts, id }) => {
+        const auth = accounts[0];
+        return auth ? { id, auth } : null;
+      })
+      .filter((user): user is UserWithAuthTokens => user !== null);
+
+    logger.debug('Fetched users for playlist creation', {
+      userCount: usersWithAuth.length,
+    });
+
+    return usersWithAuth;
+  }
 }

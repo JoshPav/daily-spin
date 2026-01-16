@@ -1,0 +1,467 @@
+import type { Account } from '@prisma/client';
+import type { Task } from 'nitropack/types';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { getTestPrisma } from '~~/tests/db/setup';
+import {
+  createFutureListen,
+  createUser,
+  createUserPlaylist,
+  getUserPlaylistByType,
+} from '~~/tests/db/utils';
+import {
+  page,
+  playlist,
+  simplifiedAlbum,
+  simplifiedTrack,
+  userProfile,
+} from '~~/tests/factories/spotify.factory';
+import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import {
+  mockSpotifyApi,
+  mockWithAccessToken,
+} from '~~/tests/mocks/spotifyMock';
+
+vi.stubGlobal('defineTask', (task: Task<string>) => task);
+
+type TaskResult = {
+  result: string;
+  total?: number;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  failed?: number;
+  duration: number;
+};
+
+describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
+  const mockCreatePlaylist = vi.mocked(mockSpotifyApi.playlists.createPlaylist);
+  const mockGetPlaylist = vi.mocked(mockSpotifyApi.playlists.getPlaylist);
+  const mockChangePlaylistDetails = vi.mocked(
+    mockSpotifyApi.playlists.changePlaylistDetails,
+  );
+  const mockUpdatePlaylistItems = vi.mocked(
+    mockSpotifyApi.playlists.updatePlaylistItems,
+  );
+  const mockGetAlbumTracks = vi.mocked(mockSpotifyApi.albums.tracks);
+  const mockCurrentUserProfile = vi.mocked(mockSpotifyApi.currentUser.profile);
+
+  const today = new Date('2026-01-17T08:00:00.000Z');
+  const startOfToday = new Date('2026-01-17T00:00:00.000Z');
+
+  const spotifyClientId = 'test-spotify-client-id';
+  const spotifyUserId = 'spotify-user-123';
+
+  let processEvent: () => Promise<TaskResult>;
+
+  beforeAll(async () => {
+    vi.setSystemTime(today);
+    mockRuntimeConfig.spotifyClientId = spotifyClientId;
+
+    const eventHandler = (await import('./updateTodaysAlbumPlaylist')).default
+      .run;
+    processEvent = () =>
+      eventHandler({
+        name: 'event',
+        context: {},
+        payload: {},
+      }) as Promise<TaskResult>;
+  });
+
+  beforeEach(async () => {
+    // Default mocks
+    mockCurrentUserProfile.mockResolvedValue(
+      userProfile({ id: spotifyUserId }),
+    );
+    mockGetAlbumTracks.mockResolvedValue(
+      page({
+        items: [
+          simplifiedTrack({ uri: 'spotify:track:1' }),
+          simplifiedTrack({ uri: 'spotify:track:2' }),
+          simplifiedTrack({ uri: 'spotify:track:3' }),
+        ],
+      }),
+    );
+    mockCreatePlaylist.mockResolvedValue(playlist({ id: 'new-playlist-123' }));
+    mockGetPlaylist.mockResolvedValue(playlist({ id: 'existing-playlist' }));
+    mockChangePlaylistDetails.mockResolvedValue(undefined);
+    mockUpdatePlaylistItems.mockResolvedValue({ snapshot_id: 'snapshot-1' });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('when no users have feature enabled', () => {
+    it('should return no users message', async () => {
+      // Given
+      await createUser({ createTodaysAlbumPlaylist: false });
+
+      // When
+      const response = await processEvent();
+
+      // Then
+      expect(response.result).toEqual(
+        'No users with playlist creation enabled',
+      );
+      expect(response).toHaveProperty('duration');
+      expect(mockCurrentUserProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when user has feature enabled', () => {
+    let userId: string;
+    let userAccount: Account;
+
+    beforeEach(async () => {
+      const user = await createUser({ createTodaysAlbumPlaylist: true });
+      userId = user.id;
+      userAccount = user.accounts[0];
+    });
+
+    describe('new playlist creation', () => {
+      it('should create playlist and populate it for user with no existing playlist', async () => {
+        // Given
+        const album = simplifiedAlbum({ id: 'album-123', name: 'Test Album' });
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album.id,
+            name: album.name,
+            artists: [
+              { spotifyId: album.artists[0].id, name: album.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.created).toBe(1);
+        expect(result.updated).toBe(0);
+        expect(result.skipped).toBe(0);
+        expect(result.failed).toBe(0);
+
+        // Verify Spotify API was called with correct credentials
+        expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
+          access_token: userAccount.accessToken,
+          token_type: 'Bearer',
+          expires_in: 3600,
+          refresh_token: userAccount.refreshToken,
+        });
+
+        // Verify Spotify profile was fetched
+        expect(mockCurrentUserProfile).toHaveBeenCalled();
+
+        // Verify album tracks were fetched
+        expect(mockGetAlbumTracks).toHaveBeenCalledWith(album.id);
+
+        // Verify playlist was created
+        expect(mockCreatePlaylist).toHaveBeenCalledWith(spotifyUserId, {
+          name: expect.stringContaining(album.name),
+          description: 'Auto-generated by Daily Spin - Your album of the day',
+          public: false,
+        });
+
+        // Verify playlist was updated with tracks
+        expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
+          'new-playlist-123',
+          {
+            uris: ['spotify:track:1', 'spotify:track:2', 'spotify:track:3'],
+          },
+        );
+
+        // Verify playlist was saved to database
+        const savedPlaylist = await getUserPlaylistByType(
+          userId,
+          'album_of_the_day',
+        );
+        expect(savedPlaylist).not.toBeNull();
+        expect(savedPlaylist?.spotifyPlaylistId).toBe('new-playlist-123');
+      });
+    });
+
+    describe('existing playlist update', () => {
+      it('should update existing playlist instead of creating new one', async () => {
+        // Given
+        const album = simplifiedAlbum({ id: 'album-456', name: 'New Album' });
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album.id,
+            name: album.name,
+            artists: [
+              { spotifyId: album.artists[0].id, name: album.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+        await createUserPlaylist({
+          userId,
+          playlistType: 'album_of_the_day',
+          spotifyPlaylistId: 'existing-playlist-456',
+        });
+        mockGetPlaylist.mockResolvedValue(
+          playlist({ id: 'existing-playlist-456' }),
+        );
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.updated).toBe(1);
+        expect(result.created).toBe(0);
+        expect(mockCreatePlaylist).not.toHaveBeenCalled();
+        expect(mockChangePlaylistDetails).toHaveBeenCalledWith(
+          'existing-playlist-456',
+          expect.objectContaining({
+            name: expect.stringContaining('New Album'),
+          }),
+        );
+        expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
+          'existing-playlist-456',
+          {
+            uris: ['spotify:track:1', 'spotify:track:2', 'spotify:track:3'],
+          },
+        );
+      });
+
+      it('should create new playlist when user deleted their existing one', async () => {
+        // Given
+        const album = simplifiedAlbum({ id: 'album-789', name: 'Test Album' });
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album.id,
+            name: album.name,
+            artists: [
+              { spotifyId: album.artists[0].id, name: album.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+        await createUserPlaylist({
+          userId,
+          playlistType: 'album_of_the_day',
+          spotifyPlaylistId: 'deleted-playlist-789',
+        });
+        // Simulate playlist was deleted - getPlaylist returns 404
+        mockGetPlaylist.mockRejectedValue(new Error('404 Not Found'));
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.created).toBe(1);
+        expect(mockCreatePlaylist).toHaveBeenCalled();
+        expect(mockUpdatePlaylistItems).toHaveBeenCalledWith(
+          'new-playlist-123', // New playlist ID
+          {
+            uris: ['spotify:track:1', 'spotify:track:2', 'spotify:track:3'],
+          },
+        );
+
+        // Verify database was updated with new playlist ID
+        const savedPlaylist = await getUserPlaylistByType(
+          userId,
+          'album_of_the_day',
+        );
+        expect(savedPlaylist?.spotifyPlaylistId).toBe('new-playlist-123');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should skip user with no scheduled album for today', async () => {
+        // Given - no FutureListen for today
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.skipped).toBe(1);
+        expect(result.created).toBe(0);
+        expect(result.updated).toBe(0);
+        expect(mockCreatePlaylist).not.toHaveBeenCalled();
+        expect(mockUpdatePlaylistItems).not.toHaveBeenCalled();
+      });
+
+      it('should skip user when album has no tracks', async () => {
+        // Given
+        const album = simplifiedAlbum({ id: 'empty-album' });
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album.id,
+            name: album.name,
+            artists: [
+              { spotifyId: album.artists[0].id, name: album.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+        mockGetAlbumTracks.mockResolvedValue(page({ items: [] }));
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.skipped).toBe(1);
+        expect(mockCreatePlaylist).not.toHaveBeenCalled();
+      });
+
+      it('should skip users with feature disabled', async () => {
+        // Given
+        await getTestPrisma().user.update({
+          where: { id: userId },
+          data: { createTodaysAlbumPlaylist: false },
+        });
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.total).toBe(0);
+      });
+    });
+
+    describe('multiple users', () => {
+      it('should process multiple users with feature enabled', async () => {
+        // Given
+        const user2 = await createUser({ createTodaysAlbumPlaylist: true });
+        const album1 = simplifiedAlbum({ id: 'album-1', name: 'Album One' });
+        const album2 = simplifiedAlbum({ id: 'album-2', name: 'Album Two' });
+
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album1.id,
+            name: album1.name,
+            artists: [
+              { spotifyId: album1.artists[0].id, name: album1.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+        await createFutureListen({
+          userId: user2.id,
+          item: {
+            spotifyId: album2.id,
+            name: album2.name,
+            artists: [
+              { spotifyId: album2.artists[0].id, name: album2.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.total).toBe(2);
+        expect(result.created).toBe(2);
+
+        // Verify both users have playlists
+        const playlist1 = await getUserPlaylistByType(
+          userId,
+          'album_of_the_day',
+        );
+        const playlist2 = await getUserPlaylistByType(
+          user2.id,
+          'album_of_the_day',
+        );
+        expect(playlist1).not.toBeNull();
+        expect(playlist2).not.toBeNull();
+      });
+
+      it('should continue processing other users if one fails', async () => {
+        // Given
+        const user2 = await createUser({ createTodaysAlbumPlaylist: true });
+        const album1 = simplifiedAlbum({ id: 'album-1', name: 'Album One' });
+        const album2 = simplifiedAlbum({ id: 'album-2', name: 'Album Two' });
+
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: album1.id,
+            name: album1.name,
+            artists: [
+              { spotifyId: album1.artists[0].id, name: album1.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+        await createFutureListen({
+          userId: user2.id,
+          item: {
+            spotifyId: album2.id,
+            name: album2.name,
+            artists: [
+              { spotifyId: album2.artists[0].id, name: album2.artists[0].name },
+            ],
+            date: startOfToday,
+          },
+        });
+
+        // Make album tracks fail for first album only
+        mockGetAlbumTracks
+          .mockRejectedValueOnce(new Error('Spotify API error'))
+          .mockResolvedValueOnce(
+            page({
+              items: [simplifiedTrack({ uri: 'spotify:track:1' })],
+            }),
+          );
+
+        // When
+        const result = await processEvent();
+
+        // Then
+        expect(result.total).toBe(2);
+        expect(result.created).toBe(1);
+        expect(result.failed).toBe(1);
+
+        // Only second user should have playlist
+        const playlist2 = await getUserPlaylistByType(
+          user2.id,
+          'album_of_the_day',
+        );
+        expect(playlist2).not.toBeNull();
+      });
+    });
+
+    describe('playlist naming', () => {
+      it('should create playlist with album name and artist', async () => {
+        // Given
+        await createFutureListen({
+          userId,
+          item: {
+            spotifyId: 'album-name-test',
+            name: 'Thriller',
+            artists: [{ spotifyId: 'artist-1', name: 'Michael Jackson' }],
+            date: startOfToday,
+          },
+        });
+
+        // When
+        await processEvent();
+
+        // Then
+        expect(mockCreatePlaylist).toHaveBeenCalledWith(
+          spotifyUserId,
+          expect.objectContaining({
+            name: 'Daily Spin: Thriller - Michael Jackson',
+          }),
+        );
+      });
+    });
+  });
+});

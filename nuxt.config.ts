@@ -29,6 +29,8 @@ export default defineNuxtConfig({
       '0 * * * *': ['processListens'],
       // Daily at 3 AM UTC
       '0 3 * * *': ['scheduleBacklogListens'],
+      // Daily at 6 AM UTC
+      '0 6 * * *': ['updateTodaysAlbumPlaylist'],
     },
     experimental: {
       tasks: true,

@@ -2,7 +2,7 @@
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type { DailyListens } from '~~/shared/schema';
 
-const { data, pending, error, refresh } = useListens();
+const { data, pending, error } = useListens();
 
 function getNextNDays(startDate: Date, n: number): Date[] {
   const days: Date[] = [];
