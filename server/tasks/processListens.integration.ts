@@ -91,10 +91,11 @@ describe('processListens Task Integration Tests', () => {
       await createUser({ trackListeningHistory: false });
 
       // When
-      const { result } = await processEvent();
+      const response = await processEvent();
 
       // Then
-      expect(result).toEqual('No users to process');
+      expect(response.result).toEqual('No users to process');
+      expect(response).toHaveProperty('duration');
       expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
     });
 
@@ -188,7 +189,7 @@ describe('processListens Task Integration Tests', () => {
         );
 
         // Then - listens were processed successfully
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
         const [savedListens] = await getAllListensForUser(expiredUserId);
         expect(savedListens).toMatchObject({
           date: startOfDay,
@@ -215,7 +216,7 @@ describe('processListens Task Integration Tests', () => {
         const { result } = await processEvent();
 
         // Then - error is handled, user processing continues
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
 
         // Then - no listens were saved due to token refresh failure
         const savedListens = await getAllListensForUser(expiredUserId);
@@ -315,7 +316,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 2 user(s)');
+          expect(result).toEqual('Processed 2 user(s): 2 successful, 0 failed');
           const [user1Listens] = await getAllListensForUser(userId);
           expect(user1Listens).toMatchObject({
             date: startOfDay,
@@ -348,7 +349,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [userWithFeatureListens] = await getAllListensForUser(userId);
           expect(userWithFeatureListens).toMatchObject({
             userId,
@@ -380,7 +381,7 @@ describe('processListens Task Integration Tests', () => {
           expires_in: 3600,
           refresh_token: userAccount.refreshToken,
         });
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
         const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toMatchObject({
           userId,
@@ -403,7 +404,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
@@ -439,7 +440,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
@@ -465,7 +466,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
@@ -498,7 +499,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             date: startOfDay,
@@ -525,7 +526,7 @@ describe('processListens Task Integration Tests', () => {
         const { result } = await processEvent();
 
         // Then
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
         const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toBeUndefined();
       });
@@ -545,7 +546,7 @@ describe('processListens Task Integration Tests', () => {
         const { result } = await processEvent();
 
         // Then
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
         const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toBeUndefined();
       });
@@ -571,7 +572,7 @@ describe('processListens Task Integration Tests', () => {
         const { result } = await processEvent();
 
         // Then
-        expect(result).toEqual('Successfully processed 1 user(s)');
+        expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
         const [savedListens] = await getAllListensForUser(userId);
         expect(savedListens).toMatchObject({
           date: startOfDay,
@@ -645,7 +646,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             userId,
@@ -670,7 +671,7 @@ describe('processListens Task Integration Tests', () => {
           const { result } = await processEvent();
 
           // Then
-          expect(result).toEqual('Successfully processed 1 user(s)');
+          expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
           const [savedListens] = await getAllListensForUser(userId);
           expect(savedListens).toMatchObject({
             userId,

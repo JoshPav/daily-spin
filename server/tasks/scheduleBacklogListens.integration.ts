@@ -51,7 +51,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
 
       // Then - Only the user from beforeEach (with feature enabled) is processed but no albums scheduled
       expect(result).toBe(
-        'Successfully processed 1 user(s), scheduled 0 album(s), 0 failed',
+        'Processed 1 user(s): 1 successful, scheduled 0 album(s), 0 failed',
       );
     });
 
@@ -422,7 +422,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
 
       // Then
       expect(result).toBe(
-        'Successfully processed 1 user(s), scheduled 7 album(s), 0 failed',
+        'Processed 1 user(s): 1 successful, scheduled 7 album(s), 0 failed',
       );
     });
 
@@ -434,7 +434,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
 
       // Then - Task completes without error
       expect(result).toBe(
-        'Successfully processed 1 user(s), scheduled 0 album(s), 0 failed',
+        'Processed 1 user(s): 1 successful, scheduled 0 album(s), 0 failed',
       );
 
       const futureListens = await getFutureListensForUser(userId);
