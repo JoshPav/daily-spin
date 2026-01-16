@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AppError, NotFoundError, ValidationError } from './errors';
 import { handleError } from './errorHandler';
+import { NotFoundError, ValidationError } from './errors';
 
 // Mock the logger
 vi.mock('./logger', () => ({
@@ -14,7 +14,11 @@ vi.mock('./logger', () => ({
 
 // Mock h3 createError
 vi.mock('h3', () => ({
-  createError: (options: { statusCode: number; message: string; data?: unknown }) => ({
+  createError: (options: {
+    statusCode: number;
+    message: string;
+    data?: unknown;
+  }) => ({
     statusCode: options.statusCode,
     message: options.message,
     data: options.data,

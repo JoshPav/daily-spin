@@ -1,5 +1,5 @@
-import { createError } from 'h3';
 import type { H3Error } from 'h3';
+import { createError } from 'h3';
 import { AppError } from './errors';
 import { createTaggedLogger } from './logger';
 
