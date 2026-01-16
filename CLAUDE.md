@@ -481,3 +481,121 @@ This approach saves time and tokens by using the user's knowledge of the codebas
 
 ### Component auto-imports
 Components in `app/components/` are auto-imported without path prefix (configured in nuxt.config.ts). Composables in `composables/**` are also auto-imported.
+
+### Error Handling
+
+The application uses a standardized error handling system with custom error classes and a centralized error handler.
+
+**Custom Error Classes** (`server/utils/errors.ts`):
+```typescript
+import { NotFoundError, ValidationError, UnauthorizedError, ExternalServiceError } from '../utils/errors';
+
+// Use specific error types with context
+throw new NotFoundError('User', { userId: '123' });
+throw new ValidationError('Invalid email format', { email, field: 'email' });
+throw new UnauthorizedError('Token expired', { userId });
+throw new ExternalServiceError('Spotify', 'fetch user data', { userId, attempts: 3 });
+```
+
+**Available Error Classes**:
+- `NotFoundError` (404) - Resource not found
+- `UnauthorizedError` (401) - Authentication failures
+- `ForbiddenError` (403) - Authorization failures
+- `ValidationError` (400) - Invalid input
+- `ExternalServiceError` (502) - Third-party service failures
+- `DatabaseError` (500) - Database operation failures
+- `ConflictError` (409) - Duplicate records
+
+**API Handler Pattern**:
+```typescript
+import { handleError } from '../utils/errorHandler';
+import { getLogContext } from '../utils/requestContext';
+
+export default defineEventHandler(async (event) => {
+  const logContext = getLogContext(event);
+
+  try {
+    // Handler logic
+    return result;
+  } catch (error) {
+    throw handleError(error, logContext);
+  }
+});
+```
+
+**Service/Repository Pattern**:
+```typescript
+// Throw specific errors with context
+if (!user) {
+  throw new NotFoundError('User', { userId });
+}
+
+// Prisma P2025 (record not found) detection in repositories
+catch (error) {
+  if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+    throw new NotFoundError('Resource name', { userId, resourceId });
+  }
+  throw new DatabaseError('operation description', { userId, error });
+}
+```
+
+**Benefits**:
+- Automatic HTTP status code mapping
+- Centralized error logging with full context
+- Type-safe error handling across all layers
+- Consistent API error responses
+
+### Logging
+
+The application uses structured logging with tagged loggers for traceability.
+
+**Creating a Logger**:
+```typescript
+import { createTaggedLogger } from '../utils/logger';
+
+const logger = createTaggedLogger('Service:MyService');
+```
+
+**Log Levels**:
+- `logger.debug()` - Detailed diagnostic info (dev only)
+- `logger.info()` - Important business events (user actions, API calls)
+- `logger.warn()` - Unexpected behavior that succeeded
+- `logger.error()` - Operation failures requiring investigation
+
+**Logging Pattern**:
+```typescript
+// API handlers - use request context
+import { getLogContext } from '../utils/requestContext';
+
+const logContext = getLogContext(event);
+logger.info('Processing request', {
+  ...logContext,  // Includes requestId, userId, path, method
+  additionalField: value
+});
+
+// Services/Repositories - include relevant context
+logger.debug('Fetching user data', { userId });
+logger.info('Successfully created record', { userId, recordId });
+logger.error('Failed to update record', {
+  userId,
+  recordId,
+  error: error instanceof Error ? error.message : 'Unknown error',
+  stack: error instanceof Error ? error.stack : undefined,
+});
+```
+
+**Sensitive Data**:
+Never log access tokens, refresh tokens, passwords, or full session objects. Use token previews if needed:
+```typescript
+logger.info('Token refreshed', {
+  userId,
+  tokenPreview: token.slice(0, 10) + '...',
+  expiresIn: 3600
+});
+```
+
+**Prisma Query Logging**:
+Database queries are automatically logged via Prisma Client Extension (`server/clients/prismaExtensions.ts`):
+- All queries logged at debug level with duration
+- Slow queries (>100ms) logged as warnings
+- Query failures logged as errors with full context
