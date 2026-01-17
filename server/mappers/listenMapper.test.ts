@@ -72,6 +72,7 @@ describe('listenMapper', () => {
           listenOrder: 'ordered',
           listenMethod: 'spotify',
           listenTime: 'morning',
+          favoriteSong: null,
         },
       });
     });
@@ -273,6 +274,7 @@ describe('listenMapper', () => {
         'listenOrder',
         'listenMethod',
         'listenTime',
+        'favoriteSong',
       ]);
     });
   });

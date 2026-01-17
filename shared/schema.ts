@@ -1,7 +1,14 @@
+export type FavoriteSong = {
+  spotifyId: string;
+  name: string;
+  trackNumber: number;
+};
+
 export type ListenMetadata = {
   listenOrder: ListenOrder;
   listenMethod: ListenMethod;
   listenTime: ListenTime | null;
+  favoriteSong: FavoriteSong | null;
 };
 
 export type Artist = {

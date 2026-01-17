@@ -6,7 +6,15 @@ export const mapDailyListens = (
 ): DailyListens => ({
   date: dailyListens.date.toISOString(),
   albums: dailyListens.albums.map(
-    ({ album, listenOrder, listenMethod, listenTime }) => ({
+    ({
+      album,
+      listenOrder,
+      listenMethod,
+      listenTime,
+      favoriteSongId,
+      favoriteSongName,
+      favoriteSongTrackNumber,
+    }) => ({
       album: {
         albumId: album.spotifyId,
         albumName: album.name,
@@ -20,6 +28,14 @@ export const mapDailyListens = (
         listenOrder,
         listenMethod,
         listenTime,
+        favoriteSong:
+          favoriteSongId && favoriteSongName && favoriteSongTrackNumber
+            ? {
+                spotifyId: favoriteSongId,
+                name: favoriteSongName,
+                trackNumber: favoriteSongTrackNumber,
+              }
+            : null,
       },
     }),
   ),

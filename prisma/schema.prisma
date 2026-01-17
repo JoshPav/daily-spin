@@ -69,14 +69,17 @@ model DailyListen {
 }
 
 model AlbumListen {
-  id            String       @id @default(cuid())
-  dailyListenId String
-  albumId       String
-  listenOrder   ListenOrder  @default(ordered)
-  listenMethod  ListenMethod @default(spotify)
-  listenTime    ListenTime?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  dailyListenId    String
+  albumId          String
+  listenOrder      ListenOrder  @default(ordered)
+  listenMethod     ListenMethod @default(spotify)
+  listenTime       ListenTime?
+  favoriteSongId          String?
+  favoriteSongName        String?
+  favoriteSongTrackNumber Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
   album       Album       @relation(fields: [albumId], references: [id], onDelete: Cascade)
