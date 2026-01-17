@@ -212,3 +212,19 @@ export type UpdatePreferences = {
   body: UpdatePreferencesBody;
   response: GetPreferencesResponse;
 };
+
+// Favorite song types
+export type UpdateFavoriteSongBody =
+  | {
+      spotifyId: string;
+      name: string;
+      trackNumber: number;
+    }
+  | { spotifyId: null };
+
+export type UpdateFavoriteSong = {
+  query: never;
+  params: { albumListenId: string };
+  body: UpdateFavoriteSongBody;
+  response: { favoriteSong: FavoriteSong | null };
+};

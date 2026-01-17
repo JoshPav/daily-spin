@@ -186,6 +186,55 @@ export class DailyListenRepository {
     }
   }
 
+  async updateFavoriteSong(
+    userId: string,
+    albumListenId: string,
+    favoriteSong: {
+      spotifyId: string;
+      name: string;
+      trackNumber: number;
+    } | null,
+  ) {
+    logger.debug('Updating favorite song', {
+      userId,
+      albumListenId,
+      favoriteSong: favoriteSong
+        ? { spotifyId: favoriteSong.spotifyId, name: favoriteSong.name }
+        : null,
+    });
+
+    try {
+      const result = await this.prismaClient.albumListen.update({
+        where: {
+          id: albumListenId,
+          dailyListen: {
+            userId,
+          },
+        },
+        data: {
+          favoriteSongId: favoriteSong?.spotifyId ?? null,
+          favoriteSongName: favoriteSong?.name ?? null,
+          favoriteSongTrackNumber: favoriteSong?.trackNumber ?? null,
+        },
+      });
+
+      logger.debug('Successfully updated favorite song', {
+        userId,
+        albumListenId,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to update favorite song', {
+        userId,
+        albumListenId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
   private async findOrCreateArtist(artist: CreateArtist) {
     logger.debug('Finding or creating artist', {
       artistSpotifyId: artist.spotifyId,
