@@ -36,6 +36,7 @@ vi.mock('consola', () => ({
   default: mockLogger,
 }));
 
+import '~~/tests/mocks/authMock';
 import '~~/tests/mocks/nitroMock';
 import '~~/tests/mocks/spotifyMock';
 
