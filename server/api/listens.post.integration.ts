@@ -15,9 +15,11 @@ import type {
 } from '~~/shared/schema';
 import {
   createBacklogItem,
+  createFutureListen,
   createUser,
   getAllListensForUser,
   getBacklogItemsForUser,
+  getFutureListensForUser,
 } from '~~/tests/db/utils';
 import {
   addAlbumListenBody,
@@ -333,6 +335,109 @@ describe('POST /api/listens Integration Tests', () => {
 
       const otherUserBacklog = await getBacklogItemsForUser(otherUser.id);
       expect(otherUserBacklog).toHaveLength(1);
+    });
+  });
+
+  describe('future listen cleanup', () => {
+    it('should remove album from future listens when listened to', async () => {
+      // Given
+      const albumSpotifyId = 'scheduled-album';
+      const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
+
+      await createFutureListen({
+        userId,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Scheduled Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+          date: scheduledDate,
+        },
+      });
+
+      // Verify future listen exists
+      const futureListensBefore = await getFutureListensForUser(userId);
+      expect(futureListensBefore).toHaveLength(1);
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: albumSpotifyId }),
+      });
+
+      // When
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then
+      const futureListensAfter = await getFutureListensForUser(userId);
+      expect(futureListensAfter).toHaveLength(0);
+    });
+
+    it('should not affect future listens when listening to album not scheduled', async () => {
+      // Given
+      const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
+
+      await createFutureListen({
+        userId,
+        item: {
+          spotifyId: 'different-album',
+          name: 'Different Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+          date: scheduledDate,
+        },
+      });
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: 'listened-album' }),
+      });
+
+      // When
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then
+      const futureListensAfter = await getFutureListensForUser(userId);
+      expect(futureListensAfter).toHaveLength(1);
+      expect(futureListensAfter[0].album.spotifyId).toBe('different-album');
+    });
+
+    it('should only remove future listen for the current user', async () => {
+      // Given
+      const otherUser = await createUser();
+      const albumSpotifyId = 'shared-scheduled-album';
+      const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
+
+      // Both users have the same album scheduled
+      await createFutureListen({
+        userId,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Shared Scheduled Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+          date: scheduledDate,
+        },
+      });
+      await createFutureListen({
+        userId: otherUser.id,
+        item: {
+          spotifyId: albumSpotifyId,
+          name: 'Shared Scheduled Album',
+          artists: [{ spotifyId: 'artist-1', name: 'Artist One' }],
+          date: scheduledDate,
+        },
+      });
+
+      const body = addAlbumListenBody({
+        album: album({ albumId: albumSpotifyId }),
+      });
+
+      // When - current user listens to the album
+      await handler(createHandlerEvent(userId, { body }));
+
+      // Then - only current user's future listen is removed
+      const currentUserFutureListens = await getFutureListensForUser(userId);
+      expect(currentUserFutureListens).toHaveLength(0);
+
+      const otherUserFutureListens = await getFutureListensForUser(
+        otherUser.id,
+      );
+      expect(otherUserFutureListens).toHaveLength(1);
     });
   });
 });

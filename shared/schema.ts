@@ -169,8 +169,3 @@ export type DeleteFutureListen = {
   body: never;
   response: never;
 };
-
-// Extended daily listens with optional future scheduled album
-export type DailyListensWithFuture = DailyListens & {
-  futureAlbum?: FutureListenItem;
-};
