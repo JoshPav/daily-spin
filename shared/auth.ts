@@ -25,8 +25,11 @@ export type SpotifyCredentials = {
 
 /**
  * Refreshes a Spotify access token using the refresh token.
- * This is the centralized token refresh logic that can be called directly
- * for server-side batch processing.
+ *
+ * NOTE: This function is kept as a fallback/utility for cases where BetterAuth's
+ * auth.api.getAccessToken() cannot be used (e.g., edge cases, testing, or if
+ * BetterAuth's refresh fails). The primary token refresh should go through
+ * BetterAuth's getAccessToken API which handles refresh automatically.
  *
  * @param refreshToken - The refresh token to use
  * @param credentials - Optional credentials (defaults to useRuntimeConfig in Nuxt context)
