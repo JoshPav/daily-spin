@@ -178,45 +178,42 @@ Dedicated component for ghost album rendering:
 
 ### Phase 6: Ghost Album Visual Design
 
-CSS updates to `DailyListens.vue`:
+Use Tailwind CSS utility classes for ghost album styling in `DailyListens.vue`:
 
-```css
-/* Ghost album styling */
-.album-cover.ghost {
-  opacity: 0.6;
-  border: 2px dashed rgba(29, 185, 84, 0.5); /* Spotify green dashed border */
-}
+**Template changes:**
+```vue
+<!-- Ghost album container -->
+<div
+  class="album-cover"
+  :class="{
+    ghost: isGhostAlbum,
+    'opacity-60 border-2 border-dashed border-green-500/50': isGhostAlbum
+  }"
+>
+  <!-- Scheduled badge -->
+  <div
+    v-if="isGhostAlbum"
+    class="absolute top-2 right-2 bg-green-500/90 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase z-10"
+  >
+    Scheduled
+  </div>
 
-.album-cover.ghost img {
-  filter: grayscale(50%) brightness(0.8);
-}
-
-.album-cover.ghost:hover img {
-  filter: grayscale(0%) brightness(1);
-}
-
-/* Scheduled badge */
-.scheduled-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(29, 185, 84, 0.9);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  z-index: 10;
-}
+  <!-- Ghost album image with grayscale -->
+  <NuxtImg
+    v-if="scheduledAlbum"
+    :src="scheduledAlbum.imageUrl"
+    class="grayscale-[50%] brightness-80 hover:grayscale-0 hover:brightness-100 transition-[filter] duration-300"
+  />
+</div>
 ```
 
-Visual characteristics:
-- Reduced opacity (60% vs 100% for past listens)
-- Grayscale with slight desaturation
-- Dashed border in Spotify green
-- "Scheduled" badge in top-right corner
-- Full color on hover (preview effect)
+**Visual characteristics (using Tailwind):**
+- `opacity-60` - Reduced opacity vs 100% for past listens
+- `grayscale-[50%] brightness-80` - Desaturated appearance
+- `border-2 border-dashed border-green-500/50` - Dashed Spotify green border
+- Badge with `bg-green-500/90 text-white text-[10px] font-semibold uppercase`
+- `hover:grayscale-0 hover:brightness-100` - Full color on hover (preview effect)
+- `transition-[filter] duration-300` - Smooth hover transition
 
 ---
 

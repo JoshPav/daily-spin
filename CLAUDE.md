@@ -49,7 +49,7 @@ bun run generate               # Generate static site
 - **Runtime**: Node.js 24, Bun for package management and scripts
 - **Database**: PostgreSQL with Prisma ORM
 - **External APIs**: Spotify Web API (@spotify/web-api-ts-sdk)
-- **Styling**: Scoped CSS in Vue components
+- **Styling**: Tailwind CSS (via @nuxt/ui) with scoped CSS for complex component styles
 - **Testing**: Vitest with separate unit and integration test projects
 
 ### Project Structure
@@ -481,6 +481,50 @@ This approach saves time and tokens by using the user's knowledge of the codebas
 
 ### Component auto-imports
 Components in `app/components/` are auto-imported without path prefix (configured in nuxt.config.ts). Composables in `composables/**` are also auto-imported.
+
+### Styling with Tailwind CSS
+
+The project uses **Tailwind CSS** (provided by `@nuxt/ui`) for styling. Follow these conventions:
+
+**Prefer Tailwind utility classes** for:
+- Layout and positioning (`flex`, `grid`, `absolute`, `relative`)
+- Spacing (`p-4`, `m-2`, `gap-4`)
+- Typography (`text-sm`, `font-bold`, `uppercase`)
+- Colors and opacity (`bg-green-500`, `text-white`, `opacity-60`)
+- Borders (`border-2`, `border-dashed`, `rounded-lg`)
+- Responsive design (`md:px-6`, `lg:grid-cols-3`)
+- State variants (`hover:opacity-100`, `focus:ring-2`)
+
+**Use scoped `<style>` blocks** for:
+- Complex animations (`@keyframes`, multi-step transitions)
+- Pseudo-elements (`::before`, `::after`)
+- Highly specific component styles that would be verbose in Tailwind
+- Styles requiring CSS features not available in Tailwind
+
+**Example - Tailwind in template:**
+```vue
+<div class="absolute top-2 right-2 bg-green-500/90 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase z-10">
+  Scheduled
+</div>
+```
+
+**Example - Scoped CSS for animations:**
+```vue
+<style scoped>
+.skeleton {
+  animation: skeleton-shimmer 2.5s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+</style>
+```
+
+**Spotify brand colors** - Use these consistently:
+- Primary green: `bg-green-500` / `text-green-500` (approximates #1db954)
+- For exact Spotify green, use arbitrary values: `bg-[#1db954]`
 
 ### Error Handling
 
