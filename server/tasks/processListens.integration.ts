@@ -123,7 +123,7 @@ describe('processListens Task Integration Tests', () => {
         );
       });
 
-      it.only('should refresh expired access token before fetching recently played', async () => {
+      it('should refresh expired access token before fetching recently played', async () => {
         // Given
         const { album, history } = createFullAlbumPlayHistory();
 
