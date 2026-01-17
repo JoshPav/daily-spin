@@ -143,6 +143,8 @@ export const albumListen = createFactory<AlbumListenWithAlbum>(() => {
     listenOrder: 'ordered' as ListenOrder,
     listenMethod: 'spotify' as ListenMethod,
     listenTime: 'morning' as ListenTime,
+    favoriteSongId: null,
+    favoriteSongName: null,
     createdAt: recent(),
     updatedAt: recent(),
     album: albumData,
