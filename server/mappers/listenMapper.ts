@@ -13,6 +13,7 @@ export const mapDailyListens = (
       listenTime,
       favoriteSongId,
       favoriteSongName,
+      favoriteSongTrackNumber,
     }) => ({
       album: {
         albumId: album.spotifyId,
@@ -28,8 +29,12 @@ export const mapDailyListens = (
         listenMethod,
         listenTime,
         favoriteSong:
-          favoriteSongId && favoriteSongName
-            ? { spotifyId: favoriteSongId, name: favoriteSongName }
+          favoriteSongId && favoriteSongName && favoriteSongTrackNumber
+            ? {
+                spotifyId: favoriteSongId,
+                name: favoriteSongName,
+                trackNumber: favoriteSongTrackNumber,
+              }
             : null,
       },
     }),

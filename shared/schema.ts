@@ -1,6 +1,7 @@
 export type FavoriteSong = {
   spotifyId: string;
   name: string;
+  trackNumber: number;
 };
 
 export type ListenMetadata = {

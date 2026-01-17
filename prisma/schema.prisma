@@ -75,8 +75,9 @@ model AlbumListen {
   listenOrder      ListenOrder  @default(ordered)
   listenMethod     ListenMethod @default(spotify)
   listenTime       ListenTime?
-  favoriteSongId   String?
-  favoriteSongName String?
+  favoriteSongId          String?
+  favoriteSongName        String?
+  favoriteSongTrackNumber Int?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 

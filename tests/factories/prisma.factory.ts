@@ -145,6 +145,7 @@ export const albumListen = createFactory<AlbumListenWithAlbum>(() => {
     listenTime: 'morning' as ListenTime,
     favoriteSongId: null,
     favoriteSongName: null,
+    favoriteSongTrackNumber: null,
     createdAt: recent(),
     updatedAt: recent(),
     album: albumData,
