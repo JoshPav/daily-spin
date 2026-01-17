@@ -70,7 +70,7 @@ describe('GET /api/backlog Integration Tests', () => {
         { spotifyId: 'artist-1', name: 'Artist One', imageUrl: undefined },
         { spotifyId: 'artist-2', name: 'Artist Two', imageUrl: undefined },
       ],
-      createdAt: createdItem.createdAt.toISOString(),
+      addedAt: createdItem.createdAt.toISOString(),
     });
   });
 

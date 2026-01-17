@@ -102,8 +102,8 @@ describe('POST /api/backlog Integration Tests', () => {
       ],
     });
     expect(result.added[0].id).toBeDefined();
-    expect(result.added[0].createdAt).toBeDefined();
-    expect(new Date(result.added[0].createdAt)).toBeInstanceOf(Date);
+    expect(result.added[0].addedAt).toBeDefined();
+    expect(new Date(result.added[0].addedAt)).toBeInstanceOf(Date);
   });
 
   it('should skip duplicate items and return them in skipped array', async () => {

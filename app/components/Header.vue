@@ -1,13 +1,31 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
+import type { NavigationMenuItem } from '@nuxt/ui';
 import { signOut } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
 import { Icons } from './common/icons';
 
 const { loggedIn, user, loading } = useAuth();
 const router = useRouter();
+const route = useRoute();
 
-const menuItems = computed<DropdownMenuItem[]>(() => [
+const navItems = computed<NavigationMenuItem[][]>(() => [
+  [
+    {
+      label: 'Dashboard',
+      icon: Icons.CALENDAR,
+      to: Route.DASHBOARD,
+      active: route.path === Route.DASHBOARD,
+    },
+    {
+      label: 'Backlog',
+      icon: Icons.BACKLOG,
+      to: Route.BACKLOG,
+      active: route.path === Route.BACKLOG,
+    },
+  ],
+]);
+
+const bodyItems = computed<NavigationMenuItem[][]>(() => [
   [
     {
       type: 'label',
@@ -15,9 +33,11 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
       avatar: {
         src: user.value?.image,
         alt: user.value?.initial,
+        size: 'md',
       },
     },
   ],
+  ...navItems.value,
   [
     {
       label: 'Bulk import',
@@ -25,14 +45,14 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
       class: 'hover:cursor-pointer',
       disabled: true,
     },
+  ],
+  [
     {
       label: 'Preferences',
       icon: Icons.SETTINGS,
       class: 'hover:cursor-pointer',
       disabled: true,
     },
-  ],
-  [
     {
       label: 'Sign out',
       icon: Icons.LOG_OUT,
@@ -47,27 +67,30 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
     },
   ],
 ]);
+
+const to = computed(() =>
+  loggedIn.value ? Route.DASHBOARD : Route.LANDING_PAGE,
+);
 </script>
 
 <template>
-  <UHeader title="DailySpin" :to="loggedIn ? Route.DASHBOARD : Route.LANDING_PAGE">
-
-    <template #toggle>
-      <USkeleton v-if="loading" class="h-8 w-8 rounded-full mr-1.5"/>
-      <UDropdownMenu
-        v-else-if="loggedIn"
-        size="xl"
-        :arrow="true"
-        :items="menuItems"
-        :content="{ align: 'end' }"
-      >
-        <UButton class="hover:cursor-pointer" variant="ghost" :avatar="{
-          src: user?.image,
-          size: 'md',
-          alt: user?.initial
-        }" />
-      </UDropdownMenu>
-      <LoginWithSpotifyButton v-else label="Sign in"  />
+  <UHeader 
+    title="DailySpin" 
+    :to="to" :ui="{ center: 'md:block', toggle: 'block' }"
+    :toggle="{ size: 'xl'}"
+    mode="slideover">
+    <template v-if="loggedIn">
+      <UNavigationMenu :items="navItems" highlight />
     </template>
+
+    <template #body>
+      <UNavigationMenu :items="bodyItems" highlight orientation="vertical" variant="pill" :ui="{
+        link: 'text-xl px-4 py-3',
+        label: 'text-xl px-4 py-3',
+        linkLeadingIcon: 'size-6'
+
+      }" />
+    </template>
+
   </UHeader>
 </template>

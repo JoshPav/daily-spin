@@ -5,6 +5,7 @@ import type {
   AddFutureListenBody,
   Album,
   Artist,
+  BacklogAlbum,
   BacklogArtist,
   DailyAlbumListen,
   ListenMetadata,
@@ -90,3 +91,15 @@ export const addFutureListenBody = createFactory<AddFutureListenBody>(() => ({
   artists: [backlogArtist()],
   date: date.future().toISOString(),
 }));
+
+export const backlogAlbum = (
+  overrides: Partial<BacklogAlbum>,
+): BacklogAlbum => ({
+  id: faker.string.uuid(),
+  spotifyId: faker.string.uuid(),
+  name: faker.music.album(),
+  imageUrl: faker.image.url(),
+  artists: [artist()],
+  addedAt: faker.date.recent().toISOString(),
+  ...overrides,
+});

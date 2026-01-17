@@ -5,7 +5,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../utils/errors';
-import { createTaggedLogger } from '../utils/logger';
+import { createTaggedLogger, filterSensitiveData } from '../utils/logger';
 import type { AuthDetails } from './user.service';
 
 const logger = createTaggedLogger('Service:Spotify');
@@ -72,6 +72,15 @@ export class SpotifyService {
     }
 
     try {
+      logger.debug(
+        'Fetching new access token...',
+        filterSensitiveData({
+          refreshToken,
+          spotifyClientId,
+          spotifyClientSecret,
+        }),
+      );
+
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {

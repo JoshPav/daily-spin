@@ -46,7 +46,7 @@ const { scrollContainer, todayElement: todayItem } = useScrollToToday({
 </script>
 
 <template>
-    <div ref="scrollContainer" class="fixed inset-0 flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto pt-(--ui-header-height)">
+    <div ref="scrollContainer" class="flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto h-full">
       <!-- Loading / Error / Empty states -->
       <div v-if="pending" class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]">Loading...</div>
       <div v-else-if="error" class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]">Error: {{ error }}</div>

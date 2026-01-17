@@ -350,6 +350,7 @@ describe('processListens Task Integration Tests', () => {
 
           // Then
           expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
+
           const [userWithFeatureListens] = await getAllListensForUser(userId);
           expect(userWithFeatureListens).toMatchObject({
             userId,

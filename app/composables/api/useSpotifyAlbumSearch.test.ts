@@ -120,7 +120,7 @@ describe('useSpotifyAlbumSearch', () => {
         'test album',
         ['album'],
         undefined,
-        3,
+        5,
       );
     });
 
@@ -255,7 +255,7 @@ describe('useSpotifyAlbumSearch', () => {
         'second',
         ['album'],
         undefined,
-        3,
+        5,
       );
     });
   });
