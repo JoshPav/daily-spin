@@ -1,15 +1,8 @@
 <script setup lang="ts">
+import { LazyAddToBacklogModal } from '#components';
+import { Icons } from '~/components/common/icons';
+
 const { data, pending, error, refresh } = useBacklog();
-
-const isAddModalOpen = ref(false);
-
-const openAddModal = () => {
-  isAddModalOpen.value = true;
-};
-
-const closeAddModal = () => {
-  isAddModalOpen.value = false;
-};
 
 const handleAdded = () => {
   refresh();
@@ -19,168 +12,93 @@ const handleDeleted = () => {
   refresh();
 };
 
+const overlay = useOverlay();
+const modal = overlay.create(LazyAddToBacklogModal);
+
+const openAddModal = () => {
+  modal.open({
+    onAdded: handleAdded,
+  });
+};
+
 const albums = computed(() => data.value?.albums ?? []);
+
+// Filtering
+const { searchTerm, sortBy, viewMode, filteredAlbums, groupedByArtist } =
+  useBacklogFilters(albums);
+
+const viewModeOptions = [
+  { value: 'albums', label: 'Albums', icon: Icons.ALBUM_LIST },
+  {
+    value: 'artists',
+    label: 'Artists',
+    icon: Icons.ARTIST,
+  },
+];
 </script>
 
 <template>
-  <div class="backlog-container">
-    <main class="main-content">
-      <div class="page-header">
-        <h1 class="page-title">Backlog</h1>
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          @click="openAddModal"
-        >
-          Add Albums
-        </UButton>
+  <div class="flex flex-col overflow-hidden h-full">
+    <main class="max-w-200 mx-auto p-4 md:p-6 w-full flex-1 flex flex-col overflow-hidden">
+      <div class="flex flex-row justify-between items-stretch md:items-center gap-4 mb-6">
+        <h1 class="m-0 text-2xl md:text-[32px] font-black text-highlighted">Backlog</h1>
+        <div class="flex flex-row gap-3 items-stretch md:items-center">
+          <DropdownSelect
+            v-model="viewMode"
+            :options="viewModeOptions"
+            label="Select view"
+            icon-only
+          />
+          <UButton
+            color="primary"
+            :icon="Icons.PLUS"
+            @click="openAddModal"
+          >
+            Add Album
+          </UButton>
+        </div>
       </div>
 
-      <!-- Loading state -->
-      <div v-if="pending" class="loading">Loading...</div>
+      <div v-if="pending" class="text-center py-12 px-6 text-base font-medium text-muted">Loading...</div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="error">Error: {{ error }}</div>
+      <div v-else-if="error" class="text-center py-12 px-6 text-base font-medium text-secondary-500">Error: {{ error }}</div>
 
-      <!-- Empty state -->
-      <div v-else-if="albums.length === 0" class="empty-state">
-        <UIcon
-          name="i-heroicons-queue-list"
-          class="text-6xl text-gray-600 mb-4"
+      <BacklogEmpty v-else-if="albums.length === 0" :on-added="handleAdded" />
+
+      <div v-else class="flex flex-col gap-4 overflow-hidden flex-1">
+        <BacklogFilters
+          v-model:search-term="searchTerm"
+          v-model:sort-by="sortBy"
+          :view-mode="viewMode"
         />
-        <p class="empty-title">Your backlog is empty</p>
-        <p class="empty-description">
-          Add albums you want to listen to later
-        </p>
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          class="mt-4"
-          @click="openAddModal"
-        >
-          Add Your First Album
-        </UButton>
-      </div>
 
-      <!-- Backlog list -->
-      <div v-else class="backlog-list">
-        <BacklogItem
-          v-for="album in albums"
-          :key="album.id"
-          :album="album"
-          @deleted="handleDeleted"
-        />
+        <div v-if="filteredAlbums.length === 0" class="text-center py-12 text-base font-medium text-muted">
+          No albums found matching your search
+        </div>
+
+        <!-- Album List View -->
+        <div v-else-if="viewMode === 'albums'" class="flex flex-col gap-3 overflow-y-auto flex-1">
+          <BacklogItem
+            v-for="album in filteredAlbums"
+            :key="album.id"
+            :album="album"
+            :search-term="searchTerm"
+            @deleted="handleDeleted"
+          />
+        </div>
+
+        <!-- Artist Grouped View -->
+        <div v-else class="flex flex-col gap-6 overflow-y-auto flex-1">
+          <BacklogArtistGroup
+            v-for="[artistKey, group] in groupedByArtist"
+            :key="artistKey"
+            :artist="group.artist"
+            :albums="group.albums"
+            :search-term="searchTerm"
+            @deleted="handleDeleted"
+          />
+        </div>
       </div>
     </main>
-
-    <!-- Add to backlog modal -->
-    <AddToBacklogModal
-      v-if="isAddModalOpen"
-      @close="closeAddModal"
-      @added="handleAdded"
-    />
   </div>
 </template>
-
-<style scoped>
-.backlog-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #121212;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.main-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
-  width: 100%;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #ffffff;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 48px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #b3b3b3;
-}
-
-.error {
-  color: #f15e6c;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  text-align: center;
-  flex: 1;
-}
-
-.empty-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-}
-
-.empty-description {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: #b3b3b3;
-  margin: 8px 0 0;
-}
-
-.backlog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 16px;
-  }
-
-  .page-title {
-    font-size: 24px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-}
-</style>

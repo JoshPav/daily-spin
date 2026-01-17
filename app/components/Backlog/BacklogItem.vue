@@ -1,23 +1,29 @@
 <template>
-  <div class="backlog-item">
+  <div class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted">
     <img
       v-if="album.imageUrl"
       :src="album.imageUrl"
       :alt="album.name"
-      class="album-image"
+      class="w-16 h-16 rounded object-cover shrink-0"
     />
-    <div v-else class="album-image placeholder">
-      <UIcon name="i-heroicons-musical-note" class="text-3xl text-gray-500" />
+    <div v-else class="w-16 h-16 rounded shrink-0 bg-neutral-600 flex items-center justify-center">
+      <UIcon :name="Icons.MUSICAL_NOTE" class="text-3xl text-neutral-500" />
     </div>
-    <div class="album-info">
-      <div class="album-name">{{ album.name }}</div>
-      <div class="artist-names">{{ artistNames }}</div>
+    <div class="flex-1 flex flex-col gap-1 min-w-0">
+      <div class="text-base font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+        <HighlightedText :text="album.name" :search-term="searchTerm" />
+      </div>
+      <div v-if="!hideArtist" class="text-sm font-medium text-muted whitespace-nowrap overflow-hidden text-ellipsis">
+        <HighlightedText :text="artistNames" :search-term="searchTerm" />
+      </div>
+      <div class="text-xs text-dimmed">Added {{ addedDate }}</div>
     </div>
     <UButton
       color="neutral"
       variant="ghost"
-      size="sm"
-      icon="i-heroicons-trash"
+      size="lg"
+      class="hover:cursor-pointer"
+      :icon="Icons.TRASH"
       :loading="deleting"
       @click="handleDelete"
     />
@@ -26,9 +32,12 @@
 
 <script lang="ts" setup>
 import type { BacklogAlbum } from '#shared/schema';
+import { Icons } from '~/components/common/icons';
 
 const props = defineProps<{
   album: BacklogAlbum;
+  hideArtist?: boolean;
+  searchTerm?: string;
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +48,34 @@ const artistNames = computed(() =>
   props.album.artists.map((a) => a.name).join(', '),
 );
 
+const addedDate = computed(() => {
+  const date = new Date(props.album.addedAt);
+  const now = new Date();
+  const diffInDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffInDays === 0) {
+    return 'today';
+  }
+  if (diffInDays === 1) {
+    return 'yesterday';
+  }
+  if (diffInDays < 7) {
+    return `${diffInDays} days ago`;
+  }
+  if (diffInDays < 30) {
+    const weeks = Math.floor(diffInDays / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+  }
+  if (diffInDays < 365) {
+    const months = Math.floor(diffInDays / 30);
+    return months === 1 ? '1 month ago' : `${months} months ago`;
+  }
+  const years = Math.floor(diffInDays / 365);
+  return years === 1 ? '1 year ago' : `${years} years ago`;
+});
+
 const { deleting, deleteItem } = useDeleteBacklogItem({
   onSuccess: () => emit('deleted'),
 });
@@ -47,62 +84,3 @@ const handleDelete = async () => {
   await deleteItem(props.album.id);
 };
 </script>
-
-<style scoped>
-.backlog-item {
-  display: flex;
-  gap: 16px;
-  padding: 12px;
-  background-color: #282828;
-  border-radius: 8px;
-  align-items: center;
-  transition: background-color 0.2s ease;
-}
-
-.backlog-item:hover {
-  background-color: #333333;
-}
-
-.album-image {
-  width: 64px;
-  height: 64px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.album-image.placeholder {
-  background-color: #404040;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.album-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.album-name {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.artist-names {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: #b3b3b3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-</style>

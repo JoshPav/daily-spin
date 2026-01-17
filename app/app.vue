@@ -2,7 +2,7 @@
   <UApp :toaster="{ position: 'top-center'}">
     <Header />
 
-    <UMain>
+    <UMain as="main">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>

@@ -67,7 +67,7 @@ export type BacklogAlbum = {
   name: string;
   imageUrl: string | null;
   artists: BacklogArtist[];
-  createdAt: string;
+  addedAt: string;
 };
 
 // API endpoint types

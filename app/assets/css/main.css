@@ -31,17 +31,17 @@ html {
   --color-primary-vibrant: #1ed760; /* More saturated, eye-catching */
 
   /* Coral/Red - Secondary/Error Color */
-  --color-secondary-50: oklch(0.97 0.02 15);
-  --color-secondary-100: oklch(0.94 0.04 15);
-  --color-secondary-200: oklch(0.89 0.08 15);
-  --color-secondary-300: oklch(0.81 0.13 15);
-  --color-secondary-400: oklch(0.72 0.16 15);
-  --color-secondary-500: oklch(0.65 0.17 15); /* #f15e6c */
-  --color-secondary-600: oklch(0.58 0.15 15);
-  --color-secondary-700: oklch(0.48 0.12 15);
-  --color-secondary-800: oklch(0.4 0.09 15);
-  --color-secondary-900: oklch(0.34 0.07 15);
-  --color-secondary-950: oklch(0.21 0.04 15);
+  --color-secondary-50: #fff0f1;
+  --color-secondary-100: #ffe1e2;
+  --color-secondary-200: #ffc6ca;
+  --color-secondary-300: #ff9da6;
+  --color-secondary-400: #f87584;
+  --color-secondary-500: #e35b6d; /* #f15e6c */
+  --color-secondary-600: #c24d5d;
+  --color-secondary-700: #953c47;
+  --color-secondary-800: #703138;
+  --color-secondary-900: #56272c;
+  --color-secondary-950: #281012;
 
   /* Neutral Grays - Based on your background colors */
   --ui-color-neutral-50: #f6f6f6;
@@ -71,12 +71,12 @@ html {
   --ui-bg-inverted: oklch(1 0 0); /* white */
 
   /* Text colors */
-  --ui-text: oklch(1 0 0); /* #ffffff - primary text */
-  --ui-text-highlighted: oklch(1 0 0);
-  --ui-text-muted: oklch(0.75 0 0); /* #b3b3b3 - secondary text */
-  --ui-text-dimmed: oklch(0.6 0 0);
-  --ui-text-toned: oklch(0.45 0 0);
-  --ui-text-inverted: oklch(0.16 0 0);
+  --ui-text: #ffffff;
+  --ui-text-highlighted: #ffffff;
+  --ui-text-muted: #b3b3b3;
+  --ui-text-dimmed: #808080;
+  --ui-text-toned: #555555;
+  --ui-text-inverted: #0d0d0d;
 
   /* Border colors */
   --ui-border: oklch(0.35 0 0);

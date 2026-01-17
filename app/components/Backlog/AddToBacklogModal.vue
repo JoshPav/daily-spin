@@ -6,59 +6,71 @@
   >
     <template #body>
       <div class="flex flex-col gap-4">
-        <!-- Search input -->
-        <div class="search-section">
+        <div class="flex flex-col gap-2">
           <input
             v-model="searchInput"
             type="text"
-            placeholder="Search for an album..."
-            class="search-input"
+            placeholder="Search by name or artist..."
+            class="w-full px-4 py-3 bg-elevated border-2 border-neutral-600 rounded-lg text-white font-montserrat text-base transition-colors focus:outline-none focus:border-primary-500 placeholder:text-muted"
             @input="handleSearchInput"
           />
         </div>
 
-        <!-- Loading state -->
-        <div v-if="loading" class="search-results">
-          <div v-for="i in 3" :key="i" class="album-card skeleton"></div>
+        <div v-if="loading" class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden">
+          <div v-for="i in 3" :key="i" class="h-20 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-[length:400%_100%] animate-[skeleton-shimmer_2.5s_ease_infinite]"></div>
         </div>
 
         <!-- Search results with multi-select -->
-        <div v-else-if="searchResults.length > 0" class="search-results">
+        <div v-else-if="searchResults.length > 0" class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden">
           <div
             v-for="album in searchResults"
             :key="album.id"
-            class="album-card"
-            :class="{ selected: isSelected(album) }"
+            class="flex gap-3 p-3 rounded-lg cursor-pointer transition-all items-center"
+            :class="
+              isSelected(album)
+                ? 'bg-primary-500'
+                : 'bg-elevated hover:bg-muted'
+            "
             @click="toggleSelection(album)"
           >
-            <div class="checkbox-wrapper">
+            <div class="flex-shrink-0">
               <UIcon
                 v-if="isSelected(album)"
-                name="i-heroicons-check-circle-solid"
+                :name="Icons.CHECK_CIRCLE_SOLID"
                 class="text-xl"
               />
               <UIcon
                 v-else
-                name="i-heroicons-plus-circle"
-                class="text-xl text-gray-500"
+                :name="Icons.PLUS_CIRCLE"
+                class="text-xl text-neutral-500"
               />
             </div>
             <img
               v-if="album.images?.[0]?.url"
               :src="album.images[0].url"
               :alt="album.name"
-              class="album-image"
+              class="w-14 h-14 rounded object-cover shrink-0"
             />
-            <div class="album-info">
-              <div class="album-name">{{ album.name }}</div>
-              <div class="artist-names">{{ getArtistNames(album) }}</div>
+            <div class="flex-1 flex flex-col gap-1 min-w-0">
+              <div
+                class="font-montserrat text-[15px] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+                :class="isSelected(album) ? 'text-black' : 'text-white'"
+              >
+                {{ album.name }}
+              </div>
+              <div
+                class="font-montserrat text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis"
+                :class="isSelected(album) ? 'text-gray-900' : 'text-muted'"
+              >
+                {{ getArtistNames(album) }}
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Selected albums summary -->
-        <div v-if="selectedAlbums.length > 0" class="selected-summary">
-          <div class="selected-count">
+        <div v-if="selectedAlbums.length > 0" class="flex justify-between items-center px-3 py-2 bg-neutral-800 rounded-lg">
+          <div class="font-montserrat text-sm font-semibold text-primary-500">
             {{ selectedAlbums.length }} album{{
               selectedAlbums.length === 1 ? '' : 's'
             }}
@@ -74,7 +86,6 @@
           </UButton>
         </div>
 
-        <!-- Add button -->
         <UButton
           v-if="selectedAlbums.length > 0"
           block
@@ -93,7 +104,12 @@
 </template>
 
 <script lang="ts" setup>
+import { Icons } from '~/components/common/icons';
 import type { SearchResult } from '~/composables/api/useSpotifyAlbumSearch';
+
+const props = defineProps<{
+  onAdded?: () => void;
+}>();
 
 const emit = defineEmits<{
   close: [];
@@ -110,6 +126,7 @@ const {
   addToBacklog,
 } = useAddToBacklog({
   onSuccess: () => {
+    props.onAdded?.();
     emit('added');
     emit('close');
   },
@@ -131,137 +148,6 @@ const handleAdd = async () => {
 </script>
 
 <style scoped>
-.search-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 12px 16px;
-  background-color: #282828;
-  border: 2px solid #404040;
-  border-radius: 8px;
-  color: #ffffff;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 16px;
-  transition: border-color 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #1db954;
-}
-
-.search-input::placeholder {
-  color: #b3b3b3;
-}
-
-.search-results {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.album-card {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  background-color: #282828;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  align-items: center;
-}
-
-.album-card:hover {
-  background-color: #333333;
-}
-
-.album-card.selected {
-  background-color: #1db954;
-}
-
-.album-card.skeleton {
-  height: 80px;
-  background: linear-gradient(
-    90deg,
-    #2a2a2a 25%,
-    #3a3a3a 37%,
-    #2a2a2a 63%
-  );
-  background-size: 400% 100%;
-  animation: skeleton-shimmer 2.5s ease infinite;
-}
-
-.checkbox-wrapper {
-  flex-shrink: 0;
-}
-
-.album-image {
-  width: 56px;
-  height: 56px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.album-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.album-name {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.album-card.selected .album-name {
-  color: #000000;
-}
-
-.artist-names {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: #b3b3b3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.album-card.selected .artist-names {
-  color: #121212;
-}
-
-.selected-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background-color: #1a1a1a;
-  border-radius: 8px;
-}
-
-.selected-count {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1db954;
-}
-
 @keyframes skeleton-shimmer {
   0% {
     background-position: 100% 0;

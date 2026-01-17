@@ -1,7 +1,7 @@
 import type { SearchResults } from '@spotify/web-api-ts-sdk';
 import { ref } from 'vue';
 
-const SEARCH_LIMIT = 3;
+const SEARCH_LIMIT = 5;
 
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
 
