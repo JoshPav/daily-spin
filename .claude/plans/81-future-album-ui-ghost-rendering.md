@@ -124,25 +124,40 @@ export const useFutureListens = () => {
    - For future dates, attach scheduled album data if available
    - Mark days with scheduled albums differently from empty future days
 
-### Phase 4: Schema/Type Updates
+### Phase 4: Dashboard Data Merging (Frontend)
 
-**File: `shared/schema.ts`** (modify)
+**No schema changes needed.** Keep the two data types separate:
 
-Extend `DailyListens` or create new type to differentiate:
+- `DailyListens` - past/current listens (from `GET /api/listens`)
+- `FutureListenItem[]` - scheduled albums (from `GET /api/futureListens`)
+
+The dashboard merges them client-side:
 ```typescript
-export type DailyListens = {
-  date: string;
-  albums: DailyAlbumListen[];
-  scheduledAlbum?: FutureListenAlbum; // NEW: ghost album for future dates
-};
+// Pseudocode for merged calendar data
+const calendarDays = computed(() => {
+  const pastListens = listensData.value; // DailyListens[]
+  const futureScheduled = futureListensData.value; // FutureListenItem[]
+
+  // Build map of scheduled albums by date
+  const scheduledByDate = new Map(
+    futureScheduled.map(item => [item.date.split('T')[0], item])
+  );
+
+  // Generate next 7 days from today
+  const futureDays = generateNextNDays(7);
+
+  return [
+    ...pastListens,
+    ...futureDays.map(date => ({
+      date,
+      albums: [],
+      scheduledAlbum: scheduledByDate.get(date) // undefined if no scheduled album
+    }))
+  ];
+});
 ```
 
-Or create a new union type:
-```typescript
-export type CalendarDay =
-  | { type: 'past' | 'today'; date: string; albums: DailyAlbumListen[] }
-  | { type: 'future'; date: string; albums: []; scheduledAlbum?: FutureListenAlbum };
-```
+This keeps APIs clean while allowing the UI to show both data types together.
 
 ### Phase 5: Ghost Album Component/Styling
 
@@ -230,11 +245,10 @@ Visual characteristics:
 
 | File | Action | Description |
 |------|--------|-------------|
-| `server/api/futureListens.get.ts` | Create | GET endpoint for future listens |
+| `server/api/futureListens.get.ts` | Create | GET endpoint for future listens (from today onwards) |
 | `app/composables/api/useFutureListens.ts` | Create | Composable for fetching future listens |
-| `app/pages/dashboard.vue` | Modify | Remove hacky logic, integrate future listens |
+| `app/pages/dashboard.vue` | Modify | Remove hacky logic, fetch & merge future listens |
 | `app/components/DailyListens.vue` | Modify | Add ghost album rendering and styling |
-| `shared/schema.ts` | Modify | Add `scheduledAlbum` field or calendar day type |
 
 ---
 
@@ -268,15 +282,12 @@ No new npm packages required.
 
 ---
 
-## Open Questions
+## Decisions Made
 
-1. **How many future days to show?** The hacky logic shows 6 days. Should this be configurable? Suggest: 7 days (one week ahead)
+1. **How many future days to show?** → 7 days (one week ahead)
 
-2. **What happens when clicking a ghost album?** Options:
-   - Open details modal (similar to past listens)
-   - Open Spotify album page
-   - No action (just visual indicator)
+2. **What happens when clicking a ghost album?** → No action for now (just visual indicator)
 
-3. **Should the API filter by date range or return all future listens?** Suggest: Return all future listens from tomorrow onwards, let frontend handle display range
+3. **Should the API filter by date range?** → Return future listens from today onwards, frontend handles 7-day display window
 
-4. **Should ghost albums show listen metadata?** Future listens don't have `listenOrder`, `listenMethod`, `listenTime` - these are populated when actually listened. Suggest: Don't show metadata for ghost albums.
+4. **Should ghost albums show listen metadata?** → No, future listens don't have metadata (`listenOrder`, `listenMethod`, `listenTime` are only populated when actually listened)
