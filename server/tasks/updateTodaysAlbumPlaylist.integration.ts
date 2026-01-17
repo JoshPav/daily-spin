@@ -24,6 +24,7 @@ import {
   userProfile,
 } from '~~/tests/factories/spotify.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import { mockGetAccessToken } from '~~/tests/mocks/authMock';
 import {
   mockSpotifyApi,
   mockWithAccessToken,
@@ -124,6 +125,11 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
       const user = await createUser({ createTodaysAlbumPlaylist: true });
       userId = user.id;
       userAccount = user.accounts[0];
+
+      // Mock BetterAuth to return the user's access token
+      mockGetAccessToken.mockResolvedValue({
+        accessToken: userAccount.accessToken,
+      });
     });
 
     describe('new playlist creation', () => {

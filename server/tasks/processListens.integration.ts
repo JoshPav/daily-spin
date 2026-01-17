@@ -29,6 +29,10 @@ import {
 } from '~~/tests/factories/spotify.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
 import {
+  mockGetAccessToken,
+  mockRefreshSpotifyToken,
+} from '~~/tests/mocks/authMock';
+import {
   mockSpotifyApi,
   mockWithAccessToken,
 } from '~~/tests/mocks/spotifyMock';
@@ -39,25 +43,20 @@ describe('processListens Task Integration Tests', () => {
   const mockGetRecentlyPlayedTracks = vi.mocked(
     mockSpotifyApi.player.getRecentlyPlayedTracks,
   );
-  const mockFetch = vi.fn();
   const today = new Date('2026-01-01T12:00:00.000Z');
   const startOfDay = new Date('2026-01-01T00:00:00.000Z');
 
   const spotifyClientId = 'test-spotify-client-id';
-  const spotifyClientSecret = 'test-spotify-client-secret';
 
   let processEvent: () => ReturnType<Task['run']>;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
     mockRuntimeConfig.spotifyClientId = spotifyClientId;
-    mockRuntimeConfig.spotifyClientSecret = spotifyClientSecret;
 
     const eventHandler = (await import('./processListens')).default.run;
     processEvent = () =>
       eventHandler({ name: 'event', context: {}, payload: {} });
-
-    vi.stubGlobal('fetch', mockFetch);
   });
 
   afterEach(() => {
@@ -123,22 +122,14 @@ describe('processListens Task Integration Tests', () => {
         );
       });
 
-      it('should refresh expired access token before fetching recently played', async () => {
+      it('should get access token via BetterAuth before fetching recently played', async () => {
         // Given
         const { album, history } = createFullAlbumPlayHistory();
 
-        // Mock token refresh response
+        // Mock BetterAuth getAccessToken response
         const newAccessToken = 'new-access-token';
-        const newExpiresIn = 3600;
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            access_token: newAccessToken,
-            token_type: 'Bearer',
-            expires_in: newExpiresIn,
-            scope: 'user-read-recently-played',
-          }),
-          text: async () => '',
+        mockGetAccessToken.mockResolvedValueOnce({
+          accessToken: newAccessToken,
         });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
@@ -148,45 +139,23 @@ describe('processListens Task Integration Tests', () => {
         // When
         const { result } = await processEvent();
 
-        // Then - token refresh endpoint was called
-        expect(mockFetch).toHaveBeenCalledWith(
-          'https://accounts.spotify.com/api/token',
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Content-Type': 'application/x-www-form-urlencoded',
-              Authorization: expect.stringContaining('Basic'),
-            }),
-            body: expect.any(URLSearchParams),
-          }),
-        );
+        // Then - BetterAuth getAccessToken was called with correct params
+        expect(mockGetAccessToken).toHaveBeenCalledWith({
+          body: {
+            providerId: 'spotify',
+          },
+          query: {
+            userId: expiredUserId,
+          },
+        });
 
-        // Verify the body contains correct params
-        const fetchCall = mockFetch.mock.calls[0];
-        const body = fetchCall[1].body as URLSearchParams;
-        expect(body.get('grant_type')).toBe('refresh_token');
-        expect(body.get('refresh_token')).toBe(expiredUserAccount.refreshToken);
-
-        // Then - Spotify API was called with new token
+        // Then - Spotify API was called with token from BetterAuth
         expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
           access_token: newAccessToken,
           token_type: 'Bearer',
           expires_in: 3600,
           refresh_token: expiredUserAccount.refreshToken,
         });
-
-        // Then - database was updated with new token
-        const prisma = getTestPrisma();
-        const updatedAccount = await prisma.account.findFirst({
-          where: {
-            userId: expiredUserId,
-            providerId: 'spotify',
-          },
-        });
-        expect(updatedAccount?.accessToken).toBe(newAccessToken);
-        expect(updatedAccount?.accessTokenExpiresAt).toEqual(
-          new Date(today.getTime() + newExpiresIn * 1000),
-        );
 
         // Then - listens were processed successfully
         expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
@@ -197,15 +166,22 @@ describe('processListens Task Integration Tests', () => {
         });
       });
 
-      it('should handle token refresh failure gracefully', async () => {
+      it('should handle token refresh failure gracefully when both BetterAuth and fallback fail', async () => {
         // Given
         const { history } = createFullAlbumPlayHistory();
 
-        // Mock token refresh failure
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          status: 400,
-          text: async () => 'Invalid refresh token',
+        // Reset mocks to ensure clean state
+        mockGetAccessToken.mockReset();
+        mockRefreshSpotifyToken.mockReset();
+
+        // Mock BetterAuth getAccessToken failure
+        mockGetAccessToken.mockImplementation(() => {
+          return Promise.reject(new Error('BetterAuth token refresh failed'));
+        });
+
+        // Mock fallback refreshSpotifyToken to also fail
+        mockRefreshSpotifyToken.mockImplementation(() => {
+          return Promise.reject(new Error('Spotify token refresh failed'));
         });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
@@ -215,7 +191,13 @@ describe('processListens Task Integration Tests', () => {
         // When
         const { result } = await processEvent();
 
-        // Then - error is handled, user processing continues
+        // Then - BetterAuth was attempted
+        expect(mockGetAccessToken).toHaveBeenCalled();
+        // Then - fallback was also attempted
+        expect(mockRefreshSpotifyToken).toHaveBeenCalled();
+
+        // Then - error is handled gracefully, user processing continues as "successful"
+        // but without any listens (the error is logged but processing continues)
         expect(result).toEqual('Processed 1 user(s): 1 successful, 0 failed');
 
         // Then - no listens were saved due to token refresh failure
@@ -225,12 +207,14 @@ describe('processListens Task Integration Tests', () => {
     });
 
     describe('when user has token expiring soon', () => {
+      let soonToExpireUserId: string;
       let soonToExpireUserAccount: Account;
 
       beforeEach(async () => {
         const user = await createUser({
           trackListeningHistory: true,
         });
+        soonToExpireUserId = user.id;
         soonToExpireUserAccount = user.accounts[0];
 
         // Update the account to have a token expiring soon
@@ -245,20 +229,13 @@ describe('processListens Task Integration Tests', () => {
         soonToExpireUserAccount.accessTokenExpiresAt = expiresAt;
       });
 
-      it('should refresh token if expires within 5 minutes', async () => {
+      it('should call BetterAuth getAccessToken which handles refresh automatically', async () => {
         // Given
         const { history } = createFullAlbumPlayHistory();
 
-        const newAccessToken = 'refreshed-token';
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            access_token: newAccessToken,
-            token_type: 'Bearer',
-            expires_in: 3600,
-            scope: 'user-read-recently-played',
-          }),
-          text: async () => '',
+        const accessToken = 'refreshed-token';
+        mockGetAccessToken.mockResolvedValueOnce({
+          accessToken,
         });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
@@ -268,14 +245,18 @@ describe('processListens Task Integration Tests', () => {
         // When
         await processEvent();
 
-        // Then - token was refreshed due to 5 minute buffer
-        expect(mockFetch).toHaveBeenCalledWith(
-          'https://accounts.spotify.com/api/token',
-          expect.any(Object),
-        );
+        // Then - BetterAuth was called (it handles refresh internally)
+        expect(mockGetAccessToken).toHaveBeenCalledWith({
+          body: {
+            providerId: 'spotify',
+          },
+          query: {
+            userId: soonToExpireUserId,
+          },
+        });
 
         expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
-          access_token: newAccessToken,
+          access_token: accessToken,
           token_type: 'Bearer',
           expires_in: 3600,
           refresh_token: soonToExpireUserAccount.refreshToken,
@@ -293,6 +274,15 @@ describe('processListens Task Integration Tests', () => {
         });
         userId = user.id;
         userAccount = user.accounts[0];
+
+        // Default: BetterAuth returns the user's access token
+        mockGetAccessToken.mockImplementation(({ query }) => {
+          if (query?.userId === userId) {
+            return Promise.resolve({ accessToken: userAccount.accessToken });
+          }
+          // For any other user, return a generic token
+          return Promise.resolve({ accessToken: 'other-user-token' });
+        });
       });
 
       describe('when additional users exist', () => {
@@ -622,9 +612,14 @@ describe('processListens Task Integration Tests', () => {
         });
       });
 
-      it('should not refresh token if not expired', async () => {
+      it('should call BetterAuth getAccessToken for valid token', async () => {
         // Given
         const { history } = createFullAlbumPlayHistory();
+
+        // BetterAuth returns the existing access token (no refresh needed)
+        mockGetAccessToken.mockResolvedValueOnce({
+          accessToken: userAccount.accessToken,
+        });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
           recentlyPlayed({ items: history }),
@@ -633,10 +628,17 @@ describe('processListens Task Integration Tests', () => {
         // When
         await processEvent();
 
-        // Then - token refresh was NOT called
-        expect(mockFetch).not.toHaveBeenCalled();
+        // Then - BetterAuth was called to get access token
+        expect(mockGetAccessToken).toHaveBeenCalledWith({
+          body: {
+            providerId: 'spotify',
+          },
+          query: {
+            userId,
+          },
+        });
 
-        // Then - Spotify API was called with existing token
+        // Then - Spotify API was called with token from BetterAuth
         expect(mockWithAccessToken).toHaveBeenCalledWith(spotifyClientId, {
           access_token: userAccount.accessToken,
           token_type: 'Bearer',
