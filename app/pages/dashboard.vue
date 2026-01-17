@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
-import type { DailyListens } from '~~/shared/schema';
+import type {
+  DailyListensWithFuture,
+  FutureListenItem,
+} from '~~/shared/schema';
 
 const { data, pending, error } = useListens();
+const { data: futureListensData } = useFutureListens();
 
 function getNextNDays(startDate: Date, n: number): Date[] {
   const days: Date[] = [];
@@ -16,7 +20,21 @@ function getNextNDays(startDate: Date, n: number): Date[] {
   return days;
 }
 
-const listens = computed<DailyListens[]>(() => {
+// Create a map of future listens by date for efficient lookup
+const futureListensByDate = computed<Map<string, FutureListenItem>>(() => {
+  const map = new Map<string, FutureListenItem>();
+  if (!futureListensData.value?.items) {
+    return map;
+  }
+  for (const item of futureListensData.value.items) {
+    // Normalize date to YYYY-MM-DD format
+    const dateKey = item.date.split('T')[0];
+    map.set(dateKey, item);
+  }
+  return map;
+});
+
+const listens = computed<DailyListensWithFuture[]>(() => {
   if (!data.value) {
     return [];
   }
@@ -29,12 +47,22 @@ const listens = computed<DailyListens[]>(() => {
 
   const datesInFuture = getNextNDays(new Date(mostRecentListen.date), 7);
 
-  return [
+  const allDays = [
     ...data.value,
     ...datesInFuture
       .slice(1)
       .map((date) => ({ date: date.toISOString(), albums: [] })),
   ];
+
+  // Merge future listens into each day
+  return allDays.map((day) => {
+    const dateKey = day.date.split('T')[0];
+    const futureAlbum = futureListensByDate.value.get(dateKey);
+    return {
+      ...day,
+      futureAlbum,
+    };
+  });
 });
 
 const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"

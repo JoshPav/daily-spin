@@ -2,7 +2,7 @@
   <div
     ref="albumCoverEl"
     class="album-cover"
-    :class="{ today: isToday(), clickable: hasAlbums, future: isFuture }"
+    :class="{ today: isToday(), clickable: hasContent, future: isFuture }"
     @click="openDailyListensModal"
   >
     <!-- Month banner (only on day 1) -->
@@ -20,7 +20,13 @@
       {{ dayListens.albums.length }}
     </div>
 
-    <div v-if="!hasAlbums" class="empty no-listen" :class="{ future: isFuture }">
+    <!-- Scheduled badge for future albums -->
+    <div v-if="hasFutureAlbum && isFuture" class="scheduled-badge">
+      <UIcon name="i-lucide-calendar-days" class="scheduled-icon" />
+    </div>
+
+    <!-- Empty state: no albums and no future album -->
+    <div v-if="!hasContent" class="empty no-listen" :class="{ future: isFuture }">
       <div class="empty-message">
         <button v-if="isToday()" class="add-album-button" @click.stop="openAddModal">
           <PlusCircleIcon class="icon" />
@@ -31,13 +37,22 @@
       </div>
     </div>
     <div v-else-if="pending" class="skeleton"></div>
-    <div v-else-if="firstAlbum && !firstAlbum.album.imageUrl" class="empty no-artwork">
+    <!-- No artwork fallback for listened albums -->
+    <div v-else-if="hasAlbums && firstAlbum && !firstAlbum.album.imageUrl" class="empty no-artwork">
       <div class="album-info">
         <div class="artist-name">{{ firstAlbum.album.artists[0]?.name || 'Unknown Artist' }}</div>
         <div class="album-name">{{ firstAlbum.album.albumName || 'Unknown Album' }}</div>
       </div>
     </div>
+    <!-- No artwork fallback for future album -->
+    <div v-else-if="hasFutureAlbum && !hasAlbums && !dayListens.futureAlbum?.album.imageUrl" class="empty no-artwork future-album-placeholder">
+      <div class="album-info">
+        <div class="artist-name">{{ dayListens.futureAlbum?.album.artists[0]?.name || 'Unknown Artist' }}</div>
+        <div class="album-name">{{ dayListens.futureAlbum?.album.name || 'Unknown Album' }}</div>
+      </div>
+    </div>
 
+    <!-- Display listened albums -->
     <template v-if="hasAlbums">
       <NuxtImg
         v-for="(albumListen, index) in dayListens.albums.slice(0, 4)"
@@ -48,24 +63,40 @@
         :style="{ zIndex: dayListens.albums.length - index }"
       />
     </template>
+
+    <!-- Display future scheduled album (only if no listened albums) -->
+    <template v-else-if="hasFutureAlbum && dayListens.futureAlbum?.album.imageUrl">
+      <NuxtImg
+        :src="dayListens.futureAlbum.album.imageUrl"
+        :alt="`${dayListens.futureAlbum.album.name} cover`"
+        class="stacked-album stack-0 future-album"
+      />
+    </template>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { LazyDailyListensModal, LazyLogAlbumModal } from '#components';
-import type { DailyListens } from '#shared/schema';
+import {
+  LazyDailyListensModal,
+  LazyFutureListenModal,
+  LazyLogAlbumModal,
+} from '#components';
+import type { DailyListensWithFuture } from '#shared/schema';
 
 const { dayListens, pending = false } = defineProps<{
-  dayListens: DailyListens;
+  dayListens: DailyListensWithFuture;
   pending?: boolean;
 }>();
 
 const overlay = useOverlay();
 const dailyListensModal = overlay.create(LazyDailyListensModal);
 const addAlbumModal = overlay.create(LazyLogAlbumModal);
+const futureListenModal = overlay.create(LazyFutureListenModal);
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
+const hasFutureAlbum = computed(() => !!dayListens.futureAlbum);
+const hasContent = computed(() => hasAlbums.value || hasFutureAlbum.value);
 const firstAlbum = computed(() => dayListens.albums[0]);
 
 const openAddModal = () => {
@@ -73,6 +104,14 @@ const openAddModal = () => {
 };
 
 const openDailyListensModal = () => {
+  // If it's a future date with a scheduled album, open the future listen modal
+  const { futureAlbum } = dayListens;
+  if (isFuture.value && futureAlbum && !hasAlbums.value) {
+    futureListenModal.open({
+      futureListenItem: futureAlbum,
+    });
+    return;
+  }
   dailyListensModal.open({
     dailyListens: dayListens,
   });
@@ -406,6 +445,47 @@ onMounted(() => {
 
   z-index: 10;
   pointer-events: none;
+}
+
+/* =========================
+   Scheduled badge for future albums
+   ========================= */
+.scheduled-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+
+  background-color: rgba(99, 102, 241, 0.9);
+  color: #ffffff;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  z-index: 10;
+  pointer-events: none;
+}
+
+.scheduled-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* =========================
+   Future album styling
+   ========================= */
+.future-album {
+  opacity: 0.7;
+}
+
+.future-album-placeholder {
+  background: linear-gradient(135deg, #1c1c2a 0%, #12121f 100%);
 }
 
 
