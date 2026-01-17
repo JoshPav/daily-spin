@@ -1,21 +1,11 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { refreshSpotifyToken } from '~~/shared/auth';
 import { UserRepository } from '../repositories/user.repository';
-import {
-  ExternalServiceError,
-  UnauthorizedError,
-  ValidationError,
-} from '../utils/errors';
+import { ExternalServiceError, UnauthorizedError } from '../utils/errors';
 import { createTaggedLogger, filterSensitiveData } from '../utils/logger';
 import type { AuthDetails } from './user.service';
 
 const logger = createTaggedLogger('Service:Spotify');
-
-type TokenRefreshResponse = {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  scope: string;
-};
 
 export class SpotifyService {
   constructor(private userRepo = new UserRepository()) {}
@@ -56,62 +46,55 @@ export class SpotifyService {
   }
 
   /**
-   * Refreshes the access token using the refresh token
+   * Refreshes the access token using the refresh token via BetterAuth's
+   * centralized token refresh logic.
    */
   private async refreshAccessToken(
     userId: string,
     refreshToken: string,
   ): Promise<AuthDetails> {
-    const config = useRuntimeConfig();
-    const { spotifyClientId, spotifyClientSecret } = config;
-
-    if (!spotifyClientSecret) {
-      throw new ValidationError('SPOTIFY_CLIENT_SECRET not configured', {
+    logger.debug(
+      'Attempting Spotify token refresh',
+      filterSensitiveData({
         userId,
-      });
-    }
+        refreshToken,
+      }),
+    );
 
     try {
+      const result = await refreshSpotifyToken(refreshToken);
+
+      // Calculate expiry time
+      const expiresAt = new Date(Date.now() + result.expiresIn * 1000);
+
+      // Log if Spotify returned a new refresh token (important for debugging)
+      if (result.refreshToken && result.refreshToken !== refreshToken) {
+        logger.warn(
+          'Spotify returned a new refresh token - token rotation detected',
+          filterSensitiveData({
+            userId,
+            oldRefreshToken: refreshToken,
+            newRefreshToken: result.refreshToken,
+          }),
+        );
+      }
+
       logger.debug(
-        'Fetching new access token...',
+        'Spotify token refresh successful',
         filterSensitiveData({
-          refreshToken,
-          spotifyClientId,
-          spotifyClientSecret,
+          userId,
+          accessToken: result.accessToken,
+          expiresAt: expiresAt.toISOString(),
+          scope: result.scope,
+          hasNewRefreshToken: !!result.refreshToken,
         }),
       );
 
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${Buffer.from(`${spotifyClientId}:${spotifyClientSecret}`).toString('base64')}`,
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new ExternalServiceError('Spotify', 'refresh token', {
-          userId,
-          status: response.status,
-          error,
-        });
-      }
-
-      const data: TokenRefreshResponse = await response.json();
-
-      // Calculate expiry time
-      const expiresAt = new Date(Date.now() + data.expires_in * 1000);
-
       // Update tokens in database
       await this.userRepo.updateUserTokens(userId, {
-        accessToken: data.access_token,
+        accessToken: result.accessToken,
         accessTokenExpiresAt: expiresAt,
-        scope: data.scope,
+        scope: result.scope,
       });
 
       logger.info('Access token refreshed successfully', {
@@ -120,27 +103,41 @@ export class SpotifyService {
       });
 
       return {
-        accessToken: data.access_token,
-        refreshToken, // Spotify doesn't always return a new refresh token
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken ?? refreshToken,
         accessTokenExpiresAt: expiresAt,
-        scope: data.scope,
+        scope: result.scope,
       };
     } catch (error) {
+      // Extract Spotify-specific error details if available
+      const spotifyError =
+        error && typeof error === 'object' && 'spotifyError' in error
+          ? (error as { spotifyError: string }).spotifyError
+          : undefined;
+      const spotifyErrorDescription =
+        error && typeof error === 'object' && 'spotifyErrorDescription' in error
+          ? (error as { spotifyErrorDescription: string })
+              .spotifyErrorDescription
+          : undefined;
+      const status =
+        error && typeof error === 'object' && 'status' in error
+          ? (error as { status: number }).status
+          : undefined;
+
       logger.error('Failed to refresh access token', {
         userId,
+        status,
+        spotifyError,
+        spotifyErrorDescription,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      // Re-throw if already our custom error
-      if (error instanceof ExternalServiceError) {
-        throw error;
-      }
-
-      // Wrap unexpected errors
       throw new ExternalServiceError('Spotify', 'refresh token', {
         userId,
-        originalError: error instanceof Error ? error.message : 'Unknown error',
+        status,
+        spotifyError,
+        spotifyErrorDescription,
       });
     }
   }
