@@ -50,8 +50,8 @@ const bodyItems = computed<NavigationMenuItem[][]>(() => [
     {
       label: 'Preferences',
       icon: Icons.SETTINGS,
-      class: 'hover:cursor-pointer',
-      disabled: true,
+      to: Route.PREFERENCES,
+      active: route.path === Route.PREFERENCES,
     },
     {
       label: 'Sign out',

@@ -25,6 +25,7 @@ export const Icons = {
   CALENDAR_ARROW_DOWN: 'lucide:calendar-arrow-down',
   CALENDAR_ARROW_UP: 'lucide:calendar-arrow-up',
   CHECK_CIRCLE_SOLID: 'i-heroicons-check-circle-solid',
+  EXTERNAL_LINK: 'i-lucide-external-link',
   IMPORT: 'i-lucide-import',
   INTERRUPTED: 'i-lucide-circle-slash',
   LOG_OUT: 'i-lucide-log-out',
