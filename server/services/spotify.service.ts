@@ -72,6 +72,15 @@ export class SpotifyService {
     }
 
     try {
+      logger.debug(
+        'Fetching new access token...',
+        filterSensitiveData({
+          refreshToken,
+          spotifyClientId,
+          spotifyClientSecret,
+        }),
+      );
+
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {

@@ -1,26 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import type { BacklogAlbum } from '#shared/schema';
+import { backlogAlbum } from '~~/tests/factories/api.factory';
 import { useBacklogFilters } from './useBacklogFilters';
-
-// Helper to create test albums
-const createAlbum = (overrides: Partial<BacklogAlbum>): BacklogAlbum => ({
-  id: 'album-1',
-  spotifyId: 'spotify-1',
-  name: 'Test Album',
-  imageUrl: 'https://example.com/image.jpg',
-  artists: [{ name: 'Test Artist', spotifyId: 'artist-1' }],
-  addedAt: new Date('2026-01-10T12:00:00.000Z'),
-  ...overrides,
-});
 
 describe('useBacklogFilters', () => {
   describe('search filtering', () => {
     it('should filter albums by name', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Abbey Road' }),
-        createAlbum({ id: '2', name: 'Dark Side of the Moon' }),
-        createAlbum({ id: '3', name: 'The Wall' }),
+        backlogAlbum({ id: '1', name: 'Abbey Road' }),
+        backlogAlbum({ id: '2', name: 'Dark Side of the Moon' }),
+        backlogAlbum({ id: '3', name: 'The Wall' }),
       ]);
 
       const { searchTerm, filteredAlbums } = useBacklogFilters(albums);
@@ -32,17 +22,17 @@ describe('useBacklogFilters', () => {
 
     it('should filter albums by artist name', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Abbey Road',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Dark Side of the Moon',
           artists: [{ name: 'Pink Floyd', spotifyId: 'floyd-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Revolver',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
@@ -59,7 +49,7 @@ describe('useBacklogFilters', () => {
 
     it('should be case-insensitive', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Abbey Road' }),
+        backlogAlbum({ id: '1', name: 'Abbey Road' }),
       ]);
 
       const { searchTerm, filteredAlbums } = useBacklogFilters(albums);
@@ -76,9 +66,9 @@ describe('useBacklogFilters', () => {
 
     it('should return all albums when search is empty', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Album 1' }),
-        createAlbum({ id: '2', name: 'Album 2' }),
-        createAlbum({ id: '3', name: 'Album 3' }),
+        backlogAlbum({ id: '1', name: 'Album 1' }),
+        backlogAlbum({ id: '2', name: 'Album 2' }),
+        backlogAlbum({ id: '3', name: 'Album 3' }),
       ]);
 
       const { searchTerm, filteredAlbums } = useBacklogFilters(albums);
@@ -89,7 +79,7 @@ describe('useBacklogFilters', () => {
 
     it('should search across multiple artists', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Collaboration Album',
           artists: [
@@ -109,9 +99,9 @@ describe('useBacklogFilters', () => {
   describe('sorting', () => {
     it('should sort by album name ascending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Zebra' }),
-        createAlbum({ id: '2', name: 'Apple' }),
-        createAlbum({ id: '3', name: 'Mango' }),
+        backlogAlbum({ id: '1', name: 'Zebra' }),
+        backlogAlbum({ id: '2', name: 'Apple' }),
+        backlogAlbum({ id: '3', name: 'Mango' }),
       ]);
 
       const { sortBy, filteredAlbums } = useBacklogFilters(albums);
@@ -126,9 +116,9 @@ describe('useBacklogFilters', () => {
 
     it('should sort by album name descending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Apple' }),
-        createAlbum({ id: '2', name: 'Zebra' }),
-        createAlbum({ id: '3', name: 'Mango' }),
+        backlogAlbum({ id: '1', name: 'Apple' }),
+        backlogAlbum({ id: '2', name: 'Zebra' }),
+        backlogAlbum({ id: '3', name: 'Mango' }),
       ]);
 
       const { sortBy, filteredAlbums } = useBacklogFilters(albums);
@@ -143,17 +133,17 @@ describe('useBacklogFilters', () => {
 
     it('should sort by artist name ascending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Zebra Band', spotifyId: 'z-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Apple Band', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Mango Band', spotifyId: 'm-1' }],
@@ -172,17 +162,17 @@ describe('useBacklogFilters', () => {
 
     it('should sort by artist name descending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Apple Band', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Zebra Band', spotifyId: 'z-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Mango Band', spotifyId: 'm-1' }],
@@ -201,9 +191,18 @@ describe('useBacklogFilters', () => {
 
     it('should sort by date added ascending (oldest first)', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', addedAt: new Date('2026-01-15') }),
-        createAlbum({ id: '2', addedAt: new Date('2026-01-10') }),
-        createAlbum({ id: '3', addedAt: new Date('2026-01-20') }),
+        backlogAlbum({
+          id: '1',
+          addedAt: new Date('2026-01-15').toISOString(),
+        }),
+        backlogAlbum({
+          id: '2',
+          addedAt: new Date('2026-01-10').toISOString(),
+        }),
+        backlogAlbum({
+          id: '3',
+          addedAt: new Date('2026-01-20').toISOString(),
+        }),
       ]);
 
       const { sortBy, filteredAlbums } = useBacklogFilters(albums);
@@ -214,9 +213,18 @@ describe('useBacklogFilters', () => {
 
     it('should sort by date added descending (newest first)', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', addedAt: new Date('2026-01-10') }),
-        createAlbum({ id: '2', addedAt: new Date('2026-01-15') }),
-        createAlbum({ id: '3', addedAt: new Date('2026-01-20') }),
+        backlogAlbum({
+          id: '1',
+          addedAt: new Date('2026-01-10').toISOString(),
+        }),
+        backlogAlbum({
+          id: '2',
+          addedAt: new Date('2026-01-15').toISOString(),
+        }),
+        backlogAlbum({
+          id: '3',
+          addedAt: new Date('2026-01-20').toISOString(),
+        }),
       ]);
 
       const { sortBy, filteredAlbums } = useBacklogFilters(albums);
@@ -227,17 +235,17 @@ describe('useBacklogFilters', () => {
 
     it('should apply sorting after search filtering', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Zebra Album',
           artists: [{ name: 'Artist', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Apple Album',
           artists: [{ name: 'Artist', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Mango Album',
           artists: [{ name: 'Other', spotifyId: 'o-1' }],
@@ -260,17 +268,17 @@ describe('useBacklogFilters', () => {
   describe('grouping by artist', () => {
     it('should group albums by primary artist', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Abbey Road',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Revolver',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Dark Side of the Moon',
           artists: [{ name: 'Pink Floyd', spotifyId: 'floyd-1' }],
@@ -294,12 +302,12 @@ describe('useBacklogFilters', () => {
 
     it('should use spotifyId and name as group key', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Artist', spotifyId: 'id-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Artist', spotifyId: 'id-2' }],
@@ -314,17 +322,17 @@ describe('useBacklogFilters', () => {
 
     it('should sort groups by artist name ascending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Zebra', spotifyId: 'z-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Apple', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Mango', spotifyId: 'm-1' }],
@@ -343,17 +351,17 @@ describe('useBacklogFilters', () => {
 
     it('should sort groups by artist name descending', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Apple', spotifyId: 'a-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Zebra', spotifyId: 'z-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Mango', spotifyId: 'm-1' }],
@@ -372,23 +380,23 @@ describe('useBacklogFilters', () => {
 
     it('should sort groups by newest album in group', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Artist A', spotifyId: 'a-1' }],
-          addedAt: new Date('2026-01-10'),
+          addedAt: new Date('2026-01-10').toISOString(),
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Artist A', spotifyId: 'a-1' }],
-          addedAt: new Date('2026-01-20'),
+          addedAt: new Date('2026-01-20').toISOString(),
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Artist B', spotifyId: 'b-1' }],
-          addedAt: new Date('2026-01-15'),
+          addedAt: new Date('2026-01-15').toISOString(),
         }),
       ]);
 
@@ -405,23 +413,23 @@ describe('useBacklogFilters', () => {
 
     it('should sort groups by oldest album in group', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Album 1',
           artists: [{ name: 'Artist A', spotifyId: 'a-1' }],
-          addedAt: new Date('2026-01-10'),
+          addedAt: new Date('2026-01-10').toISOString(),
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Album 2',
           artists: [{ name: 'Artist A', spotifyId: 'a-1' }],
-          addedAt: new Date('2026-01-20'),
+          addedAt: new Date('2026-01-20').toISOString(),
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Album 3',
           artists: [{ name: 'Artist B', spotifyId: 'b-1' }],
-          addedAt: new Date('2026-01-05'),
+          addedAt: new Date('2026-01-05').toISOString(),
         }),
       ]);
 
@@ -438,17 +446,17 @@ describe('useBacklogFilters', () => {
 
     it('should apply search filter before grouping', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Abbey Road',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '2',
           name: 'Revolver',
           artists: [{ name: 'The Beatles', spotifyId: 'beatles-1' }],
         }),
-        createAlbum({
+        backlogAlbum({
           id: '3',
           name: 'Dark Side',
           artists: [{ name: 'Pink Floyd', spotifyId: 'floyd-1' }],
@@ -468,7 +476,7 @@ describe('useBacklogFilters', () => {
   describe('view mode switching', () => {
     it('should switch from name sort to artist sort when entering artist view', async () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Album 1' }),
+        backlogAlbum({ id: '1', name: 'Album 1' }),
       ]);
 
       const { sortBy, viewMode } = useBacklogFilters(albums);
@@ -484,7 +492,7 @@ describe('useBacklogFilters', () => {
 
     it('should not change sort if already on a valid artist view sort', async () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Album 1' }),
+        backlogAlbum({ id: '1', name: 'Album 1' }),
       ]);
 
       const { sortBy, viewMode } = useBacklogFilters(albums);
@@ -501,7 +509,7 @@ describe('useBacklogFilters', () => {
 
     it('should allow manual sort changes in artist view', async () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Album 1' }),
+        backlogAlbum({ id: '1', name: 'Album 1' }),
       ]);
 
       const { sortBy, viewMode } = useBacklogFilters(albums);
@@ -529,7 +537,7 @@ describe('useBacklogFilters', () => {
 
     it('should handle albums with no artists', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({ id: '1', name: 'Album 1', artists: [] }),
+        backlogAlbum({ id: '1', name: 'Album 1', artists: [] }),
       ]);
 
       const { groupedByArtist } = useBacklogFilters(albums);
@@ -540,7 +548,7 @@ describe('useBacklogFilters', () => {
 
     it('should handle albums with multiple artists (uses first)', () => {
       const albums = ref<BacklogAlbum[]>([
-        createAlbum({
+        backlogAlbum({
           id: '1',
           name: 'Collaboration',
           artists: [
