@@ -29,7 +29,7 @@ export const userCreateInput = createFactory<Prisma.UserCreateInput>(() => ({
       id: uuid(),
       accessToken: jwt(),
       refreshToken: jwt(),
-      accessTokenExpiresAt: faker.date.soon({ days: 1 }),
+      accessTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
       scope:
         'user-read-recently-played playlist-modify-public playlist-modify-private',
     },
@@ -38,7 +38,7 @@ export const userCreateInput = createFactory<Prisma.UserCreateInput>(() => ({
     create: {
       id: uuid(),
       token: jwt(),
-      expiresAt: faker.date.soon({ days: 1 }),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
     },
   },
 }));

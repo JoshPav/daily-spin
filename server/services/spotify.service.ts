@@ -5,7 +5,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../utils/errors';
-import { createTaggedLogger } from '../utils/logger';
+import { createTaggedLogger, filterSensitiveData } from '../utils/logger';
 import type { AuthDetails } from './user.service';
 
 const logger = createTaggedLogger('Service:Spotify');
