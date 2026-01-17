@@ -150,4 +150,90 @@ export class UserRepository {
       throw error;
     }
   }
+
+  async getPreferences(userId: string) {
+    logger.debug('Fetching user preferences', { userId });
+
+    try {
+      const result = await this.prismaClient.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          trackListeningHistory: true,
+          createTodaysAlbumPlaylist: true,
+          createSongOfDayPlaylist: true,
+          userPlaylists: {
+            select: {
+              playlistType: true,
+              spotifyPlaylistId: true,
+            },
+          },
+        },
+      });
+
+      logger.debug('Successfully fetched user preferences', {
+        userId,
+        found: !!result,
+        playlistCount: result?.userPlaylists.length || 0,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to fetch user preferences', {
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  async updatePreferences(
+    userId: string,
+    preferences: {
+      trackListeningHistory?: boolean;
+      createTodaysAlbumPlaylist?: boolean;
+      createSongOfDayPlaylist?: boolean;
+    },
+  ) {
+    logger.debug('Updating user preferences', {
+      userId,
+      preferences,
+    });
+
+    try {
+      const result = await this.prismaClient.user.update({
+        where: {
+          id: userId,
+        },
+        data: preferences,
+        select: {
+          trackListeningHistory: true,
+          createTodaysAlbumPlaylist: true,
+          createSongOfDayPlaylist: true,
+          userPlaylists: {
+            select: {
+              playlistType: true,
+              spotifyPlaylistId: true,
+            },
+          },
+        },
+      });
+
+      logger.info('Successfully updated user preferences', {
+        userId,
+        updatedFields: Object.keys(preferences),
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to update user preferences', {
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
 }

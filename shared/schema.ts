@@ -169,3 +169,37 @@ export type DeleteFutureListen = {
   body: never;
   response: never;
 };
+
+// User preferences types
+export type UserPreferences = {
+  trackListeningHistory: boolean;
+  createTodaysAlbumPlaylist: boolean;
+  createSongOfDayPlaylist: boolean;
+};
+
+export type LinkedPlaylist = {
+  type: 'album_of_the_day' | 'song_of_the_day';
+  spotifyPlaylistId: string;
+  spotifyUrl: string;
+};
+
+export type GetPreferencesResponse = {
+  preferences: UserPreferences;
+  linkedPlaylists: LinkedPlaylist[];
+};
+
+export type UpdatePreferencesBody = Partial<UserPreferences>;
+
+export type GetPreferences = {
+  query: never;
+  params: never;
+  body: never;
+  response: GetPreferencesResponse;
+};
+
+export type UpdatePreferences = {
+  query: never;
+  params: never;
+  body: UpdatePreferencesBody;
+  response: GetPreferencesResponse;
+};
