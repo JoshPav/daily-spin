@@ -216,12 +216,13 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
       handler(
         createHandlerEvent(userId, {
           params: { albumListenId },
-          body: { spotifyId: 'track-123' } as any,
+          body: { spotifyId: 'track-123' },
         }),
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing required fields: spotifyId, name, and trackNumber are required',
+      message:
+        'Missing required fields: spotifyId, name, and trackNumber are required',
     });
   });
 });
