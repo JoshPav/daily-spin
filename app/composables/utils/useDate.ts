@@ -32,6 +32,10 @@ export const useDate = (dateString: string) => {
     formatted: {
       formattedMonth,
     },
+    relative: {
+      isFuture: computed(() => dfnsIsFuture(date.value)),
+      isToday: computed(() => dfnsIsToday(date.value)),
+    },
     utils: {
       isFuture,
       isToday,

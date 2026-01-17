@@ -9,6 +9,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday } from '../utils/datetime.utils';
 import { createTaggedLogger } from '../utils/logger';
 import { BacklogService } from './backlog.service';
+import { FutureListenService } from './futureListen.service';
 import { RecentlyPlayedService } from './recentlyPlayed.service';
 
 const logger = createTaggedLogger('Service:DailyListen');
@@ -18,6 +19,7 @@ export class DailyListenService {
     private dailyListenRepo = new DailyListenRepository(),
     private userRepo = new UserRepository(),
     private backlogService = new BacklogService(),
+    private futureListenService = new FutureListenService(),
   ) {}
 
   async addAlbumListen(userId: string, body: AddAlbumListenBody) {
@@ -37,6 +39,12 @@ export class DailyListenService {
 
     // Remove album from backlog if present
     await this.backlogService.removeBacklogItemByAlbumSpotifyId(
+      userId,
+      body.album.albumId,
+    );
+
+    // Remove album from future listens if scheduled
+    await this.futureListenService.removeFutureListenByAlbumSpotifyId(
       userId,
       body.album.albumId,
     );

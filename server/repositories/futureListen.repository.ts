@@ -345,4 +345,56 @@ export class FutureListenRepository {
       throw error;
     }
   }
+
+  /**
+   * Delete future listen by album Spotify ID
+   */
+  async deleteFutureListenByAlbumSpotifyId(
+    userId: string,
+    albumSpotifyId: string,
+  ) {
+    logger.debug('Deleting future listen by album Spotify ID', {
+      userId,
+      albumSpotifyId,
+    });
+
+    try {
+      // Find the album by Spotify ID
+      const album = await this.prismaClient.album.findUnique({
+        where: { spotifyId: albumSpotifyId },
+      });
+
+      if (!album) {
+        logger.debug('Album not found, nothing to delete', {
+          userId,
+          albumSpotifyId,
+        });
+        return { count: 0 };
+      }
+
+      // Delete the future listen
+      const result = await this.prismaClient.futureListen.deleteMany({
+        where: {
+          userId,
+          albumId: album.id,
+        },
+      });
+
+      logger.debug('Successfully deleted future listen by album Spotify ID', {
+        userId,
+        albumSpotifyId,
+        deletedCount: result.count,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to delete future listen by album Spotify ID', {
+        userId,
+        albumSpotifyId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
 }

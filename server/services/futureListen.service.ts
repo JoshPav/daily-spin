@@ -122,4 +122,18 @@ export class FutureListenService {
 
     return result;
   }
+
+  /**
+   * Remove future listen by album Spotify ID
+   * Used when an album is listened to, to auto-clean scheduled listens
+   */
+  async removeFutureListenByAlbumSpotifyId(
+    userId: string,
+    albumSpotifyId: string,
+  ) {
+    return await this.futureListenRepo.deleteFutureListenByAlbumSpotifyId(
+      userId,
+      albumSpotifyId,
+    );
+  }
 }
