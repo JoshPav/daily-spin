@@ -1,9 +1,12 @@
-<template>
-  <span v-for="(part, index) in parts" :key="index">
-    <mark v-if="part.highlight" class="bg-primary-500/30 text-primary-200 px-0.5 rounded">{{ part.text }}</mark>
-    <template v-else>{{ part.text }}</template>
-  </span>
-</template>
+<template><span v-for="(part, index) in parts" :key="index">
+  <mark
+    v-if="part.highlight"
+    class="bg-primary-500/30 text-primary-200 px-0.5 rounded"
+  >
+    {{ part.text }}
+  </mark>
+  <template v-else>{{ part.text }}</template>
+</span></template>
 
 <script setup lang="ts">
 interface TextPart {

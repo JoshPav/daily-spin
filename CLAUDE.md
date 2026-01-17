@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Daily Spin is a Nuxt 4 application that automatically tracks albums listened to on Spotify. It polls Spotify's recently played tracks API to detect when a user has listened to a full album (all tracks in order), stores this data in PostgreSQL via Prisma, and displays a calendar-style history of listening activity.
+DailSpin is a Nuxt 4 application that automatically tracks albums listened to on Spotify. It polls Spotify's recently played tracks API to detect when a user has listened to a full album (all tracks in order), stores this data in PostgreSQL via Prisma, and displays a calendar-style history of listening activity.
 
 ## Commands
 
@@ -361,7 +361,7 @@ Features and tech debt are tracked in **GitHub Issues** on the [DailySpin projec
 ### Finding Work
 
 Before starting any feature or fix:
-1. Check the [GitHub Issues](https://github.com/JoshPav/album-of-the-day/issues) for the relevant issue
+1. Check the [GitHub Issues](https://github.com/JoshPav/daily-spin/issues) for the relevant issue
 2. Read the issue description for requirements and acceptance criteria
 3. Use the issue number when creating branches (see below)
 
@@ -380,7 +380,7 @@ Before starting any feature or fix:
 Before implementing any new feature, follow this workflow:
 
 1. **Find the GitHub Issue**:
-   - Look up the relevant issue in [GitHub Issues](https://github.com/JoshPav/album-of-the-day/issues)
+   - Look up the relevant issue in [GitHub Issues](https://github.com/JoshPav/daily-spin/issues)
    - Read the full issue description, acceptance criteria, and any comments
    - Use `gh issue view <number>` to fetch issue details from the command line
    - If no issue exists for the work, ask the user if one should be created first

@@ -1,19 +1,29 @@
 <template>
-  <div class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted">
+  <div
+    class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted"
+  >
     <img
       v-if="album.imageUrl"
       :src="album.imageUrl"
       :alt="album.name"
       class="w-16 h-16 rounded object-cover shrink-0"
-    />
-    <div v-else class="w-16 h-16 rounded shrink-0 bg-neutral-600 flex items-center justify-center">
+    >
+    <div
+      v-else
+      class="w-16 h-16 rounded shrink-0 bg-neutral-600 flex items-center justify-center"
+    >
       <UIcon :name="Icons.MUSICAL_NOTE" class="text-3xl text-neutral-500" />
     </div>
     <div class="flex-1 flex flex-col gap-1 min-w-0">
-      <div class="text-base font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+      <div
+        class="text-base font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis"
+      >
         <HighlightedText :text="album.name" :search-term="searchTerm" />
       </div>
-      <div v-if="!hideArtist" class="text-sm font-medium text-muted whitespace-nowrap overflow-hidden text-ellipsis">
+      <div
+        v-if="!hideArtist"
+        class="text-sm font-medium text-muted whitespace-nowrap overflow-hidden text-ellipsis"
+      >
         <HighlightedText :text="artistNames" :search-term="searchTerm" />
       </div>
       <div class="text-xs text-dimmed">Added {{ addedDate }}</div>

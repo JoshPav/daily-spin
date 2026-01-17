@@ -1,16 +1,31 @@
 <template>
-  <UModal title="Log Album" :description="subheadingText" :content="{ onOpenAutoFocus: (e) => e.preventDefault() }" >
+  <UModal
+    title="Log Album"
+    :description="subheadingText"
+    :content="{ onOpenAutoFocus: (e) => e.preventDefault() }"
+  >
     <template #body>
       <div class="flex flex-col gap-6">
         <AlbumSearch v-if="!selectedAlbum" v-model="selectedAlbum" />
 
         <div v-if="selectedAlbum" class="flex flex-col gap-4">
           <div class="flex justify-between items-center">
-            <h3 class="m-0 font-montserrat text-lg font-bold text-primary-vibrant">Selected Album</h3>
-            <UButton color="neutral" variant="subtle" size="lg" @click="selectedAlbum = undefined">Change</UButton>
+            <h3
+              class="m-0 font-montserrat text-lg font-bold text-primary-vibrant"
+            >
+              Selected Album
+            </h3>
+            <UButton
+              color="neutral"
+              variant="subtle"
+              size="lg"
+              @click="selectedAlbum = undefined"
+            >
+              Change
+            </UButton>
           </div>
 
-          <AlbumPreview  :album="selectedAlbum" />
+          <AlbumPreview :album="selectedAlbum" />
 
           <RadioGroup
             v-model="listenMethod"
@@ -24,14 +39,19 @@
             :items="listenTimeOptions"
           />
 
-          <UButton block color="primary" size="lg" @click="logAlbumListen" :loading="saving">
+          <UButton
+            block
+            color="primary"
+            size="lg"
+            @click="logAlbumListen"
+            :loading="saving"
+          >
             Save
           </UButton>
         </div>
       </div>
     </template>
   </UModal>
-
 </template>
 
 <script lang="ts" setup>

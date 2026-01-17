@@ -39,9 +39,10 @@ describe('useBacklogFilters', () => {
         }),
       ]);
 
-      const { searchTerm, filteredAlbums } = useBacklogFilters(albums);
+      const { searchTerm, sortBy, filteredAlbums } = useBacklogFilters(albums);
 
       searchTerm.value = 'beatles';
+      sortBy.value = 'name-asc';
       expect(filteredAlbums.value).toHaveLength(2);
       expect(filteredAlbums.value[0]?.name).toBe('Abbey Road');
       expect(filteredAlbums.value[1]?.name).toBe('Revolver');

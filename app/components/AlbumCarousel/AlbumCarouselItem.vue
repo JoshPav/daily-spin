@@ -1,8 +1,9 @@
 <template>
   <div class="flex flex-col gap-2 w-full">
     <section class="flex-1 min-w-0 flex flex-col md:flex-row md:gap-6">
-
-      <div class="shrink-0 w-full aspect-square md:w-75 md:h-75 md:aspect-auto rounded-lg overflow-hidden bg-default shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+      <div
+        class="shrink-0 w-full aspect-square md:w-75 md:h-75 md:aspect-auto rounded-lg overflow-hidden bg-default shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+      >
         <NuxtImg
           v-if="albumListen.album.imageUrl"
           :src="albumListen.album.imageUrl"
@@ -12,13 +13,18 @@
       </div>
 
       <div class="mt-6 md:mt-0 md:flex md:flex-col md:justify-center">
-        <h2 class="mb-2 text-2xl md:text-[32px] font-black text-default leading-tight">{{ albumListen.album.albumName }}</h2>
-        <p class="mb-3 text-base font-semibold text-muted">{{ albumListen.album.artists[0]?.name }}</p>
-
+        <h2
+          class="mb-2 text-2xl md:text-[32px] font-black text-default leading-tight"
+        >
+          {{ albumListen.album.albumName }}
+        </h2>
+        <p class="mb-3 text-base font-semibold text-muted">
+          {{ albumListen.album.artists[0]?.name }}
+        </p>
       </div>
     </section>
 
-    <USeparator class="my-4"   />
+    <USeparator class="my-4" />
 
     <!-- Listen Details -->
     <section>
@@ -45,9 +51,7 @@
         />
       </section>
     </section>
-    <div>
-
-    </div>
+    <div></div>
   </div>
 </template>
 

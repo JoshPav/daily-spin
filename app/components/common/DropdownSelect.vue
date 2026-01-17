@@ -1,11 +1,10 @@
 <template>
-  <UDropdownMenu :items="dropdownItems" >
-    <UButton
-      color="primary"
-      variant="outline"
-    >
+  <UDropdownMenu :items="dropdownItems">
+    <UButton color="primary" variant="outline">
       <UIcon v-if="selectedIcon" :name="selectedIcon" class="text-lg" />
-      <span v-if="selectedLabel" :class="{ 'hidden md:block': iconOnly }">{{ selectedLabel }}</span>
+      <span v-if="selectedLabel" :class="{ 'hidden md:block': iconOnly }"
+        >{{ selectedLabel }}</span
+      >
     </UButton>
   </UDropdownMenu>
 </template>

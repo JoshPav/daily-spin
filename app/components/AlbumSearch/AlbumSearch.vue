@@ -9,14 +9,17 @@
         @input="handleSearchInput"
         @focus="handleFocus"
         @blur="handleBlur"
-      />
+      >
     </div>
 
     <div v-if="loading && isFocused" class="search-results">
       <div v-for="i in 3" :key="i" class="album-card skeleton"></div>
     </div>
 
-    <div v-else-if="searchResults.length > 0 && isFocused" class="search-results">
+    <div
+      v-else-if="searchResults.length > 0 && isFocused"
+      class="search-results"
+    >
       <AlbumSearchResult
         v-for="album in searchResults"
         :key="album.id"
@@ -85,7 +88,7 @@ const selectAlbum = (album: SearchResult) => {
   border: 2px solid #404040;
   border-radius: 8px;
   color: #ffffff;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 16px;
   transition: border-color 0.2s ease;
 }

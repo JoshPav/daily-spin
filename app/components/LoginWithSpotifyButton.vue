@@ -1,11 +1,11 @@
 <template>
-  <UButton 
-    v-on:click="onClick" 
-    :icon="Icons.SPOTIFY" 
-    variant="solid" 
+  <UButton
+    v-on:click="onClick"
+    :icon="Icons.SPOTIFY"
+    variant="solid"
     :label="label"
-    class="text-white font-semibold px-4 py-2 rounded-sm hover:cursor-pointer bg-(--color-spotify-brand-green) hover:bg-(--color-spotify-brand-green-hover)" 
-    :loading="loading" 
+    class="text-white font-semibold px-4 py-2 rounded-sm hover:cursor-pointer bg-(--color-spotify-brand-green) hover:bg-(--color-spotify-brand-green-hover)"
+    :loading="loading"
   />
 </template>
 
@@ -49,5 +49,4 @@ const onClick = async () => {
 </script>
 
 <style>
-
 </style>

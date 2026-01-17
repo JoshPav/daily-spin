@@ -2,16 +2,15 @@
   <div class="flex flex-col gap-3">
     <!-- Artist Header -->
     <div class="flex items-center gap-3 px-3">
-      <UAvatar
-        :src="artistImage"
-        :alt="artist.name"
-        size="lg"
-      />
+      <UAvatar :src="artistImage" :alt="artist.name" size="lg" />
       <div class="flex flex-col">
         <div class="text-lg font-bold text-white">
           <HighlightedText :text="artist.name" :search-term="searchTerm" />
         </div>
-        <div class="text-sm text-muted">{{ albumCount }} {{ albumCount === 1 ? 'album' : 'albums' }}</div>
+        <div class="text-sm text-muted">
+          {{ albumCount }}
+          {{ albumCount === 1 ? 'album' : 'albums' }}
+        </div>
       </div>
     </div>
 

@@ -7,11 +7,7 @@
       size="xl"
       class="flex-1"
     />
-    <DropdownSelect
-      v-model="sortBy"
-      :options="sortOptions"
-      label="Sort by"
-    />
+    <DropdownSelect v-model="sortBy" :options="sortOptions" label="Sort by" />
   </div>
 </template>
 

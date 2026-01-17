@@ -1,9 +1,6 @@
 <template>
   <div class="empty-state flex-col text-center py-16">
-    <UIcon
-      :name="Icons.BACKLOG_EMPTY"
-      class="text-6xl text-gray-600 mb-4"
-    />
+    <UIcon :name="Icons.BACKLOG_EMPTY" class="text-6xl text-gray-600 mb-4" />
     <p class="text-highlighted font-bold text-xl">Your backlog is empty</p>
     <p class="text-muted font-medium mt-2 text-sm">
       Add albums you want to listen to later
@@ -37,6 +34,5 @@ const openAddModal = () => {
 };
 </script>
 
-<style> 
-
+<style>
 </style>

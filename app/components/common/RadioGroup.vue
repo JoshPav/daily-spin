@@ -9,9 +9,15 @@
     :ui="{ container: 'flex', item: 'flex-1' }"
   >
     <template #label="{ item }">
-      <div class="flex flex-col items-center justify-center gap-1 md:gap-1.5 w-full">
+      <div
+        class="flex flex-col items-center justify-center gap-1 md:gap-1.5 w-full"
+      >
         <template v-if="item.icon">
-          <component v-if="isComponent(item.icon)" :is="item.icon" class="text-lg md:text-2xl" />
+          <component
+            v-if="isComponent(item.icon)"
+            :is="item.icon"
+            class="text-lg md:text-2xl"
+          />
           <UIcon v-else :name="item.icon" class="text-lg md:text-2xl" />
         </template>
         <span class="text-xs md:text-sm">{{ item.label }}</span>

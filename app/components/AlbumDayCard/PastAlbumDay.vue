@@ -7,7 +7,9 @@
     @click="handleClick"
   >
     <template #empty>
-      <div class="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+      <div
+        class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+      >
         <button
           v-if="isToday"
           class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-[#1ed760] hover:scale-110 active:scale-105"

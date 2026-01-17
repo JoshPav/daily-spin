@@ -10,10 +10,10 @@
       :src="album.images[0].url"
       :alt="album.name"
       class="album-image"
-    />
+    >
     <div class="album-info">
       <div class="album-name">{{ album.name }}</div>
-      <div class="artist-names">{{  getAlbumArtists(album.artists) }}</div>
+      <div class="artist-names">{{ getAlbumArtists(album.artists) }}</div>
     </div>
   </div>
 </template>
@@ -29,7 +29,6 @@ const onClick = () => emit('clicked');
 </script>
 
 <style>
-
 .album-card {
   display: flex;
   gap: 16px;
@@ -51,12 +50,7 @@ const onClick = () => emit('clicked');
 
 .album-card.skeleton {
   height: 80px;
-  background: linear-gradient(
-    90deg,
-    #2a2a2a 25%,
-    #3a3a3a 37%,
-    #2a2a2a 63%
-  );
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 37%, #2a2a2a 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 2.5s ease infinite;
 }
@@ -77,7 +71,7 @@ const onClick = () => emit('clicked');
 }
 
 .album-name {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;
@@ -88,7 +82,7 @@ const onClick = () => emit('clicked');
 }
 
 .artist-names {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: #b3b3b3;
