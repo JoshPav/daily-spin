@@ -57,6 +57,7 @@ describe('listenMapper', () => {
       expect(result.date).toBe('2024-06-15T00:00:00.000Z');
       expect(result.albums).toHaveLength(1);
       expect(result.albums[0]).toEqual({
+        id: albumListenData.id,
         album: {
           albumId: 'album-123',
           albumName: 'Test Album',
@@ -255,8 +256,9 @@ describe('listenMapper', () => {
       // Result should only have date and albums properties
       expect(Object.keys(result)).toEqual(['date', 'albums']);
 
-      // Album result should only have album and listenMetadata
+      // Album result should only have id, album and listenMetadata
       expect(Object.keys(result.albums[0])).toEqual([
+        'id',
         'album',
         'listenMetadata',
       ]);

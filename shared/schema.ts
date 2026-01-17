@@ -25,6 +25,7 @@ export type Album = {
 };
 
 export type DailyAlbumListen = {
+  id: string;
   album: Album;
   listenMetadata: ListenMetadata;
 };
@@ -54,7 +55,7 @@ export type ListenOrder = 'ordered' | 'shuffled' | 'interrupted';
 
 export type ListenTime = 'morning' | 'noon' | 'evening' | 'night';
 
-export type AddAlbumListenBody = DailyAlbumListen & {
+export type AddAlbumListenBody = Omit<DailyAlbumListen, 'id'> & {
   date: string;
 };
 

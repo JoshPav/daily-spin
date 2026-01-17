@@ -51,22 +51,78 @@
         />
       </section>
     </section>
-    <div></div>
+
+    <USeparator class="my-4" />
+
+    <!-- Favorite Song -->
+    <section>
+      <h3 class="mb-4 font-semibold">Favorite song</h3>
+      <button
+        class="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-600 hover:border-green-500 hover:bg-green-500/10 transition-colors text-left"
+        :class="{
+          'border-solid border-green-500 bg-green-500/10': favoriteSong,
+        }"
+        @click="openFavoriteSongModal"
+      >
+        <UIcon
+          :name="favoriteSong ? 'i-lucide-music' : 'i-lucide-plus'"
+          class="text-lg"
+          :class="favoriteSong ? 'text-green-500' : 'text-muted'"
+        />
+        <span v-if="favoriteSong" class="flex-1">
+          <span class="text-muted text-sm">{{ favoriteSong.trackNumber }}.</span>
+          {{ favoriteSong.name }}
+        </span>
+        <span v-else class="flex-1 text-muted">Select favorite song</span>
+        <UIcon
+          v-if="favoriteSong"
+          name="i-lucide-pencil"
+          class="text-muted text-sm"
+        />
+      </button>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { DailyAlbumListen } from '#shared/schema';
+import type { DailyAlbumListen, FavoriteSong } from '#shared/schema';
 import {
   LISTEN_METHOD_CONFIG,
   LISTEN_ORDER_CONFIG,
   LISTEN_TIME_CONFIG,
 } from '~/constants/listenMetadata';
 
-const { albumListen } = defineProps<{
+const props = defineProps<{
   albumListen: DailyAlbumListen;
 }>();
 
-const listenTime = computed(() => albumListen.listenMetadata.listenTime);
-const listenMethod = computed(() => albumListen.listenMetadata.listenMethod);
+const listenTime = computed(() => props.albumListen.listenMetadata.listenTime);
+const listenMethod = computed(() => props.albumListen.listenMetadata.listenMethod);
+
+// Local state for favorite song (allows optimistic updates)
+const favoriteSong = ref<FavoriteSong | null>(
+  props.albumListen.listenMetadata.favoriteSong,
+);
+
+// Sync with props when they change
+watch(
+  () => props.albumListen.listenMetadata.favoriteSong,
+  (newValue) => {
+    favoriteSong.value = newValue;
+  },
+);
+
+const { open: openModal } = useFavoriteSongModal();
+
+const openFavoriteSongModal = () => {
+  openModal({
+    albumListenId: props.albumListen.id,
+    albumId: props.albumListen.album.albumId,
+    albumName: props.albumListen.album.albumName,
+    currentFavoriteSong: favoriteSong.value,
+    onUpdated: (updatedFavoriteSong) => {
+      favoriteSong.value = updatedFavoriteSong;
+    },
+  });
+};
 </script>
