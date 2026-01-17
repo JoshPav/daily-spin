@@ -18,19 +18,37 @@ export type SpotifyTokenRefreshError = {
   error_description?: string;
 };
 
+export type SpotifyCredentials = {
+  clientId: string;
+  clientSecret: string;
+};
+
 /**
  * Refreshes a Spotify access token using the refresh token.
- * This is the centralized token refresh logic used by BetterAuth and can also
- * be called directly for server-side batch processing.
+ * This is the centralized token refresh logic that can be called directly
+ * for server-side batch processing.
+ *
+ * @param refreshToken - The refresh token to use
+ * @param credentials - Optional credentials (defaults to useRuntimeConfig in Nuxt context)
  */
 export async function refreshSpotifyToken(
   refreshToken: string,
+  credentials?: SpotifyCredentials,
 ): Promise<SpotifyTokenRefreshResult> {
+  // Use provided credentials or fall back to runtime config (for Nuxt server context)
+  // biome-ignore lint/suspicious/noExplicitAny: useRuntimeConfig is globally available in Nuxt but not typed here
+  const global = globalThis as any;
+  const runtimeConfig = global.useRuntimeConfig?.();
+  const creds = credentials ?? {
+    clientId: runtimeConfig?.spotifyClientId ?? clientId,
+    clientSecret: runtimeConfig?.spotifyClientSecret ?? clientSecret,
+  };
+
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      Authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
