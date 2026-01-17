@@ -13,15 +13,25 @@
             placeholder="Search by name or artist..."
             class="w-full px-4 py-3 bg-elevated border-2 border-neutral-600 rounded-lg text-white font-montserrat text-base transition-colors focus:outline-none focus:border-primary-500 placeholder:text-muted"
             @input="handleSearchInput"
-          />
+          >
         </div>
 
-        <div v-if="loading" class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden">
-          <div v-for="i in 3" :key="i" class="h-20 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-[length:400%_100%] animate-[skeleton-shimmer_2.5s_ease_infinite]"></div>
+        <div
+          v-if="loading"
+          class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden"
+        >
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="h-20 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-[length:400%_100%] animate-[skeleton-shimmer_2.5s_ease_infinite]"
+          ></div>
         </div>
 
         <!-- Search results with multi-select -->
-        <div v-else-if="searchResults.length > 0" class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden">
+        <div
+          v-else-if="searchResults.length > 0"
+          class="flex flex-col gap-3 max-h-75 overflow-y-auto overflow-x-hidden"
+        >
           <div
             v-for="album in searchResults"
             :key="album.id"
@@ -50,7 +60,7 @@
               :src="album.images[0].url"
               :alt="album.name"
               class="w-14 h-14 rounded object-cover shrink-0"
-            />
+            >
             <div class="flex-1 flex flex-col gap-1 min-w-0">
               <div
                 class="font-montserrat text-[15px] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
@@ -69,11 +79,13 @@
         </div>
 
         <!-- Selected albums summary -->
-        <div v-if="selectedAlbums.length > 0" class="flex justify-between items-center px-3 py-2 bg-neutral-800 rounded-lg">
+        <div
+          v-if="selectedAlbums.length > 0"
+          class="flex justify-between items-center px-3 py-2 bg-neutral-800 rounded-lg"
+        >
           <div class="font-montserrat text-sm font-semibold text-primary-500">
-            {{ selectedAlbums.length }} album{{
-              selectedAlbums.length === 1 ? '' : 's'
-            }}
+            {{ selectedAlbums.length }} album
+            {{ selectedAlbums.length === 1 ? '' : 's' }}
             selected
           </div>
           <UButton
@@ -94,9 +106,8 @@
           :loading="saving"
           @click="handleAdd"
         >
-          Add {{ selectedAlbums.length }} Album{{
-            selectedAlbums.length === 1 ? '' : 's'
-          }}
+          Add {{ selectedAlbums.length }} Album
+          {{ selectedAlbums.length === 1 ? '' : 's' }}
         </UButton>
       </div>
     </template>

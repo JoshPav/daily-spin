@@ -177,8 +177,10 @@ export type UserPreferences = {
   createSongOfDayPlaylist: boolean;
 };
 
+export type PlaylistType = 'album_of_the_day' | 'song_of_the_day';
+
 export type LinkedPlaylist = {
-  type: 'album_of_the_day' | 'song_of_the_day';
+  type: PlaylistType;
   spotifyPlaylistId: string;
   spotifyUrl: string;
 };

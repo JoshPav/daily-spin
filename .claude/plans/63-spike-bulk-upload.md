@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This spike investigates the feasibility and approach for implementing bulk upload of Spotify streaming history data. Users can request their data export from Spotify, which provides JSON files containing their complete listening history. This feature would allow users to backfill their Daily Spin listening history using this data.
+This spike investigates the feasibility and approach for implementing bulk upload of Spotify streaming history data. Users can request their data export from Spotify, which provides JSON files containing their complete listening history. This feature would allow users to backfill their DailySpin listening history using this data.
 
 ## Spotify Data Format Analysis
 

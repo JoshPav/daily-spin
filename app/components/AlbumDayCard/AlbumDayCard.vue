@@ -35,7 +35,10 @@
     <slot name="badge" />
 
     <!-- Loading state -->
-    <div v-if="pending" class="skeleton absolute inset-0 rounded-lg overflow-hidden" />
+    <div
+      v-if="pending"
+      class="skeleton absolute inset-0 rounded-lg overflow-hidden"
+    />
 
     <!-- Empty state -->
     <template v-else-if="images.length === 0">
@@ -44,7 +47,9 @@
         :class="isFuture ? 'bg-linear-to-br from-[#1c1c2a] to-[#12121f]' : 'bg-linear-to-br from-[#1a1a1a] to-[#0a0a0a]'"
       >
         <slot name="empty">
-          <div class="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+          <div
+            class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+          >
             <span>—</span>
           </div>
         </slot>
@@ -59,7 +64,9 @@
       >
         <slot name="no-artwork">
           <div class="flex flex-col gap-1.5 w-full">
-            <div class="text-[11px] font-semibold text-neutral-400 tracking-tight uppercase">
+            <div
+              class="text-[11px] font-semibold text-neutral-400 tracking-tight uppercase"
+            >
               {{ firstAlbum?.artistName || 'Unknown Artist' }}
             </div>
             <div class="text-[13px] font-bold text-white leading-tight">
@@ -134,45 +141,91 @@ defineExpose({
 }
 
 @keyframes skeleton-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 /* Stacked albums effect - transforms */
 .stacked-album {
-  transition: transform 0.3s ease, filter 0.35s ease;
+  transition:
+    transform 0.3s ease,
+    filter 0.35s ease;
 }
 
-.stacked-album.stack-0 { transform: translate(0, 0) rotate(0deg); }
-.stacked-album.stack-1 { transform: translate(4px, 4px) rotate(2deg); }
-.stacked-album.stack-2 { transform: translate(8px, 8px) rotate(-2deg); }
-.stacked-album.stack-3 { transform: translate(12px, 12px) rotate(1deg); }
+.stacked-album.stack-0 {
+  transform: translate(0, 0) rotate(0deg);
+}
+.stacked-album.stack-1 {
+  transform: translate(4px, 4px) rotate(2deg);
+}
+.stacked-album.stack-2 {
+  transform: translate(8px, 8px) rotate(-2deg);
+}
+.stacked-album.stack-3 {
+  transform: translate(12px, 12px) rotate(1deg);
+}
 
 /* On hover, fan out the cards */
-.album-day-card.cursor-pointer:hover .stacked-album.stack-1 { transform: translate(6px, 6px) rotate(3deg); }
-.album-day-card.cursor-pointer:hover .stacked-album.stack-2 { transform: translate(12px, 12px) rotate(-3deg); }
-.album-day-card.cursor-pointer:hover .stacked-album.stack-3 { transform: translate(18px, 18px) rotate(2deg); }
+.album-day-card.cursor-pointer:hover .stacked-album.stack-1 {
+  transform: translate(6px, 6px) rotate(3deg);
+}
+.album-day-card.cursor-pointer:hover .stacked-album.stack-2 {
+  transform: translate(12px, 12px) rotate(-3deg);
+}
+.album-day-card.cursor-pointer:hover .stacked-album.stack-3 {
+  transform: translate(18px, 18px) rotate(2deg);
+}
 
 /* Album image: grayscale by default */
-.album-day-card .stacked-album.stack-0 { filter: grayscale(100%) brightness(0.75) contrast(0.95); }
-.album-day-card .stacked-album.stack-1 { filter: grayscale(100%) brightness(0.65) contrast(0.95); }
-.album-day-card .stacked-album.stack-2 { filter: grayscale(100%) brightness(0.55) contrast(0.95); }
-.album-day-card .stacked-album.stack-3 { filter: grayscale(100%) brightness(0.45) contrast(0.95); }
+.album-day-card .stacked-album.stack-0 {
+  filter: grayscale(100%) brightness(0.75) contrast(0.95);
+}
+.album-day-card .stacked-album.stack-1 {
+  filter: grayscale(100%) brightness(0.65) contrast(0.95);
+}
+.album-day-card .stacked-album.stack-2 {
+  filter: grayscale(100%) brightness(0.55) contrast(0.95);
+}
+.album-day-card .stacked-album.stack-3 {
+  filter: grayscale(100%) brightness(0.45) contrast(0.95);
+}
 
 /* Restore colour on hover */
-.album-day-card:hover .stacked-album.stack-0 { filter: grayscale(0%) brightness(1) contrast(1); }
-.album-day-card:hover .stacked-album.stack-1 { filter: grayscale(0%) brightness(0.85) contrast(1); }
-.album-day-card:hover .stacked-album.stack-2 { filter: grayscale(0%) brightness(0.7) contrast(1); }
-.album-day-card:hover .stacked-album.stack-3 { filter: grayscale(0%) brightness(0.6) contrast(1); }
+.album-day-card:hover .stacked-album.stack-0 {
+  filter: grayscale(0%) brightness(1) contrast(1);
+}
+.album-day-card:hover .stacked-album.stack-1 {
+  filter: grayscale(0%) brightness(0.85) contrast(1);
+}
+.album-day-card:hover .stacked-album.stack-2 {
+  filter: grayscale(0%) brightness(0.7) contrast(1);
+}
+.album-day-card:hover .stacked-album.stack-3 {
+  filter: grayscale(0%) brightness(0.6) contrast(1);
+}
 
 /* Restore colour for today */
-.album-day-card.today .stacked-album.stack-0 { filter: grayscale(0%) brightness(1) contrast(1); }
-.album-day-card.today .stacked-album.stack-1 { filter: grayscale(0%) brightness(0.85) contrast(1); }
-.album-day-card.today .stacked-album.stack-2 { filter: grayscale(0%) brightness(0.7) contrast(1); }
-.album-day-card.today .stacked-album.stack-3 { filter: grayscale(0%) brightness(0.6) contrast(1); }
+.album-day-card.today .stacked-album.stack-0 {
+  filter: grayscale(0%) brightness(1) contrast(1);
+}
+.album-day-card.today .stacked-album.stack-1 {
+  filter: grayscale(0%) brightness(0.85) contrast(1);
+}
+.album-day-card.today .stacked-album.stack-2 {
+  filter: grayscale(0%) brightness(0.7) contrast(1);
+}
+.album-day-card.today .stacked-album.stack-3 {
+  filter: grayscale(0%) brightness(0.6) contrast(1);
+}
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .album-day-card .stacked-album { transition: none; }
+  .album-day-card .stacked-album {
+    transition: none;
+  }
 }
 </style>

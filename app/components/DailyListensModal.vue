@@ -1,10 +1,11 @@
 <template>
-  <UModal :title="modalHeader" :description="modalSubheading || undefined" :content="{ onOpenAutoFocus: (e) => e.preventDefault() }" >
+  <UModal
+    :title="modalHeader"
+    :description="modalSubheading"
+    :content="{ onOpenAutoFocus: (e) => e.preventDefault() }"
+  >
     <template #body>
-      <AlbumCarousel
-        v-if="dailyListens"
-        :albums="dailyListens.albums"
-      />
+      <AlbumCarousel v-if="dailyListens" :albums="dailyListens.albums" />
     </template>
   </UModal>
 </template>
@@ -26,8 +27,12 @@ const modalHeader = computed(() =>
 const modalSubheading = computed(() => {
   const albumCount = dailyListens.albums.length;
 
-  if (!albumCount || albumCount <= 1) {
-    return undefined;
+  if (albumCount === 0) {
+    return 'No albums listened';
+  }
+
+  if (albumCount === 1) {
+    return '1 album listened';
   }
 
   return `${albumCount} albums listened`;
@@ -35,5 +40,4 @@ const modalSubheading = computed(() => {
 </script>
 
 <style scoped>
-
 </style>

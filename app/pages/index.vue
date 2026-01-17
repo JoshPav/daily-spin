@@ -1,6 +1,8 @@
 <template>
   <div class="min-h-screen bg-black text-white">
-    <div class="relative border-b-8 border-gray-800 overflow-hidden min-h-screen sm:min-h-[120vh] flex items-center">
+    <div
+      class="relative border-b-8 border-gray-800 overflow-hidden min-h-screen sm:min-h-[120vh] flex items-center"
+    >
       <div
         class="absolute inset-0 z-0 perspective-hero"
         :style="{ transform: `translateY(${scrollY * 0.5}px)` }"
@@ -9,8 +11,10 @@
           :src="showcaseImage"
           alt="Album calendar showcase"
           class="w-full h-full object-cover opacity-40 showcase-hero-transform"
-        />
-        <div class="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black"></div>
+        >
+        <div
+          class="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black"
+        ></div>
       </div>
 
       <!-- Hero Content -->
@@ -20,7 +24,8 @@
             Your complete album history
           </h1>
           <p class="text-xl sm:text-2xl text-gray-300">
-            Build a complete archive of your album plays and watch your musical taste evolve over time.
+            Build a complete archive of your album plays and watch your musical
+            taste evolve over time.
           </p>
           <div class="pt-6">
             <div class="inline-block scale-125">
@@ -31,23 +36,23 @@
       </UContainer>
     </div>
 
-    <LandingPageFeature 
-      heading="Set it and Forget it" 
-      description="Once connected, the app quietly tracks every album you finish on Spotify. Your daily listens are neatly compiled with playback details — no effort required."  
-      :image-src="featureTodaysListens" 
+    <LandingPageFeature
+      heading="Set it and Forget it"
+      description="Once connected, the app quietly tracks every album you finish on Spotify. Your daily listens are neatly compiled with playback details — no effort required."
+      :image-src="featureTodaysListens"
     />
 
-    <LandingPageFeature 
-      heading="Set the vibe for the days ahead" 
-      description="Plan out your listening mood in advance and let the app queue up the perfect album each morning."  
+    <LandingPageFeature
+      heading="Set the vibe for the days ahead"
+      description="Plan out your listening mood in advance and let the app queue up the perfect album each morning."
       :image-src="featureTodaysAlbum"
       :reversed="true"
     />
 
-    <LandingPageFeature 
-      heading="Collect the gems from your year" 
-      description="Select the song that hit hardest each day and turn your year of listening into a curated mixtape." 
-      :image-src="featureSongOfTheDay" 
+    <LandingPageFeature
+      heading="Collect the gems from your year"
+      description="Select the song that hit hardest each day and turn your year of listening into a curated mixtape."
+      :image-src="featureSongOfTheDay"
     />
 
     <!-- Final CTA -->
@@ -58,7 +63,8 @@
             Ready to start tracking?
           </h2>
           <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
-            Connect your Spotify account and begin documenting your album listening journey today.
+            Connect your Spotify account and begin documenting your album
+            listening journey today.
           </p>
           <div class="pt-4">
             <div class="inline-block scale-125">

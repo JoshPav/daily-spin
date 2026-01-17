@@ -5,7 +5,7 @@
       :src="album.images[0].url"
       :alt="album.name"
       class="preview-image"
-    />
+    >
     <div class="preview-info">
       <div class="preview-album-name">{{ album.name }}</div>
       <div class="preview-artist-names">
@@ -20,7 +20,6 @@ defineProps<{ album: SearchResult }>();
 </script>
 
 <style>
-
 .selected-album-preview {
   display: flex;
   gap: 16px;
@@ -42,17 +41,16 @@ defineProps<{ album: SearchResult }>();
 }
 
 .preview-album-name {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #ffffff;
 }
 
 .preview-artist-names {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: #b3b3b3;
 }
-
 </style>

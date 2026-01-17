@@ -1,4 +1,4 @@
-# 🎵 Daily Spin
+# 🎵 DailySpin
 
 Track the albums you actually listen to — automatically.
 

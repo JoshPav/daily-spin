@@ -2,16 +2,9 @@
   <div class="border-b-8 border-gray-800">
     <UContainer class="py-16 sm:py-24">
       <div class="grid md:grid-cols-2 gap-12 items-center">
-        <div
-          class="space-y-4"
-          :class="{ 'md:order-2': reversed }"
-        >
-          <h2 class="text-3xl sm:text-5xl font-bold">
-            {{ heading }}
-          </h2>
-          <p class="text-lg sm:text-xl text-gray-400">
-            {{ description }}
-          </p>
+        <div class="space-y-4" :class="{ 'md:order-2': reversed }">
+          <h2 class="text-3xl sm:text-5xl font-bold">{{ heading }}</h2>
+          <p class="text-lg sm:text-xl text-gray-400">{{ description }}</p>
         </div>
         <div
           ref="imageContainer"
@@ -27,7 +20,7 @@
               :alt="heading"
               class="w-full h-auto"
               loading="lazy"
-            />
+            >
           </div>
         </div>
       </div>

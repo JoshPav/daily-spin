@@ -30,6 +30,7 @@ export const Icons = {
   INTERRUPTED: 'i-lucide-circle-slash',
   LOG_OUT: 'i-lucide-log-out',
   MAGNIFYING_GLASS: 'i-heroicons-magnifying-glass',
+  MENU: 'i-lucide-menu',
   MOON_STAR: 'i-lucide-moon-star',
   MUSICAL_NOTE: 'i-heroicons-musical-note',
   ORDERED: 'i-lucide-list-ordered',

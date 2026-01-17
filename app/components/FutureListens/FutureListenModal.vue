@@ -7,24 +7,25 @@
     <template #body>
       <div class="flex flex-col items-center gap-6">
         <!-- Album artwork (large, centered) -->
-        <div class="w-full aspect-square md:w-75 md:h-75 md:aspect-auto rounded-lg overflow-hidden bg-neutral-900 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+        <div
+          class="w-full aspect-square md:w-75 md:h-75 md:aspect-auto rounded-lg overflow-hidden bg-neutral-900 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+        >
           <img
             v-if="futureListenItem.album.imageUrl"
             :src="futureListenItem.album.imageUrl"
             :alt="futureListenItem.album.name"
             class="w-full h-full object-cover"
-          />
-          <div
-            v-else
-            class="w-full h-full flex items-center justify-center"
           >
+          <div v-else class="w-full h-full flex items-center justify-center">
             <UIcon name="i-lucide-disc-3" class="text-6xl text-neutral-500" />
           </div>
         </div>
 
         <!-- Album info (centered) -->
         <div class="text-center">
-          <h3 class="font-montserrat text-xl font-bold text-white leading-tight">
+          <h3
+            class="font-montserrat text-xl font-bold text-white leading-tight"
+          >
             {{ futureListenItem.album.name }}
           </h3>
           <p class="font-montserrat text-sm text-neutral-400 mt-1">

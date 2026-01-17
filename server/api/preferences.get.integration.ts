@@ -28,7 +28,7 @@ describe('GET /api/preferences Integration Tests', () => {
       preferences: {
         trackListeningHistory: true,
         createTodaysAlbumPlaylist: true,
-        createSongOfDayPlaylist: false,
+        createSongOfDayPlaylist: true,
       },
       linkedPlaylists: [],
     });

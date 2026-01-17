@@ -74,23 +74,29 @@ const to = computed(() =>
 </script>
 
 <template>
-  <UHeader 
-    title="DailySpin" 
-    :to="to" :ui="{ center: 'md:block', toggle: 'block' }"
-    :toggle="{ size: 'xl'}"
-    mode="slideover">
+  <UHeader
+    title="DailySpin"
+    :to="to"
+    :ui="{ center: 'md:block', toggle: 'block!', content: 'block!', overlay: 'block!' }"
+    :toggle="{ size: 'xl' }"
+    mode="slideover"
+  >
     <template v-if="loggedIn">
       <UNavigationMenu :items="navItems" highlight />
     </template>
 
     <template #body>
-      <UNavigationMenu :items="bodyItems" highlight orientation="vertical" variant="pill" :ui="{
-        link: 'text-xl px-4 py-3',
-        label: 'text-xl px-4 py-3',
-        linkLeadingIcon: 'size-6'
-
-      }" />
+      <UNavigationMenu
+        :items="bodyItems"
+        highlight
+        orientation="vertical"
+        variant="pill"
+        :ui="{
+          link: 'text-xl px-4 py-3',
+          label: 'text-xl px-4 py-3',
+          linkLeadingIcon: 'size-6'
+        }"
+      />
     </template>
-
   </UHeader>
 </template>

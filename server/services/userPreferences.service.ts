@@ -4,8 +4,8 @@ import type {
   UserPreferences,
 } from '#shared/schema';
 import { UserRepository } from '../repositories/user.repository';
-import { createTaggedLogger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
+import { createTaggedLogger } from '../utils/logger';
 
 const logger = createTaggedLogger('Service:UserPreferences');
 

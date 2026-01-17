@@ -85,16 +85,35 @@ const { scrollContainer, todayElement: todayItem } = useScrollToToday({
 </script>
 
 <template>
-  <div ref="scrollContainer" class="flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto h-full">
+  <div
+    ref="scrollContainer"
+    class="flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto h-full"
+  >
     <!-- Loading / Error / Empty states -->
-    <div v-if="pending" class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]">Loading...</div>
-    <div v-else-if="error" class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]">Error: {{ error }}</div>
-    <div v-else-if="days && days.length === 0" class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]">
+    <div
+      v-if="pending"
+      class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
+    >
+      Loading...
+    </div>
+    <div
+      v-else-if="error"
+      class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
+    >
+      Error: {{ error }}
+    </div>
+    <div
+      v-else-if="days && days.length === 0"
+      class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
+    >
       No listens yet for this month
     </div>
 
     <!-- Scrollable grid -->
-    <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8">
+    <div
+      v-else
+      class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
+    >
       <StickyMonthHeader />
       <template v-for="day in days" :key="day.date">
         <FutureAlbumDay

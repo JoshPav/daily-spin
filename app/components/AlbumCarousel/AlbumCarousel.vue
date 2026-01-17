@@ -17,7 +17,6 @@
     <template #default="{ item }">
       <AlbumCarouselItem :album-listen="item" />
     </template>
-
   </UCarousel>
 </template>
 

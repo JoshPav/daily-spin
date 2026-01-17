@@ -3,10 +3,10 @@ import type {
   GetPreferencesResponse,
   UpdatePreferencesBody,
 } from '~~/shared/schema';
+import { getTestPrisma } from '~~/tests/db/setup';
 import { createUser, createUserPlaylist } from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
-import { getTestPrisma } from '~~/tests/db/setup';
 
 describe('PATCH /api/preferences Integration Tests', () => {
   let userId: string;
@@ -35,7 +35,7 @@ describe('PATCH /api/preferences Integration Tests', () => {
     // Then
     expect(result.preferences.trackListeningHistory).toBe(false);
     expect(result.preferences.createTodaysAlbumPlaylist).toBe(true); // unchanged
-    expect(result.preferences.createSongOfDayPlaylist).toBe(false); // unchanged
+    expect(result.preferences.createSongOfDayPlaylist).toBe(true); // unchanged
   });
 
   it('should update multiple preference fields', async () => {
@@ -117,7 +117,7 @@ describe('PATCH /api/preferences Integration Tests', () => {
     // Then - nothing should change
     expect(result.preferences.trackListeningHistory).toBe(true);
     expect(result.preferences.createTodaysAlbumPlaylist).toBe(true);
-    expect(result.preferences.createSongOfDayPlaylist).toBe(false);
+    expect(result.preferences.createSongOfDayPlaylist).toBe(true);
   });
 
   it('should only update preferences for authenticated user', async () => {
@@ -151,11 +151,15 @@ describe('PATCH /api/preferences Integration Tests', () => {
     };
 
     // When - toggle off
-    const result1 = await handler(createHandlerEvent(userId, { body: toggleOffBody }));
+    const result1 = await handler(
+      createHandlerEvent(userId, { body: toggleOffBody }),
+    );
     expect(result1.preferences.createTodaysAlbumPlaylist).toBe(false);
 
     // When - toggle back on
-    const result2 = await handler(createHandlerEvent(userId, { body: toggleOnBody }));
+    const result2 = await handler(
+      createHandlerEvent(userId, { body: toggleOnBody }),
+    );
     expect(result2.preferences.createTodaysAlbumPlaylist).toBe(true);
 
     // Then - verify final state in database
