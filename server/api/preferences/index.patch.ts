@@ -2,10 +2,10 @@ import type {
   GetPreferencesResponse,
   UpdatePreferencesBody,
 } from '#shared/schema';
-import { UserPreferencesService } from '../services/userPreferences.service';
-import { handleError } from '../utils/errorHandler';
-import { createTaggedLogger } from '../utils/logger';
-import { getLogContext } from '../utils/requestContext';
+import { UserPreferencesService } from '~~/server/services/userPreferences.service';
+import { handleError } from '~~/server/utils/errorHandler';
+import { createTaggedLogger } from '~~/server/utils/logger';
+import { getLogContext } from '~~/server/utils/requestContext';
 
 const logger = createTaggedLogger('API:preferences.patch');
 

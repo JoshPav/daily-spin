@@ -1,7 +1,7 @@
 import type { GetPreferencesResponse } from '#shared/schema';
-import { UserPreferencesService } from '../services/userPreferences.service';
-import { createTaggedLogger } from '../utils/logger';
-import { getLogContext } from '../utils/requestContext';
+import { UserPreferencesService } from '~~/server/services/userPreferences.service';
+import { createTaggedLogger } from '~~/server/utils/logger';
+import { getLogContext } from '~~/server/utils/requestContext';
 
 const logger = createTaggedLogger('API:preferences.get');
 
