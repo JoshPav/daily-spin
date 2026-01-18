@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Icons } from '~/components/common/icons';
 import type { PlaylistType } from '~~/shared/schema';
 
 const {
@@ -118,18 +117,12 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
                 </div>
               </div>
 
-              <UButton
-                color="primary"
+              <OpenInSpotifyButton
+                :spotify-id="playlist.spotifyPlaylistId"
+                type="playlist"
                 variant="solid"
-                class="rounded-xl"
-                :trailing-icon="Icons.EXTERNAL_LINK"
-                :icon="Icons.SPOTIFY"
-                :to="playlist.spotifyUrl"
-                target="_blank"
-                external
-              >
-                Open
-              </UButton>
+                size="md"
+              />
             </div>
           </div>
         </PreferencesCard>

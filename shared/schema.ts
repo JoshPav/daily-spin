@@ -2,13 +2,13 @@ export type FavoriteSong = {
   spotifyId: string;
   name: string;
   trackNumber: number;
+  albumId: string;
 };
 
 export type ListenMetadata = {
   listenOrder: ListenOrder;
   listenMethod: ListenMethod;
   listenTime: ListenTime | null;
-  favoriteSong: FavoriteSong | null;
 };
 
 export type Artist = {
@@ -33,6 +33,7 @@ export type DailyAlbumListen = {
 export type DailyListens = {
   date: string;
   albums: DailyAlbumListen[];
+  favoriteSong: FavoriteSong | null;
 };
 
 export type GetListensQueryParams = {
@@ -220,12 +221,13 @@ export type UpdateFavoriteSongBody =
       spotifyId: string;
       name: string;
       trackNumber: number;
+      albumId: string;
     }
   | { spotifyId: null };
 
 export type UpdateFavoriteSong = {
   query: never;
-  params: { albumListenId: string };
+  params: { date: string };
   body: UpdateFavoriteSongBody;
   response: { favoriteSong: FavoriteSong | null };
 };

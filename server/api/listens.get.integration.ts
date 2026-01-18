@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 import type { AlbumListenInput } from '~~/server/repositories/dailyListen.repository';
-import type { DailyAlbumListen, GetListensResponse } from '~~/shared/schema';
+import type { GetListensResponse } from '~~/shared/schema';
 import {
   createBacklogItem,
   createDailyListens,
@@ -63,24 +63,24 @@ describe('GET /api/listens Integration Tests', () => {
     vi.unstubAllEnvs();
   });
 
-  const getExpectedAlbum = (
-    albumInput: AlbumListenInput,
-  ): DailyAlbumListen => ({
-    album: {
-      albumId: albumInput.album.spotifyId,
-      albumName: albumInput.album.name,
-      imageUrl: albumInput.album.imageUrl ?? '',
-      artists: albumInput.album.artists.map(({ spotifyId, name }) => ({
-        name,
-        spotifyId,
-      })),
-    },
-    listenMetadata: expect.objectContaining({
-      listenMethod: albumInput.listenMethod ?? 'spotify',
-      listenOrder: albumInput.listenOrder ?? 'ordered',
-      listenTime: albumInput.listenTime ?? null,
-    }),
-  });
+  const getExpectedAlbum = (albumInput: AlbumListenInput) =>
+    expect.objectContaining({
+      id: expect.any(String),
+      album: {
+        albumId: albumInput.album.spotifyId,
+        albumName: albumInput.album.name,
+        imageUrl: albumInput.album.imageUrl ?? '',
+        artists: albumInput.album.artists.map(({ spotifyId, name }) => ({
+          name,
+          spotifyId,
+        })),
+      },
+      listenMetadata: {
+        listenMethod: albumInput.listenMethod ?? 'spotify',
+        listenOrder: albumInput.listenOrder ?? 'ordered',
+        listenTime: albumInput.listenTime ?? null,
+      },
+    });
 
   it('should return listens for a date range, with missing dates filled in', async () => {
     // Given
@@ -108,14 +108,17 @@ describe('GET /api/listens Integration Tests', () => {
       {
         date: day1.toISOString(),
         albums: [getExpectedAlbum(album1)],
+        favoriteSong: null,
       },
       {
         date: '2026-01-11T00:00:00.000Z',
         albums: [],
+        favoriteSong: null,
       },
       {
         date: day2.toISOString(),
         albums: [getExpectedAlbum(album2)],
+        favoriteSong: null,
       },
     ]);
   });
@@ -149,6 +152,7 @@ describe('GET /api/listens Integration Tests', () => {
     expect(result[0]).toEqual({
       date: day.toISOString(),
       albums: [getExpectedAlbum(album1), getExpectedAlbum(album2)],
+      favoriteSong: null,
     });
   });
 
@@ -365,6 +369,7 @@ describe('GET /api/listens Integration Tests', () => {
     expect(result[0]).toEqual({
       date: day.toISOString(),
       albums: [getExpectedAlbum(mainUserAlbum)],
+      favoriteSong: null,
     });
   });
 });

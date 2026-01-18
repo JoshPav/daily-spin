@@ -5,13 +5,13 @@ import type { DailyListens, FutureListenItem } from '~~/shared/schema';
 const { data, pending, error } = useListens();
 const { data: futureListensData } = useFutureListens();
 
-// Helper to check if a date string is in the future
-const isFutureDate = (dateStr: string) => {
+// Helper to check if a date string is today or in the future
+const isTodayOrFuture = (dateStr: string) => {
   const date = new Date(dateStr);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   date.setHours(0, 0, 0, 0);
-  return date > today;
+  return date >= today;
 };
 
 function getNextNDays(startDate: Date, n: number): Date[] {
@@ -59,10 +59,15 @@ const days = computed<DayEntry[]>(() => {
 
   const datesInFuture = getNextNDays(new Date(mostRecentListen.date), 7);
 
-  const pastDays: DayEntry[] = data.value.map((day) => ({
-    date: day.date,
-    dailyListens: day,
-  }));
+  const pastDays: DayEntry[] = data.value.map((day) => {
+    const dateKey = day.date.split('T')[0];
+    return {
+      date: day.date,
+      dailyListens: day,
+      // Also check for future album on today
+      futureAlbum: futureListensByDate.value.get(dateKey),
+    };
+  });
 
   const futureDays: DayEntry[] = datesInFuture.slice(1).map((date) => {
     const dateStr = date.toISOString();
@@ -117,7 +122,7 @@ const { scrollContainer, todayElement: todayItem } = useScrollToToday({
       <StickyMonthHeader />
       <template v-for="day in days" :key="day.date">
         <FutureAlbumDay
-          v-if="isFutureDate(day.date)"
+          v-if="isTodayOrFuture(day.date)"
           :date="day.date"
           :future-album="day.futureAlbum"
           :ref="el => {

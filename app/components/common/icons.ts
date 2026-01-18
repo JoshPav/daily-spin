@@ -22,6 +22,7 @@ export const Icons = {
   BACKLOG: 'i-lucide-list-music',
   BACKLOG_EMPTY: 'i-heroicons-queue-list',
   CALENDAR: 'i-lucide-calendar',
+  CALENDAR_REMOVE: 'i-lucide-calendar-x',
   CALENDAR_ARROW_DOWN: 'lucide:calendar-arrow-down',
   CALENDAR_ARROW_UP: 'lucide:calendar-arrow-up',
   CHECK_CIRCLE_SOLID: 'i-heroicons-check-circle-solid',

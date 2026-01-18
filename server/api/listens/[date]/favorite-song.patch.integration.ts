@@ -17,7 +17,7 @@ import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import { albumListenInput } from '~~/tests/factories/prisma.factory';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 
-describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', () => {
+describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
   let userId: string;
   let handler: EventHandler<UpdateFavoriteSong['response']>;
 
@@ -35,23 +35,26 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
 
   it('should set a favorite song successfully', async () => {
     // Given
+    const date = new Date('2026-01-15');
     const dailyListen = await createDailyListens({
       userId,
-      date: new Date('2026-01-15'),
+      date,
       albumListen: albumListenInput(),
     });
-    const albumListenId = dailyListen.albums[0].id;
+    const spotifyAlbumId = dailyListen.albums[0].album.spotifyId;
+    const internalAlbumId = dailyListen.albums[0].albumId;
 
     const favoriteSong = {
       spotifyId: 'track-123',
       name: 'My Favorite Track',
       trackNumber: 5,
+      albumId: spotifyAlbumId,
     };
 
     // When
     const result = await handler(
       createHandlerEvent(userId, {
-        params: { albumListenId },
+        params: { date: '2026-01-15' },
         body: favoriteSong,
       }),
     );
@@ -59,34 +62,41 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
     // Then
     expect(result.favoriteSong).toEqual(favoriteSong);
 
-    // Verify in database
+    // Verify in database (uses internal album ID)
     const [savedListen] = await getAllListensForUser(userId);
-    expect(savedListen.albums[0].favoriteSongId).toBe('track-123');
-    expect(savedListen.albums[0].favoriteSongName).toBe('My Favorite Track');
-    expect(savedListen.albums[0].favoriteSongTrackNumber).toBe(5);
+    expect(savedListen.favoriteSongId).toBe('track-123');
+    expect(savedListen.favoriteSongName).toBe('My Favorite Track');
+    expect(savedListen.favoriteSongTrackNumber).toBe(5);
+    expect(savedListen.favoriteSongAlbumId).toBe(internalAlbumId);
   });
 
   it('should clear a favorite song successfully', async () => {
     // Given - create listen with existing favorite song
+    const date = new Date('2026-01-15');
     const dailyListen = await createDailyListens({
       userId,
-      date: new Date('2026-01-15'),
+      date,
       albumListen: albumListenInput(),
     });
-    const albumListenId = dailyListen.albums[0].id;
+    const spotifyAlbumId = dailyListen.albums[0].album.spotifyId;
 
     // First set a favorite song
     await handler(
       createHandlerEvent(userId, {
-        params: { albumListenId },
-        body: { spotifyId: 'track-123', name: 'Some Track', trackNumber: 1 },
+        params: { date: '2026-01-15' },
+        body: {
+          spotifyId: 'track-123',
+          name: 'Some Track',
+          trackNumber: 1,
+          albumId: spotifyAlbumId,
+        },
       }),
     );
 
     // When - clear the favorite song
     const result = await handler(
       createHandlerEvent(userId, {
-        params: { albumListenId },
+        params: { date: '2026-01-15' },
         body: { spotifyId: null },
       }),
     );
@@ -96,25 +106,32 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
 
     // Verify in database
     const [savedListen] = await getAllListensForUser(userId);
-    expect(savedListen.albums[0].favoriteSongId).toBeNull();
-    expect(savedListen.albums[0].favoriteSongName).toBeNull();
-    expect(savedListen.albums[0].favoriteSongTrackNumber).toBeNull();
+    expect(savedListen.favoriteSongId).toBeNull();
+    expect(savedListen.favoriteSongName).toBeNull();
+    expect(savedListen.favoriteSongTrackNumber).toBeNull();
+    expect(savedListen.favoriteSongAlbumId).toBeNull();
   });
 
   it('should update an existing favorite song', async () => {
     // Given
+    const date = new Date('2026-01-15');
     const dailyListen = await createDailyListens({
       userId,
-      date: new Date('2026-01-15'),
+      date,
       albumListen: albumListenInput(),
     });
-    const albumListenId = dailyListen.albums[0].id;
+    const spotifyAlbumId = dailyListen.albums[0].album.spotifyId;
 
     // Set initial favorite song
     await handler(
       createHandlerEvent(userId, {
-        params: { albumListenId },
-        body: { spotifyId: 'track-1', name: 'First Choice', trackNumber: 1 },
+        params: { date: '2026-01-15' },
+        body: {
+          spotifyId: 'track-1',
+          name: 'First Choice',
+          trackNumber: 1,
+          albumId: spotifyAlbumId,
+        },
       }),
     );
 
@@ -123,10 +140,11 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
       spotifyId: 'track-2',
       name: 'Second Choice',
       trackNumber: 7,
+      albumId: spotifyAlbumId,
     };
     const result = await handler(
       createHandlerEvent(userId, {
-        params: { albumListenId },
+        params: { date: '2026-01-15' },
         body: newFavorite,
       }),
     );
@@ -136,92 +154,134 @@ describe('PATCH /api/listens/[albumListenId]/favorite-song Integration Tests', (
 
     // Verify in database
     const [savedListen] = await getAllListensForUser(userId);
-    expect(savedListen.albums[0].favoriteSongId).toBe('track-2');
-    expect(savedListen.albums[0].favoriteSongName).toBe('Second Choice');
-    expect(savedListen.albums[0].favoriteSongTrackNumber).toBe(7);
+    expect(savedListen.favoriteSongId).toBe('track-2');
+    expect(savedListen.favoriteSongName).toBe('Second Choice');
+    expect(savedListen.favoriteSongTrackNumber).toBe(7);
   });
 
-  it('should return 404 when album listen does not exist', async () => {
+  it('should return 404 when daily listen does not exist', async () => {
     // Given
-    const nonExistentId = 'non-existent-id';
+    const nonExistentDate = '2026-12-31';
 
     // When/Then
     await expect(
       handler(
         createHandlerEvent(userId, {
-          params: { albumListenId: nonExistentId },
-          body: { spotifyId: 'track-123', name: 'Track', trackNumber: 1 },
+          params: { date: nonExistentDate },
+          body: {
+            spotifyId: 'track-123',
+            name: 'Track',
+            trackNumber: 1,
+            albumId: 'album-123',
+          },
         }),
       ),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: 'Album listen not found',
+      message: 'Daily listen not found',
     });
   });
 
-  it('should return 404 when album listen belongs to different user', async () => {
+  it('should return 404 when daily listen belongs to different user', async () => {
     // Given
     const otherUser = await createUser();
+    const date = new Date('2026-01-15');
     const dailyListen = await createDailyListens({
       userId: otherUser.id,
-      date: new Date('2026-01-15'),
+      date,
       albumListen: albumListenInput(),
     });
-    const albumListenId = dailyListen.albums[0].id;
+    const spotifyAlbumId = dailyListen.albums[0].album.spotifyId;
 
     // When/Then
     await expect(
       handler(
         createHandlerEvent(userId, {
-          params: { albumListenId },
-          body: { spotifyId: 'track-123', name: 'Track', trackNumber: 1 },
+          params: { date: '2026-01-15' },
+          body: {
+            spotifyId: 'track-123',
+            name: 'Track',
+            trackNumber: 1,
+            albumId: spotifyAlbumId,
+          },
         }),
       ),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: 'Album listen not found',
+      message: 'Daily listen not found',
     });
 
     // Verify original listen is unchanged
     const [otherUserListen] = await getAllListensForUser(otherUser.id);
-    expect(otherUserListen.albums[0].favoriteSongId).toBeNull();
+    expect(otherUserListen.favoriteSongId).toBeNull();
   });
 
-  it('should return 400 when albumListenId param is missing', async () => {
+  it('should return 400 when date param is missing', async () => {
     // When/Then
     await expect(
       handler(
         createHandlerEvent(userId, {
           params: {},
-          body: { spotifyId: 'track-123', name: 'Track', trackNumber: 1 },
+          body: {
+            spotifyId: 'track-123',
+            name: 'Track',
+            trackNumber: 1,
+            albumId: 'album-123',
+          },
         }),
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing albumListenId parameter',
+      message: 'Missing date parameter',
+    });
+  });
+
+  it('should return 400 when date format is invalid', async () => {
+    // When/Then
+    await expect(
+      handler(
+        createHandlerEvent(userId, {
+          params: { date: 'invalid-date' },
+          body: {
+            spotifyId: 'track-123',
+            name: 'Track',
+            trackNumber: 1,
+            albumId: 'album-123',
+          },
+        }),
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'Invalid date format',
     });
   });
 
   it('should return 400 when body is missing required fields', async () => {
     // Given
-    const dailyListen = await createDailyListens({
+    const date = new Date('2026-01-15');
+    await createDailyListens({
       userId,
-      date: new Date('2026-01-15'),
+      date,
       albumListen: albumListenInput(),
     });
-    const albumListenId = dailyListen.albums[0].id;
 
-    // When/Then - missing name and trackNumber
+    // When/Then - missing albumId
     await expect(
       handler(
         createHandlerEvent(userId, {
-          params: { albumListenId },
-          body: { spotifyId: 'track-123' } as any,
+          params: { date: '2026-01-15' },
+          body: {
+            spotifyId: 'track-123',
+            name: 'Track',
+            trackNumber: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: Testing invalid input
+          } as any,
         }),
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing required fields: spotifyId, name, and trackNumber are required',
+      message:
+        'Missing required fields: spotifyId, name, trackNumber, and albumId are required',
     });
   });
 });

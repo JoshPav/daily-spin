@@ -14,12 +14,27 @@
         <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
       </div>
     </template>
+
+    <template #empty>
+      <div
+        class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+      >
+        <button
+          v-if="isToday"
+          class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-[#1ed760] hover:scale-110 active:scale-105"
+          @click.stop="openAddModal"
+        >
+          <PlusCircleIcon class="w-9 h-9" />
+        </button>
+        <span v-else>—</span>
+      </div>
+    </template>
   </AlbumDayCard>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { LazyFutureListenModal } from '#components';
+import { LazyFutureListenModal, LazyLogAlbumModal } from '#components';
 import type { FutureListenItem } from '#shared/schema';
 import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
@@ -35,8 +50,16 @@ const {
 
 const overlay = useOverlay();
 const futureListenModal = overlay.create(LazyFutureListenModal);
+const addAlbumModal = overlay.create(LazyLogAlbumModal);
 
-const { date: dateRef } = useDate(date);
+const {
+  date: dateRef,
+  relative: { isToday },
+} = useDate(date);
+
+const openAddModal = () => {
+  addAlbumModal.open({ dateOfListen: dateRef.value });
+};
 
 const albumCardInfo = computed<AlbumCardInfo[]>(() => {
   if (!futureAlbum) return [];

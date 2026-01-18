@@ -19,6 +19,7 @@ describe('listenMapper', () => {
 
       expect(result.date).toBe('2024-06-15T00:00:00.000Z');
       expect(result.albums).toEqual([]);
+      expect(result.favoriteSong).toBeNull();
     });
 
     it('should map a daily listen with a single album', () => {
@@ -73,9 +74,9 @@ describe('listenMapper', () => {
           listenOrder: 'ordered',
           listenMethod: 'spotify',
           listenTime: 'morning',
-          favoriteSong: null,
         },
       });
+      expect(result.favoriteSong).toBeNull();
     });
 
     it('should map a daily listen with multiple albums', () => {
@@ -253,8 +254,8 @@ describe('listenMapper', () => {
 
       const result = mapDailyListens(dailyListen);
 
-      // Result should only have date and albums properties
-      expect(Object.keys(result)).toEqual(['date', 'albums']);
+      // Result should only have date, albums, and favoriteSong properties
+      expect(Object.keys(result)).toEqual(['date', 'albums', 'favoriteSong']);
 
       // Album result should only have id, album and listenMetadata
       expect(Object.keys(result.albums[0])).toEqual([
@@ -271,12 +272,11 @@ describe('listenMapper', () => {
         'imageUrl',
       ]);
 
-      // Metadata should only have the expected fields
+      // Metadata should only have the expected fields (no favoriteSong - it's on DailyListens now)
       expect(Object.keys(result.albums[0].listenMetadata)).toEqual([
         'listenOrder',
         'listenMethod',
         'listenTime',
-        'favoriteSong',
       ]);
     });
   });

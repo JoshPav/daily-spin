@@ -188,46 +188,58 @@ export class DailyListenRepository {
 
   async updateFavoriteSong(
     userId: string,
-    albumListenId: string,
+    date: Date,
     favoriteSong: {
       spotifyId: string;
       name: string;
       trackNumber: number;
+      albumId: string; // This is the Spotify album ID
     } | null,
   ) {
     logger.debug('Updating favorite song', {
       userId,
-      albumListenId,
+      date: date.toISOString(),
       favoriteSong: favoriteSong
         ? { spotifyId: favoriteSong.spotifyId, name: favoriteSong.name }
         : null,
     });
 
     try {
-      const result = await this.prismaClient.albumListen.update({
+      // Look up the internal album ID from the Spotify ID
+      let internalAlbumId: string | null = null;
+      if (favoriteSong?.albumId) {
+        const album = await this.prismaClient.album.findUnique({
+          where: { spotifyId: favoriteSong.albumId },
+          select: { id: true },
+        });
+        internalAlbumId = album?.id ?? null;
+      }
+
+      const result = await this.prismaClient.dailyListen.update({
         where: {
-          id: albumListenId,
-          dailyListen: {
+          userId_date: {
             userId,
+            date,
           },
         },
         data: {
           favoriteSongId: favoriteSong?.spotifyId ?? null,
           favoriteSongName: favoriteSong?.name ?? null,
           favoriteSongTrackNumber: favoriteSong?.trackNumber ?? null,
+          favoriteSongAlbumId: internalAlbumId,
         },
       });
 
       logger.debug('Successfully updated favorite song', {
         userId,
-        albumListenId,
+        date: date.toISOString(),
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to update favorite song', {
         userId,
-        albumListenId,
+        date: date.toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
