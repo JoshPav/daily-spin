@@ -5,12 +5,13 @@ import type {
   UpdateFavoriteSongBody,
 } from '#shared/schema';
 import { DailyListenRepository } from '../../../repositories/dailyListen.repository';
+import { UserRepository } from '../../../repositories/user.repository';
 import { SongOfDayPlaylistService } from '../../../services/songOfDayPlaylist.service';
+import { SpotifyService } from '../../../services/spotify.service';
 import { handleError } from '../../../utils/errorHandler';
 import { NotFoundError, ValidationError } from '../../../utils/errors';
 import { createTaggedLogger } from '../../../utils/logger';
 import { getLogContext } from '../../../utils/requestContext';
-import { getSpotifyClientForUser } from '../../../utils/spotifyClient';
 
 const logger = createTaggedLogger('API:favorite-song.patch');
 
@@ -84,17 +85,36 @@ export default defineEventHandler<
 
     // Update Song of the Day playlist (don't block on failure)
     try {
-      const { spotifyClient, spotifyUserId } =
-        await getSpotifyClientForUser(userId);
-      const playlistService = new SongOfDayPlaylistService();
-      await playlistService.updateSongOfDayPlaylist(
-        userId,
-        spotifyUserId,
-        spotifyClient,
-      );
-      logger.info('Successfully updated Song of the Day playlist', {
-        ...logContext,
-      });
+      const userRepo = new UserRepository();
+      const spotifyService = new SpotifyService();
+
+      const user = await userRepo.getUser(userId);
+      const account = user?.accounts[0];
+
+      if (account) {
+        const auth = {
+          accessToken: account.accessToken,
+          refreshToken: account.refreshToken,
+          accessTokenExpiresAt: account.accessTokenExpiresAt,
+          scope: account.scope,
+        };
+
+        const spotifyClient = await spotifyService.getClientForUser(
+          userId,
+          auth,
+        );
+        const playlistService = new SongOfDayPlaylistService();
+
+        await playlistService.updateSongOfDayPlaylist(
+          userId,
+          account.accountId,
+          spotifyClient,
+        );
+
+        logger.info('Successfully updated Song of the Day playlist', {
+          ...logContext,
+        });
+      }
     } catch (playlistError) {
       // Log but don't fail the request if playlist update fails
       logger.error('Failed to update Song of the Day playlist', {

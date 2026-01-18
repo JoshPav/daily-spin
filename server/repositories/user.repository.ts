@@ -29,6 +29,7 @@ export class UserRepository {
               providerId: 'spotify',
             },
             select: {
+              accountId: true,
               accessToken: true,
               refreshToken: true,
               accessTokenExpiresAt: true,
