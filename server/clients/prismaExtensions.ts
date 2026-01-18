@@ -7,7 +7,7 @@ const logger = createTaggedLogger('Prisma');
  * Prisma extension that adds automatic query timing and slow query detection
  * This extension logs:
  * - All query operations with timing
- * - Slow queries (>100ms) with warnings
+ * - Slow queries (>500ms) with warnings
  * - Query errors with full context
  */
 export const loggingExtension = Prisma.defineExtension({
@@ -21,8 +21,8 @@ export const loggingExtension = Prisma.defineExtension({
           const result = await query(args);
           const duration = Date.now() - startTime;
 
-          // Log slow queries
-          if (duration > 100) {
+          // Log slow queries (500ms threshold for serverless DB)
+          if (duration > 500) {
             logger.warn('Slow query detected', {
               model,
               operation,

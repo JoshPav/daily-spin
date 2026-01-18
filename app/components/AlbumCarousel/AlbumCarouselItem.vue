@@ -49,7 +49,7 @@
       </CollapsibleSection>
     </section>
 
-    <USeparator class="my-1 md:my-4" />
+    <USeparator ref="trackListDivider" class="my-1 md:my-4" />
 
     <!-- Listen Details -->
     <section>
@@ -79,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue';
 import type { DailyAlbumListen, FavoriteSong } from '#shared/schema';
 import type { AlbumTrack } from '~/composables/api/useAlbumTracks';
 import {
@@ -116,6 +117,7 @@ defineExpose({ expand, collapse });
 
 // Track list expansion
 const expanded = ref(false);
+const trackListDivider = ref<ComponentPublicInstance | null>(null);
 const { tracks, loading, error, fetchTracks } = useAlbumTracks();
 
 // Only highlight track if the favorite song is from this album
@@ -125,10 +127,18 @@ const selectedTrackId = computed(() =>
     : undefined,
 );
 
-// Fetch tracks when expanded for the first time
-watch(expanded, (isExpanded) => {
-  if (isExpanded && tracks.value.length === 0) {
-    fetchTracks(props.albumListen.album.albumId);
+// Fetch tracks when expanded for the first time and scroll into view
+watch(expanded, async (isExpanded) => {
+  if (isExpanded) {
+    if (tracks.value.length === 0) {
+      fetchTracks(props.albumListen.album.albumId);
+    }
+    // Wait for content to render and animation to complete
+    await nextTick();
+    setTimeout(() => {
+      const dividerEl = trackListDivider.value?.$el as HTMLElement | undefined;
+      dividerEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
   }
 });
 

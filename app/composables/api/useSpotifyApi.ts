@@ -2,7 +2,9 @@ import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { getAccessToken } from '~/lib/auth-client';
 
 export const useSpotifyApi = async () => {
-  const { spotifyClientId } = useRuntimeConfig();
+  const {
+    public: { spotifyClientId },
+  } = useRuntimeConfig();
 
   const { data } = await getAccessToken({
     providerId: 'spotify',
