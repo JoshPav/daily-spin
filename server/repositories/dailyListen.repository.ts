@@ -247,6 +247,54 @@ export class DailyListenRepository {
     }
   }
 
+  async getFavoriteSongsForYear(userId: string, year: number) {
+    logger.debug('Fetching favorite songs for year', { userId, year });
+
+    try {
+      const startOfYear = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+      const endOfYear = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+      const result = await this.prismaClient.dailyListen.findMany({
+        where: {
+          userId,
+          date: {
+            gte: startOfYear,
+            lte: endOfYear,
+          },
+          favoriteSongId: {
+            not: null,
+          },
+        },
+        select: {
+          date: true,
+          favoriteSongId: true,
+          favoriteSongName: true,
+          favoriteSongTrackNumber: true,
+          favoriteSongAlbumId: true,
+        },
+        orderBy: {
+          date: 'asc',
+        },
+      });
+
+      logger.debug('Successfully fetched favorite songs for year', {
+        userId,
+        year,
+        count: result.length,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to fetch favorite songs for year', {
+        userId,
+        year,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
   private async findOrCreateArtist(artist: CreateArtist) {
     logger.debug('Finding or creating artist', {
       artistSpotifyId: artist.spotifyId,
