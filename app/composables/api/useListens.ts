@@ -1,35 +1,50 @@
 import { endOfDay, startOfDay, subDays } from 'date-fns';
-import type { DailyListens, GetListensResponse } from '#shared/schema';
+import type {
+  DailyListens,
+  FavoriteSong,
+  GetListensResponse,
+} from '#shared/schema';
+import { useAuth } from '../auth/useAuth';
 
-const INITIAL_DAYS = 21; // 3 weeks
-const FETCH_MORE_DAYS = 14; // 2 weeks per additional fetch
+const INITIAL_DAYS = 21;
+const FETCH_MORE_DAYS = 14;
+
+// Shared state across all uses of useListens
+const listensData = ref<DailyListens[]>([]);
+const listensPending = ref(true);
+const listensLoadingMore = ref(false);
+const listensHasMore = ref(true);
+const listensError = ref<Error | null>(null);
+const oldestLoadedDate = ref<Date | null>(null);
+let initialized = false;
 
 export interface UseListensReturn {
-  /** Accumulated listening data (oldest to newest) */
   data: Ref<DailyListens[]>;
-  /** Initial loading state */
   pending: Ref<boolean>;
-  /** Loading more (older) data */
   loadingMore: Ref<boolean>;
-  /** Whether there's more historical data to load */
   hasMore: Ref<boolean>;
-  /** Error state */
   error: Ref<Error | null>;
-  /** Fetch older data */
   fetchMore: () => Promise<void>;
-  /** Refresh all data from the beginning */
   refresh: () => Promise<void>;
+  updateFavoriteSongForDate: (
+    date: string,
+    favoriteSong: FavoriteSong | null,
+  ) => void;
 }
 
 export const useListens = (): UseListensReturn => {
-  const data = ref<DailyListens[]>([]);
-  const pending = ref(true);
-  const loadingMore = ref(false);
-  const hasMore = ref(true);
-  const error = ref<Error | null>(null);
-
-  // Track the oldest date we've loaded
-  const oldestLoadedDate = ref<Date | null>(null);
+  const updateFavoriteSongForDate = (
+    date: string,
+    favoriteSong: FavoriteSong | null,
+  ) => {
+    const datePrefix = date.split('T')[0] ?? date;
+    const dailyListen = listensData.value.find((dl) =>
+      dl.date.startsWith(datePrefix),
+    );
+    if (dailyListen) {
+      dailyListen.favoriteSong = favoriteSong;
+    }
+  };
 
   const fetchDateRange = async (
     startDate: Date,
@@ -49,8 +64,8 @@ export const useListens = (): UseListensReturn => {
   };
 
   const fetchInitial = async () => {
-    pending.value = true;
-    error.value = null;
+    listensPending.value = true;
+    listensError.value = null;
 
     try {
       const today = new Date();
@@ -59,26 +74,30 @@ export const useListens = (): UseListensReturn => {
 
       const result = await fetchDateRange(startDate, endDate);
 
-      data.value = result;
+      listensData.value = result;
       oldestLoadedDate.value = startDate;
 
       // If no actual listens in initial fetch, there might still be older data
       // We'll determine hasMore when user tries to fetch more
-      hasMore.value = true;
+      listensHasMore.value = true;
     } catch (e) {
-      error.value =
+      listensError.value =
         e instanceof Error ? e : new Error('Failed to fetch listens');
     } finally {
-      pending.value = false;
+      listensPending.value = false;
     }
   };
 
   const fetchMore = async () => {
-    if (loadingMore.value || !hasMore.value || !oldestLoadedDate.value) {
+    if (
+      listensLoadingMore.value ||
+      !listensHasMore.value ||
+      !oldestLoadedDate.value
+    ) {
       return;
     }
 
-    loadingMore.value = true;
+    listensLoadingMore.value = true;
 
     try {
       // Fetch the next batch of older days
@@ -88,38 +107,53 @@ export const useListens = (): UseListensReturn => {
       const result = await fetchDateRange(startDate, endDate);
 
       // Prepend older data to the beginning
-      data.value = [...result, ...data.value];
+      listensData.value = [...result, ...listensData.value];
       oldestLoadedDate.value = startDate;
 
       // Stop fetching if we got a batch with no actual listens
       if (!hasActualListens(result)) {
-        hasMore.value = false;
+        listensHasMore.value = false;
       }
     } catch (e) {
-      error.value =
+      listensError.value =
         e instanceof Error ? e : new Error('Failed to fetch more listens');
     } finally {
-      loadingMore.value = false;
+      listensLoadingMore.value = false;
     }
   };
 
   const refresh = async () => {
-    data.value = [];
+    listensData.value = [];
     oldestLoadedDate.value = null;
-    hasMore.value = true;
+    listensHasMore.value = true;
+    initialized = false;
     await fetchInitial();
   };
 
-  // Fetch initial data
-  fetchInitial();
+  // Wait for auth to be ready before fetching (only once)
+  const { loading: authLoading } = useAuth();
+
+  if (!initialized) {
+    watch(
+      authLoading,
+      (isLoading) => {
+        if (!isLoading && !initialized) {
+          initialized = true;
+          fetchInitial();
+        }
+      },
+      { immediate: true },
+    );
+  }
 
   return {
-    data: data as Ref<DailyListens[]>,
-    pending: pending as Ref<boolean>,
-    loadingMore: loadingMore as Ref<boolean>,
-    hasMore: hasMore as Ref<boolean>,
-    error: error as Ref<Error | null>,
+    data: listensData,
+    pending: listensPending,
+    loadingMore: listensLoadingMore,
+    hasMore: listensHasMore,
+    error: listensError,
     fetchMore,
     refresh,
+    updateFavoriteSongForDate,
   };
 };

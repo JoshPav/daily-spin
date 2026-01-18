@@ -9,8 +9,8 @@ import {
 
 export interface UseScrollToTodayOptions {
   isReady: Ref<boolean>;
-  /** Optional ref to a UScrollArea component - if provided, uses its viewport for scrolling */
-  scrollAreaRef?: Ref<ComponentPublicInstance | null>;
+  /** Optional ref to a scroll container (either a UScrollArea component or plain HTML element) */
+  scrollAreaRef?: Ref<ComponentPublicInstance | HTMLElement | null>;
 }
 
 export const useScrollToToday = ({
@@ -23,8 +23,13 @@ export const useScrollToToday = ({
   // Get the actual scrollable element (either direct ref or ScrollArea's viewport)
   const getScrollableElement = (): HTMLElement | null => {
     if (scrollAreaRef?.value) {
-      // UScrollArea: the viewport is the scrollable element inside $el
-      const el = scrollAreaRef.value.$el as HTMLElement;
+      const ref = scrollAreaRef.value;
+      // Check if it's a plain HTML element
+      if (ref instanceof HTMLElement) {
+        return ref;
+      }
+      // UScrollArea component: the viewport is the scrollable element inside $el
+      const el = ref.$el as HTMLElement;
       return el?.querySelector(
         '[data-radix-scroll-area-viewport]',
       ) as HTMLElement | null;

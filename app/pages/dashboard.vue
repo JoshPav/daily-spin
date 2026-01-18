@@ -6,7 +6,7 @@ const { data, pending, error, loadingMore, hasMore, fetchMore } = useListens();
 const { data: futureListensData } = useFutureListens();
 
 // ScrollArea ref
-const scrollAreaRef = useTemplateRef<ComponentPublicInstance>('scrollArea');
+const scrollAreaRef = useTemplateRef<HTMLDivElement>('scrollArea');
 
 // Helper to check if a date string is today or in the future
 const isTodayOrFuture = (dateStr: string) => {
@@ -116,6 +116,22 @@ const handleScroll = async () => {
   }
 };
 
+// Check if container needs more content to be scrollable
+const ensureScrollable = async () => {
+  await nextTick();
+  const container = getScrollableElement();
+  if (!container || loadingMore.value || !hasMore.value) {
+    return;
+  }
+
+  // If content doesn't overflow, fetch more
+  if (container.scrollHeight <= container.clientHeight) {
+    await fetchMore();
+    // Check again after new content renders
+    await ensureScrollable();
+  }
+};
+
 // Set up scroll listener when ScrollArea is ready
 onMounted(() => {
   // Watch for the scroll area to be available
@@ -125,6 +141,17 @@ onMounted(() => {
       container.addEventListener('scroll', handleScroll, { passive: true });
     }
   });
+
+  // Watch for initial data load and ensure container is scrollable
+  watch(
+    () => data.value.length,
+    async (len) => {
+      if (len > 0 && !pending.value) {
+        await ensureScrollable();
+      }
+    },
+    { immediate: true },
+  );
 });
 
 onUnmounted(() => {
@@ -136,7 +163,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <UScrollArea ref="scrollArea" class="h-full">
+  <div
+    ref="scrollArea"
+    class="h-[calc(100vh-var(--ui-header-height))] overflow-y-auto"
+  >
     <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
       <!-- Loading more indicator (top) -->
       <div v-if="loadingMore" class="text-center py-4 text-sm text-[#b3b3b3]">
@@ -173,6 +203,13 @@ onUnmounted(() => {
         class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
       >
         <StickyMonthHeader />
+        <!-- End of data message -->
+        <div
+          v-if="!hasMore"
+          class="col-span-full text-center text-sm text-[#b3b3b3]"
+        >
+          You've reached the beginning of your listening history
+        </div>
         <template v-for="day in days" :key="day.date">
           <FutureAlbumDay
             v-if="isTodayOrFuture(day.date)"
@@ -196,7 +233,7 @@ onUnmounted(() => {
         </template>
       </div>
     </div>
-  </UScrollArea>
+  </div>
 </template>
 
 <style scoped>

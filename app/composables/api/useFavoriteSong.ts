@@ -1,36 +1,10 @@
-import type {
-  FavoriteSong,
-  GetListensResponse,
-  UpdateFavoriteSong,
-} from '#shared/schema';
+import type { FavoriteSong, UpdateFavoriteSong } from '#shared/schema';
 
 export const useFavoriteSong = () => {
   const saving = ref(false);
   const error = ref<string | null>(null);
 
-  const updateListensCache = (
-    date: string,
-    favoriteSong: FavoriteSong | null,
-  ) => {
-    const nuxtApp = useNuxtApp();
-
-    // Find and update all cached listens data that contains this date
-    for (const key of Object.keys(nuxtApp.payload.data)) {
-      if (!key.startsWith('listens-')) continue;
-
-      const { data } = useNuxtData<GetListensResponse>(key);
-      if (!data.value) continue;
-
-      const datePrefix = date.split('T')[0] ?? date;
-      const dailyListen = data.value.find((dl) =>
-        dl.date.startsWith(datePrefix),
-      );
-      if (dailyListen) {
-        dailyListen.favoriteSong = favoriteSong;
-        return;
-      }
-    }
-  };
+  const { updateFavoriteSongForDate } = useListens();
 
   const updateFavoriteSong = async (
     date: string,
@@ -65,8 +39,8 @@ export const useFavoriteSong = () => {
         },
       );
 
-      // Update the cached listens data so it persists across component re-renders
-      updateListensCache(date, result.favoriteSong);
+      // Update the shared listens state so it persists across component re-renders
+      updateFavoriteSongForDate(date, result.favoriteSong);
 
       return result.favoriteSong;
     } catch (e) {
