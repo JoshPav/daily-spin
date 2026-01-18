@@ -274,3 +274,11 @@ export const getUserPlaylistByType = (
       userId_playlistType: { userId, playlistType },
     },
   });
+
+export const getSpotifyAccountForUser = (userId: string) =>
+  getTestPrisma().account.findFirst({
+    where: {
+      userId,
+      providerId: 'spotify',
+    },
+  });

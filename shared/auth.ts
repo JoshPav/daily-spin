@@ -2,6 +2,9 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { customSession } from 'better-auth/plugins';
 import prisma from '../server/clients/prisma';
+import { createTaggedLogger } from '../server/utils/logger';
+
+const logger = createTaggedLogger('Auth');
 
 const clientId = process.env.SPOTIFY_CLIENT_ID || '';
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
@@ -28,9 +31,13 @@ export const auth = betterAuth({
   databaseHooks: {
     account: {
       update: {
-        // Reset requiresReauth when account is updated with new tokens (re-authentication)
         before: async (account) => {
           if (account.accessToken || account.refreshToken) {
+            logger.info('Resetting requiresReauth flag on token update', {
+              userId: account.userId,
+              hasAccessToken: !!account.accessToken,
+              hasRefreshToken: !!account.refreshToken,
+            });
             return {
               data: {
                 ...account,

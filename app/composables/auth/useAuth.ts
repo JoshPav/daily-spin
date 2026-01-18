@@ -22,9 +22,14 @@ export const useAuth = () => {
     };
   });
 
+  const requiresReauth = computed(
+    () => sessionData.value?.requiresReauth ?? false,
+  );
+
   return {
     loggedIn: computed(() => !!user.value),
     user,
     loading: computed(() => session.value.isPending),
+    requiresReauth,
   };
 };

@@ -29,7 +29,7 @@
           </p>
           <div class="pt-6">
             <div class="inline-block scale-125">
-              <LoginWithSpotifyButton />
+              <LoginWithSpotifyButton size="xl" />
             </div>
           </div>
         </div>
