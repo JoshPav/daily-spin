@@ -16,7 +16,7 @@ describe('PATCH /api/preferences Integration Tests', () => {
     const user = await createUser();
     userId = user.id;
 
-    handler = (await import('./preferences.patch')).default;
+    handler = (await import('./index.patch')).default;
   });
 
   afterEach(() => {

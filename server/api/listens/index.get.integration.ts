@@ -61,7 +61,7 @@ describe('GET /api/listens Integration Tests', () => {
       accessToken: userAccount.accessToken,
     });
 
-    handler = (await import('./listens.get')).default;
+    handler = (await import('./index.get')).default;
   });
 
   afterEach(() => {

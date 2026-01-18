@@ -1,9 +1,9 @@
-import { logger } from '../utils/logger';
+import { logger } from '~~/server/utils/logger';
 import {
   getRequestDuration,
   getUserId,
   initRequestContext,
-} from '../utils/requestContext';
+} from '~~/server/utils/requestContext';
 
 /**
  * Logging middleware that tracks all HTTP requests.

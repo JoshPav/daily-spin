@@ -1,4 +1,4 @@
-import { auth } from '../../shared/auth';
+import { auth } from '~~/shared/auth';
 
 /**
  * Authentication middleware that runs for all API routes.

@@ -36,7 +36,7 @@ describe('POST /api/listens Integration Tests', () => {
   let handler: EventHandler;
 
   beforeAll(async () => {
-    handler = (await import('./listens.post')).default;
+    handler = (await import('./index.post')).default;
   });
 
   beforeEach(async () => {

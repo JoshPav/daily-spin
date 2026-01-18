@@ -12,7 +12,7 @@ describe('GET /api/preferences Integration Tests', () => {
     const user = await createUser();
     userId = user.id;
 
-    handler = (await import('./preferences.get')).default;
+    handler = (await import('./index.get')).default;
   });
 
   afterEach(() => {
