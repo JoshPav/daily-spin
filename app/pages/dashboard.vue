@@ -2,8 +2,11 @@
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type { DailyListens, FutureListenItem } from '~~/shared/schema';
 
-const { data, pending, error } = useListens();
+const { data, pending, error, loadingMore, hasMore, fetchMore } = useListens();
 const { data: futureListensData } = useFutureListens();
+
+// ScrollArea ref
+const scrollAreaRef = useTemplateRef<ComponentPublicInstance>('scrollArea');
 
 // Helper to check if a date string is today or in the future
 const isTodayOrFuture = (dateStr: string) => {
@@ -47,7 +50,7 @@ type DayEntry = {
 };
 
 const days = computed<DayEntry[]>(() => {
-  if (!data.value) {
+  if (!data.value || data.value.length === 0) {
     return [];
   }
 
@@ -84,65 +87,116 @@ const days = computed<DayEntry[]>(() => {
 const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
 
 const isReady = computed(() => days.value && days.value.length > 0);
-const { scrollContainer, todayElement: todayItem } = useScrollToToday({
+const { todayElement: todayItem, getScrollableElement } = useScrollToToday({
   isReady,
+  scrollAreaRef,
+});
+
+// Infinite scroll - load more when scrolling near the top
+const SCROLL_THRESHOLD = 200; // pixels from top to trigger load
+
+const handleScroll = async () => {
+  const container = getScrollableElement();
+  if (!container || loadingMore.value || !hasMore.value) {
+    return;
+  }
+
+  // Check if scrolled near the top (loading older content)
+  if (container.scrollTop <= SCROLL_THRESHOLD) {
+    // Save scroll position info before loading
+    const previousScrollHeight = container.scrollHeight;
+
+    await fetchMore();
+
+    // Restore scroll position after content is prepended
+    await nextTick();
+    const newScrollHeight = container.scrollHeight;
+    const addedHeight = newScrollHeight - previousScrollHeight;
+    container.scrollTop = container.scrollTop + addedHeight;
+  }
+};
+
+// Set up scroll listener when ScrollArea is ready
+onMounted(() => {
+  // Watch for the scroll area to be available
+  watchEffect(() => {
+    const container = getScrollableElement();
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+    }
+  });
+});
+
+onUnmounted(() => {
+  const container = getScrollableElement();
+  if (container) {
+    container.removeEventListener('scroll', handleScroll);
+  }
 });
 </script>
 
 <template>
-  <div
-    ref="scrollContainer"
-    class="flex flex-col max-w-450 mx-auto px-4 md:px-6 overflow-y-auto h-full"
-  >
-    <!-- Loading / Error / Empty states -->
-    <div
-      v-if="pending"
-      class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
-    >
-      Loading...
-    </div>
-    <div
-      v-else-if="error"
-      class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
-    >
-      Error: {{ error }}
-    </div>
-    <div
-      v-else-if="days && days.length === 0"
-      class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
-    >
-      No listens yet for this month
-    </div>
+  <UScrollArea ref="scrollArea" class="h-full">
+    <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
+      <!-- Loading more indicator (top) -->
+      <div v-if="loadingMore" class="text-center py-4 text-sm text-[#b3b3b3]">
+        Loading older albums...
+      </div>
 
-    <!-- Scrollable grid -->
-    <div
-      v-else
-      class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
-    >
-      <StickyMonthHeader />
-      <template v-for="day in days" :key="day.date">
-        <FutureAlbumDay
-          v-if="isTodayOrFuture(day.date)"
-          :date="day.date"
-          :future-album="day.futureAlbum"
-          :ref="el => {
-            if (day.date.split('T')[0] === today) {
-              todayItem = (el as any)?.$el ?? el ?? null;
-            }
-          }"
-        />
-        <PastAlbumDay
-          v-else-if="day.dailyListens"
-          :day-listens="day.dailyListens"
-          :ref="el => {
-            if (day.date.split('T')[0] === today) {
-              todayItem = (el as any)?.$el ?? el ?? null;
-            }
-          }"
-        />
-      </template>
+      <!-- Initial loading state -->
+      <div
+        v-if="pending && data.length === 0"
+        class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
+      >
+        Loading...
+      </div>
+
+      <!-- Error state -->
+      <div
+        v-else-if="error"
+        class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
+      >
+        Error: {{ error.message }}
+      </div>
+
+      <!-- Empty state -->
+      <div
+        v-else-if="!pending && days.length === 0"
+        class="text-center py-12 px-6 text-base font-medium text-[#b3b3b3]"
+      >
+        No listens yet for this month
+      </div>
+
+      <!-- Scrollable grid -->
+      <div
+        v-else
+        class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
+      >
+        <StickyMonthHeader />
+        <template v-for="day in days" :key="day.date">
+          <FutureAlbumDay
+            v-if="isTodayOrFuture(day.date)"
+            :date="day.date"
+            :future-album="day.futureAlbum"
+            :ref="el => {
+              if (day.date.split('T')[0] === today) {
+                todayItem = (el as any)?.$el ?? el ?? null;
+              }
+            }"
+          />
+          <PastAlbumDay
+            v-else-if="day.dailyListens"
+            :day-listens="day.dailyListens"
+            :ref="el => {
+              if (day.date.split('T')[0] === today) {
+                todayItem = (el as any)?.$el ?? el ?? null;
+              }
+            }"
+          />
+        </template>
+      </div>
     </div>
-  </div>
+  </UScrollArea>
 </template>
 
 <style scoped>
