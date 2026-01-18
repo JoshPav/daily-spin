@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type {
+  Artist,
   Context,
   Page,
   PlayHistory,
@@ -116,6 +117,25 @@ export const simplifiedAlbum = createFactory<SimplifiedAlbum>(() => ({
   total_tracks: int({ min: 8, max: 15 }),
   type: 'album',
   uri: `spotify:album:${uuid()}`,
+}));
+
+export const fullArtist = createFactory<Artist>(() => ({
+  ...simplifiedArtist(),
+  external_urls: {
+    spotify: '',
+  },
+  followers: {
+    href: null,
+    total: faker.number.int(),
+  },
+  genres: [genre()],
+  href: '',
+  id: uuid(),
+  images: [],
+  name: artist(),
+  popularity: faker.number.int(),
+  type: 'artist',
+  uri: `spotify:artist`,
 }));
 
 export const simplifiedArtist = createFactory<SimplifiedArtist>(() => ({
