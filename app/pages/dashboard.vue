@@ -135,10 +135,13 @@ const ensureScrollable = async () => {
 // Set up scroll listener when ScrollArea is ready
 onMounted(() => {
   // Watch for the scroll area to be available
-  watchEffect(() => {
+  watchEffect((onCleanup) => {
     const container = getScrollableElement();
     if (container) {
       container.addEventListener('scroll', handleScroll, { passive: true });
+      onCleanup(() => {
+        container.removeEventListener('scroll', handleScroll);
+      });
     }
   });
 

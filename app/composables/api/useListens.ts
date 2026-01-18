@@ -9,15 +9,6 @@ import { useAuth } from '../auth/useAuth';
 const INITIAL_DAYS = 21;
 const FETCH_MORE_DAYS = 14;
 
-// Shared state across all uses of useListens
-const listensData = ref<DailyListens[]>([]);
-const listensPending = ref(true);
-const listensLoadingMore = ref(false);
-const listensHasMore = ref(true);
-const listensError = ref<Error | null>(null);
-const oldestLoadedDate = ref<Date | null>(null);
-let initialized = false;
-
 export interface UseListensReturn {
   data: Ref<DailyListens[]>;
   pending: Ref<boolean>;
@@ -33,6 +24,21 @@ export interface UseListensReturn {
 }
 
 export const useListens = (): UseListensReturn => {
+  // Use useState for SSR-safe shared state (isolated per request on server, shared on client)
+  const listensData = useState<DailyListens[]>('listens-data', () => []);
+  const listensPending = useState<boolean>('listens-pending', () => true);
+  const listensLoadingMore = useState<boolean>(
+    'listens-loading-more',
+    () => false,
+  );
+  const listensHasMore = useState<boolean>('listens-has-more', () => true);
+  const listensError = useState<Error | null>('listens-error', () => null);
+  const oldestLoadedDate = useState<Date | null>(
+    'listens-oldest-date',
+    () => null,
+  );
+  const initialized = useState<boolean>('listens-initialized', () => false);
+
   const updateFavoriteSongForDate = (
     date: string,
     favoriteSong: FavoriteSong | null,
@@ -126,19 +132,20 @@ export const useListens = (): UseListensReturn => {
     listensData.value = [];
     oldestLoadedDate.value = null;
     listensHasMore.value = true;
-    initialized = false;
+    initialized.value = false;
     await fetchInitial();
   };
 
   // Wait for auth to be ready before fetching (only once)
   const { loading: authLoading } = useAuth();
 
-  if (!initialized) {
+  if (!initialized.value) {
+    // Set immediately to prevent race condition with multiple synchronous calls
+    initialized.value = true;
     watch(
       authLoading,
       (isLoading) => {
-        if (!isLoading && !initialized) {
-          initialized = true;
+        if (!isLoading) {
           fetchInitial();
         }
       },
