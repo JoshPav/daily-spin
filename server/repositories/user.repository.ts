@@ -236,4 +236,39 @@ export class UserRepository {
       throw error;
     }
   }
+
+  async setSpotifyRequiresReauth(userId: string, requiresReauth: boolean) {
+    logger.info('Setting Spotify requiresReauth flag', {
+      userId,
+      requiresReauth,
+    });
+
+    try {
+      const result = await this.prismaClient.account.updateMany({
+        where: {
+          userId,
+          providerId: 'spotify',
+        },
+        data: {
+          requiresReauth,
+        },
+      });
+
+      logger.info('Successfully updated requiresReauth flag', {
+        userId,
+        requiresReauth,
+        updatedCount: result.count,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to update requiresReauth flag', {
+        userId,
+        requiresReauth,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
 }

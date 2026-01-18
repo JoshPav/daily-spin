@@ -55,5 +55,6 @@ export const Icons = {
   TRASH: 'i-heroicons-trash',
   USER_DOWN: 'tabler:user-down',
   USER_UP: 'tabler:user-up',
+  WARNING: 'i-lucide-triangle-alert',
   WIFI: 'i-lucide-wifi',
 };

@@ -17,6 +17,7 @@ import {
   createUser,
   getAllListensForUser,
   getBacklogItemsForUser,
+  getSpotifyAccountForUser,
 } from '~~/tests/db/utils';
 import {
   createAlbumAndTracks,
@@ -189,6 +190,36 @@ describe('processListens Task Integration Tests', () => {
         // Then - no listens were saved due to token refresh failure
         const savedListens = await getAllListensForUser(expiredUserId);
         expect(savedListens).toHaveLength(0);
+      });
+
+      it('should set requiresReauth flag when token refresh fails with invalid_grant', async () => {
+        // Given
+        const { history } = createFullAlbumPlayHistory();
+
+        // Verify account doesn't require reauth initially
+        const accountBefore = await getSpotifyAccountForUser(expiredUserId);
+        expect(accountBefore?.requiresReauth).toBe(false);
+
+        mockGetAccessToken.mockReset();
+        mockGetAccessToken.mockImplementation(() => {
+          // The error object needs to serialize to include "invalid_grant"
+          // since isInvalidGrantError uses JSON.stringify
+          return Promise.reject({
+            error: 'invalid_grant',
+            error_description: 'Token has been revoked',
+          });
+        });
+
+        mockGetRecentlyPlayedTracks.mockResolvedValue(
+          recentlyPlayed({ items: history }),
+        );
+
+        // When
+        await processEvent();
+
+        // Then - requiresReauth flag should be set to true
+        const accountAfter = await getSpotifyAccountForUser(expiredUserId);
+        expect(accountAfter?.requiresReauth).toBe(true);
       });
     });
 

@@ -1,9 +1,10 @@
 <template>
-  <UApp :toaster="{ position: 'top-center'}">
+  <UApp :toaster="{ position: 'top-center' }">
     <Header />
 
     <UMain as="main">
       <NuxtLayout>
+        <ReauthBanner class="mb-4" />
         <NuxtPage />
       </NuxtLayout>
     </UMain>

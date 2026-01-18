@@ -1,4 +1,6 @@
+import { customSessionClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/vue';
+import type { auth } from '../../shared/auth';
 
 export const {
   signIn,
@@ -7,4 +9,6 @@ export const {
   getSession,
   getAccessToken,
   refreshToken,
-} = createAuthClient();
+} = createAuthClient({
+  plugins: [customSessionClient<typeof auth>()],
+});

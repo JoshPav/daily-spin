@@ -1,5 +1,6 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { auth } from '~~/shared/auth';
+import { UserRepository } from '../repositories/user.repository';
 import { ExternalServiceError, UnauthorizedError } from '../utils/errors';
 import { createTaggedLogger, filterSensitiveData } from '../utils/logger';
 import type { AuthDetails } from './user.service';
@@ -7,6 +8,8 @@ import type { AuthDetails } from './user.service';
 const logger = createTaggedLogger('Service:Spotify');
 
 export class SpotifyService {
+  constructor(private userRepository: UserRepository = new UserRepository()) {}
+
   /**
    * Gets a Spotify API client for the user, using BetterAuth to handle token refresh.
    */
@@ -58,19 +61,39 @@ export class SpotifyService {
 
       return response.accessToken;
     } catch (error) {
-      logger.warn(
-        'BetterAuth getAccessToken failed, falling back to manual refresh',
-        {
-          userId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
-      );
+      const isInvalidGrant = this.isInvalidGrantError(error);
+
+      if (isInvalidGrant) {
+        logger.warn(
+          'Token refresh failed with invalid_grant, marking account for reauth',
+          {
+            userId,
+          },
+        );
+        await this.userRepository.setSpotifyRequiresReauth(userId, true);
+      }
+
+      logger.warn('BetterAuth getAccessToken failed', {
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        isInvalidGrant,
+      });
 
       throw new ExternalServiceError('Spotify', 'refresh_token', {
         error,
         userId,
+        requiresReauth: isInvalidGrant,
       });
     }
+  }
+
+  private isInvalidGrantError(error: unknown): boolean {
+    if (!error) return false;
+
+    const errorStr = JSON.stringify(error).toLowerCase();
+    return (
+      errorStr.includes('invalid_grant') || errorStr.includes('invalid grant')
+    );
   }
 
   /**
