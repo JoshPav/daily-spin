@@ -136,10 +136,18 @@ export const useListens = (): UseListensReturn => {
     await fetchInitial();
   };
 
-  // Wait for auth to be ready before fetching (only once)
+  // Wait for auth to be ready before fetching (only once per environment)
   const { loading: authLoading } = useAuth();
 
-  if (!initialized.value) {
+  // On client, reset initialization if server didn't complete the fetch
+  // This handles SSR hydration where initialized=true but data wasn't loaded
+  const needsClientInit =
+    import.meta.client &&
+    initialized.value &&
+    listensPending.value &&
+    listensData.value.length === 0;
+
+  if (!initialized.value || needsClientInit) {
     // Set immediately to prevent race condition with multiple synchronous calls
     initialized.value = true;
     watch(
