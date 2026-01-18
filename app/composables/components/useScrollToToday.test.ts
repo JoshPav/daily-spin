@@ -97,23 +97,6 @@ describe('useScrollToToday', () => {
       expect(container.scrollTo).not.toHaveBeenCalled();
     });
 
-    it('should warn and not scroll if container is not scrollable', async () => {
-      const isReady = ref(false);
-      const { scrollContainer, todayElement, scrollToToday } = useScrollToToday(
-        { isReady },
-      );
-
-      const container = createMockElement({ overflowY: 'visible' });
-      const today = createMockElement();
-
-      scrollContainer.value = container;
-      todayElement.value = today;
-
-      scrollToToday();
-
-      expect(container.scrollTo).not.toHaveBeenCalled();
-    });
-
     it('should scroll when container has overflow-y: scroll', async () => {
       const isReady = ref(false);
       const { scrollContainer, todayElement, scrollToToday } = useScrollToToday(

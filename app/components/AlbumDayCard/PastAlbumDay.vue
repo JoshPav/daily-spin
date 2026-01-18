@@ -1,21 +1,28 @@
 <template>
-  <AlbumDayCard
-    ref="cardRef"
-    :date="dayListens.date"
-    :albums="albumCardInfo"
-    :pending="pending"
-    @click="handleClick"
+  <UChip
+    size="3xl"
+    :show="needsFavoriteSong"
+    color="warning"
+    :ui="{ base: 'z-20' }"
   >
-    <template #empty>
-      <div
-        class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
-      >
-        <UTooltip text="No albums listened to this day">
-          <span>—</span>
-        </UTooltip>
-      </div>
-    </template>
-  </AlbumDayCard>
+    <AlbumDayCard
+      ref="cardRef"
+      :date="dayListens.date"
+      :albums="albumCardInfo"
+      :pending="pending"
+      @click="handleClick"
+    >
+      <template #empty>
+        <div
+          class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+        >
+          <UTooltip text="No albums listened to this day">
+            <span>—</span>
+          </UTooltip>
+        </div>
+      </template>
+    </AlbumDayCard>
+  </UChip>
 </template>
 
 <script lang="ts" setup>
@@ -35,6 +42,9 @@ const dailyListensModal = overlay.create(LazyDailyListensModal);
 const { date } = useDate(dayListens.date);
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
+const needsFavoriteSong = computed(
+  () => hasAlbums.value && !dayListens.favoriteSong,
+);
 
 const albumCardInfo = computed<AlbumCardInfo[]>(() =>
   dayListens.albums.map((a) => ({
