@@ -23,6 +23,7 @@ import {
   recentlyPlayed,
 } from '~~/tests/factories/spotify.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import { mockGetAccessToken } from '~~/tests/mocks/authMock';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 import {
   mockSpotifyApi,
@@ -54,6 +55,11 @@ describe('GET /api/listens Integration Tests', () => {
     const user = await createUser();
     userId = user.id;
     userAccount = user.accounts[0];
+
+    // Mock BetterAuth to return the user's access token
+    mockGetAccessToken.mockResolvedValue({
+      accessToken: userAccount.accessToken,
+    });
 
     handler = (await import('./listens.get')).default;
   });

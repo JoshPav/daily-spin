@@ -3,17 +3,55 @@ import { createConsola, type LogLevel } from 'consola';
 /**
  * Centralized logger configuration for server-side logging.
  *
- * Log levels by environment:
- * - Production: info, warn, error, fatal
- * - Staging: debug, info, warn, error, fatal
- * - Development: All levels (trace through fatal)
+ * Log level can be set via LOG_LEVEL environment variable:
+ * - Accepts numeric values: 0 (trace) through 6 (fatal)
+ * - Accepts level names: trace, debug, verbose, info, warn, error, fatal
+ *
+ * Default log levels by environment (when LOG_LEVEL is not set):
+ * - Production: info (3)
+ * - Staging: debug (1)
+ * - Development: trace (0) - all levels
  */
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Configure log level based on environment
-const logLevel: LogLevel = isDevelopment ? 0 : isProduction ? 3 : 2;
+// Map of log level names to numeric values
+const logLevelMap: Record<string, LogLevel> = {
+  trace: 0,
+  debug: 1,
+  verbose: 2,
+  info: 3,
+  warn: 4,
+  error: 5,
+  fatal: 6,
+};
+
+// Environment-based default log level
+const defaultLogLevel: LogLevel = isDevelopment ? 0 : isProduction ? 3 : 2;
+
+/**
+ * Parse LOG_LEVEL environment variable.
+ * Accepts numeric values (0-6) or level names (trace, debug, info, warn, error, fatal).
+ */
+function parseLogLevel(level: string | undefined): LogLevel | undefined {
+  if (!level) return undefined;
+
+  const trimmed = level.trim().toLowerCase();
+
+  // Try parsing as number
+  const numeric = Number(trimmed);
+  if (!Number.isNaN(numeric) && numeric >= 0 && numeric <= 6) {
+    return numeric as LogLevel;
+  }
+
+  // Try parsing as level name
+  return logLevelMap[trimmed];
+}
+
+// Configure log level: manual override takes precedence, otherwise use environment default
+const logLevel: LogLevel =
+  parseLogLevel(process.env.LOG_LEVEL) ?? defaultLogLevel;
 
 // Create base logger instance
 export const logger = createConsola({
@@ -45,34 +83,6 @@ export function createTaggedLogger(tag: string) {
  * - warn (4): Unexpected behavior, but operation succeeded
  * - error (5): Operation failed, requires investigation
  * - fatal (6): Application crash, immediate attention
- *
- * Usage examples:
- *
- * @example Info level - business events
- * logger.info('Album listen created', {
- *   userId: '123',
- *   albumId: 'album_456',
- *   date: '2026-01-15',
- * });
- *
- * @example Warn level - unexpected but handled
- * logger.warn('Album already exists in backlog', {
- *   userId: '123',
- *   albumId: 'album_456',
- * });
- *
- * @example Error level - operation failed
- * logger.error('Failed to fetch Spotify data', {
- *   userId: '123',
- *   error: error.message,
- *   stack: error.stack,
- * });
- *
- * @example Debug level - diagnostic info
- * logger.debug('Processing recently played tracks', {
- *   userId: '123',
- *   trackCount: 50,
- * });
  */
 
 /**
