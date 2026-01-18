@@ -1,6 +1,9 @@
-import type { Artist } from '@spotify/web-api-ts-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { simplifiedAlbum, simplifiedArtist } from '~~/tests/factories/spotify.factory';
+import {
+  fullArtist,
+  simplifiedAlbum,
+  simplifiedArtist,
+} from '~~/tests/factories/spotify.factory';
 import { useAddToBacklog } from './useAddToBacklog';
 import type { SearchResult } from './useSpotifyAlbumSearch';
 
@@ -13,7 +16,9 @@ const mockSpotifyApi = {
   },
 };
 
-function createSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
+function createSearchResult(
+  overrides: Partial<SearchResult> = {},
+): SearchResult {
   const album = simplifiedAlbum();
   return {
     ...album,
@@ -21,25 +26,13 @@ function createSearchResult(overrides: Partial<SearchResult> = {}): SearchResult
   } as SearchResult;
 }
 
-function createFullArtist(id: string, name: string, imageUrl?: string): Artist {
-  return {
-    id,
-    name,
-    type: 'artist',
-    uri: `spotify:artist:${id}`,
-    href: `https://api.spotify.com/v1/artists/${id}`,
-    external_urls: { spotify: `https://open.spotify.com/artist/${id}` },
-    followers: { href: null, total: 1000 },
-    genres: ['rock'],
-    images: imageUrl ? [{ url: imageUrl, height: 640, width: 640 }] : [],
-    popularity: 75,
-  };
-}
-
 describe('useAddToBacklog', () => {
   beforeEach(() => {
     vi.stubGlobal('$fetch', mockFetch);
-    vi.stubGlobal('useSpotifyApi', vi.fn(async () => mockSpotifyApi));
+    vi.stubGlobal(
+      'useSpotifyApi',
+      vi.fn(async () => mockSpotifyApi),
+    );
   });
 
   afterEach(() => {
@@ -159,10 +152,17 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [{ url: 'https://example.com/artist.jpg' }],
+        }),
       ]);
       mockFetch.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ added: 1 }), 100)),
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ added: 1 }), 100),
+          ),
       );
 
       selectedAlbums.value = [album];
@@ -182,7 +182,13 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [
+            { url: 'https://example.com/artist.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       mockFetch.mockResolvedValue({ added: 1 });
 
@@ -215,14 +221,22 @@ describe('useAddToBacklog', () => {
       const album = createSearchResult({
         id: 'album1',
         name: 'Test Album',
-        images: [{ url: 'https://example.com/album.jpg', height: 640, width: 640 }],
+        images: [
+          { url: 'https://example.com/album.jpg', height: 640, width: 640 },
+        ],
         release_date: '2024-01-15',
         total_tracks: 10,
         artists: [artist],
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [
+            { url: 'https://example.com/artist.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       mockFetch.mockResolvedValue({ added: 1 });
 
@@ -260,8 +274,20 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Artist 1', 'https://example.com/artist1.jpg'),
-        createFullArtist('artist2', 'Artist 2', 'https://example.com/artist2.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Artist 1',
+          images: [
+            { url: 'https://example.com/artist1.jpg', height: 300, width: 300 },
+          ],
+        }),
+        fullArtist({
+          id: 'artist2',
+          name: 'Artist 2',
+          images: [
+            { url: 'https://example.com/artist2.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       mockFetch.mockResolvedValue({ added: 1 });
 
@@ -273,7 +299,10 @@ describe('useAddToBacklog', () => {
 
     it('should deduplicate artist IDs across multiple albums', async () => {
       const { selectedAlbums, addToBacklog } = useAddToBacklog();
-      const sharedArtist = simplifiedArtist({ id: 'shared-artist', name: 'Shared Artist' });
+      const sharedArtist = simplifiedArtist({
+        id: 'shared-artist',
+        name: 'Shared Artist',
+      });
       const album1 = createSearchResult({
         id: 'album1',
         artists: [sharedArtist],
@@ -284,7 +313,13 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('shared-artist', 'Shared Artist', 'https://example.com/shared.jpg'),
+        fullArtist({
+          id: 'shared-artist',
+          name: 'Shared Artist',
+          images: [
+            { url: 'https://example.com/shared.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       mockFetch.mockResolvedValue({ added: 2 });
 
@@ -298,7 +333,10 @@ describe('useAddToBacklog', () => {
 
     it('should handle artists without images', async () => {
       const { selectedAlbums, addToBacklog } = useAddToBacklog();
-      const artist = simplifiedArtist({ id: 'artist1', name: 'Artist Without Image' });
+      const artist = simplifiedArtist({
+        id: 'artist1',
+        name: 'Artist Without Image',
+      });
       const album = createSearchResult({
         id: 'album1',
         artists: [artist],
@@ -306,7 +344,7 @@ describe('useAddToBacklog', () => {
 
       // Artist without images array
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Artist Without Image'),
+        fullArtist({ id: 'artist1', name: 'Artist Without Image', images: [] }),
       ]);
       mockFetch.mockResolvedValue({ added: 1 });
 
@@ -337,7 +375,13 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [
+            { url: 'https://example.com/artist.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       mockFetch.mockResolvedValue({ added: 1 });
 
@@ -357,7 +401,13 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [
+            { url: 'https://example.com/artist.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       const response = { added: 1 };
       mockFetch.mockResolvedValue(response);
@@ -421,7 +471,10 @@ describe('useAddToBacklog', () => {
     });
 
     it('should handle Spotify API unavailable gracefully', async () => {
-      vi.stubGlobal('useSpotifyApi', vi.fn(async () => null));
+      vi.stubGlobal(
+        'useSpotifyApi',
+        vi.fn(async () => null),
+      );
 
       const { selectedAlbums, addToBacklog } = useAddToBacklog();
       const artist = simplifiedArtist({ id: 'artist1', name: 'Test Artist' });
@@ -468,10 +521,22 @@ describe('useAddToBacklog', () => {
 
       // Mock responses for both batches
       const fullArtistsBatch1 = artists.slice(0, 50).map((a) =>
-        createFullArtist(a.id, a.name, `https://example.com/${a.id}.jpg`),
+        fullArtist({
+          id: a.id,
+          name: a.name,
+          images: [
+            { url: `https://example.com/${a.id}.jpg`, height: 300, width: 300 },
+          ],
+        }),
       );
       const fullArtistsBatch2 = artists.slice(50).map((a) =>
-        createFullArtist(a.id, a.name, `https://example.com/${a.id}.jpg`),
+        fullArtist({
+          id: a.id,
+          name: a.name,
+          images: [
+            { url: `https://example.com/${a.id}.jpg`, height: 300, width: 300 },
+          ],
+        }),
       );
 
       mockArtistsGet
@@ -503,7 +568,13 @@ describe('useAddToBacklog', () => {
       });
 
       mockArtistsGet.mockResolvedValue([
-        createFullArtist('artist1', 'Test Artist', 'https://example.com/artist.jpg'),
+        fullArtist({
+          id: 'artist1',
+          name: 'Test Artist',
+          images: [
+            { url: 'https://example.com/artist.jpg', height: 300, width: 300 },
+          ],
+        }),
       ]);
       const response = { added: 1, skipped: 0 };
       mockFetch.mockResolvedValue(response);

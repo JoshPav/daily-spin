@@ -70,9 +70,7 @@ async function migrateArtistImages() {
     },
   });
 
-  console.log(
-    `Found ${artistsWithoutImages.length} artists without images\n`,
-  );
+  console.log(`Found ${artistsWithoutImages.length} artists without images\n`);
 
   if (artistsWithoutImages.length === 0) {
     console.log('✅ All artists already have images. Nothing to migrate.');
