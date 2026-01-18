@@ -5,7 +5,6 @@ import { Route } from '~/pages/routes';
 import { Icons } from './common/icons';
 
 const { loggedIn, user, loading } = useAuth();
-const router = useRouter();
 const route = useRoute();
 
 const navItems = computed<NavigationMenuItem[][]>(() => [
@@ -60,7 +59,8 @@ const bodyItems = computed<NavigationMenuItem[][]>(() => [
       onSelect: async () => {
         await signOut({
           fetchOptions: {
-            onSuccess: async () => void router.push(Route.LANDING_PAGE),
+            onSuccess: async () =>
+              void navigateTo(Route.LANDING_PAGE, { external: true }),
           },
         });
       },
@@ -77,15 +77,19 @@ const to = computed(() =>
   <UHeader
     title="DailySpin"
     :to="to"
-    :ui="{ center: 'md:block', toggle: 'block!', content: 'block!', overlay: 'block!' }"
-    :toggle="{ size: 'xl' }"
+    :ui="{ center: 'md:block', toggle: loggedIn ? '' : 'hidden' }"
+    :toggle="{ size: 'xl', disabled: loading }"
     mode="slideover"
   >
     <template v-if="loggedIn">
       <UNavigationMenu :items="navItems" highlight />
     </template>
 
-    <template #body>
+    <template #right>
+      <LoginWithSpotifyButton v-if="!loading && !loggedIn" label="Login" />
+    </template>
+
+    <template v-if="loggedIn" #body>
       <UNavigationMenu
         :items="bodyItems"
         highlight
