@@ -33,7 +33,7 @@
 
     <!-- Track List -->
     <section>
-      <CollapsibleSection v-model="expanded" icon="i-lucide-list-music">
+      <CollapsibleSection v-model="expanded" :icon="Icons.MUSIC.SONG_LIST">
         <template #trigger>
           <span class="flex-1 text-left">View tracks</span>
         </template>
@@ -86,6 +86,7 @@ import {
   LISTEN_ORDER_CONFIG,
   LISTEN_TIME_CONFIG,
 } from '~/constants/listenMetadata';
+import { Icons } from '../common/icons';
 
 const props = defineProps<{
   albumListen: DailyAlbumListen;

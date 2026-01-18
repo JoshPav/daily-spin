@@ -31,12 +31,12 @@ const allSortOptions = [
       {
         value: 'date-added-desc' as SortOption,
         label: 'Newest First',
-        icon: Icons.CALENDAR_ARROW_UP,
+        icon: Icons.CALENDAR.ARROW_UP,
       },
       {
         value: 'date-added-asc' as SortOption,
         label: 'Oldest First',
-        icon: Icons.CALENDAR_ARROW_DOWN,
+        icon: Icons.CALENDAR.ARROW_DOWN,
       },
     ],
     modes: ['albums', 'artists'] as ViewMode[],
@@ -46,12 +46,12 @@ const allSortOptions = [
       {
         value: 'name-asc' as SortOption,
         label: 'Album A → Z',
-        icon: Icons.MUSICAL_NOTE,
+        icon: Icons.MUSIC.NOTE,
       },
       {
         value: 'name-desc' as SortOption,
         label: 'Album Z → A',
-        icon: Icons.MUSICAL_NOTE,
+        icon: Icons.MUSIC.NOTE,
       },
     ],
     modes: ['albums'] as ViewMode[],

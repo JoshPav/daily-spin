@@ -26,8 +26,8 @@ export function toRadioOptions<T extends string>(
 export const LISTEN_METHOD_CONFIG: Record<ListenMethod, ListenMetadataConfig> =
   {
     spotify: { label: 'Spotify', icon: Icons.SPOTIFY },
-    vinyl: { label: 'Vinyl', icon: Icons.VINYL },
-    streamed: { label: 'Streamed', icon: Icons.AUDIO_LINES },
+    vinyl: { label: 'Vinyl', icon: Icons.MUSIC.VINYL },
+    streamed: { label: 'Streamed', icon: Icons.MUSIC.AUDIO_LINES },
   };
 
 export const LISTEN_TIME_CONFIG: Record<ListenTime, ListenMetadataConfig> = {
@@ -39,6 +39,6 @@ export const LISTEN_TIME_CONFIG: Record<ListenTime, ListenMetadataConfig> = {
 
 export const LISTEN_ORDER_CONFIG: Record<ListenOrder, ListenMetadataConfig> = {
   ordered: { label: 'Ordered', icon: Icons.ORDERED },
-  shuffled: { label: 'Shuffled', icon: Icons.SHUFFLED },
+  shuffled: { label: 'Shuffled', icon: Icons.MUSIC.SHUFFLED },
   interrupted: { label: 'Interrupted', icon: Icons.INTERRUPTED },
 };

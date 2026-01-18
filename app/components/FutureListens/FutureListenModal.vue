@@ -50,7 +50,7 @@
             :loading="removing"
             @click="handleRemove"
           >
-            <UIcon :name="Icons.CALENDAR_REMOVE" class="size-4.5" />
+            <UIcon :name="Icons.CALENDAR.REMOVE" class="size-4.5" />
             Remove from schedule
           </UButton>
         </div>

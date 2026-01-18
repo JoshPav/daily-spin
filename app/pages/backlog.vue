@@ -28,11 +28,11 @@ const { searchTerm, sortBy, viewMode, filteredAlbums, groupedByArtist } =
   useBacklogFilters(albums);
 
 const viewModeOptions = [
-  { value: 'albums', label: 'Albums', icon: Icons.ALBUM_LIST },
+  { value: 'albums', label: 'Albums', icon: Icons.MUSIC.ALBUMS },
   {
     value: 'artists',
     label: 'Artists',
-    icon: Icons.ARTIST,
+    icon: Icons.MUSIC.ARTIST,
   },
 ];
 </script>

@@ -6,7 +6,7 @@
       :variant="variant"
       :size="size"
       :icon="icon"
-      :trailing-icon="model ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+      :trailing-icon="model ? Icons.CHEVRON.UP : Icons.CHEVRON.DOWN"
       :class="buttonClass"
       :ui="{
         trailingIcon: 'text-muted size-4',
@@ -22,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+import { Icons } from './icons';
+
 const model = defineModel<boolean>({ default: false });
 
 withDefaults(
