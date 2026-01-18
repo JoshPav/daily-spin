@@ -49,7 +49,11 @@ export default defineConfig({
           name: 'unit',
           environment: 'happy-dom',
           include: ['**/*.test.ts'],
-          exclude: ['**/*.integration.ts', '**/*.component.ts', 'node_modules/**'],
+          exclude: [
+            '**/*.integration.ts',
+            '**/*.component.ts',
+            'node_modules/**',
+          ],
         },
       },
       {

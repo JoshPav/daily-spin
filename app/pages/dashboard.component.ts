@@ -1,15 +1,13 @@
-import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
-import type { DailyAlbumListen, DailyListens } from '~~/shared/schema';
-import {
-  album,
-  dailyAlbumListen,
-} from '~~/tests/factories/component.factory';
+import type { DailyListens } from '~~/shared/schema';
+import { album, dailyAlbumListen } from '~~/tests/factories/component.factory';
+// @ts-expect-error - Vue files are handled by Nuxt test environment at runtime
 import Dashboard from './dashboard.vue';
 
 // Mock useListens composable
-const mockListensData = ref<DailyListens[] | null>(null);
+const mockListensData = ref<DailyListens[]>([]);
 const mockListensPending = ref(false);
 const mockListensError = ref<Error | null>(null);
 
@@ -39,8 +37,8 @@ describe('Dashboard Page - Component Tests', () => {
 
   beforeEach(() => {
     vi.setSystemTime(TODAY);
-    // Reset mocks
-    mockListensData.value = null;
+    // Reset mocks - use empty array to avoid null reference errors in component
+    mockListensData.value = [];
     mockListensPending.value = false;
     mockListensError.value = null;
     mockFutureListensData.value = { items: [] };
@@ -64,6 +62,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
+          favoriteSong: null,
         },
       ];
 
@@ -88,6 +87,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
+          favoriteSong: null,
         },
       ];
 
@@ -103,7 +103,7 @@ describe('Dashboard Page - Component Tests', () => {
     it('should show loading state while fetching', async () => {
       // Given - Data is pending
       mockListensPending.value = true;
-      mockListensData.value = null;
+      mockListensData.value = [];
 
       // When - Mount the dashboard
       const wrapper = await mountSuspended(Dashboard);
@@ -136,6 +136,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [album1, album2],
+          favoriteSong: null,
         },
       ];
 
@@ -154,6 +155,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [dailyAlbumListen()],
+          favoriteSong: null,
         },
       ];
 
@@ -178,6 +180,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
+          favoriteSong: null,
         },
       ];
 
@@ -204,6 +207,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
+          favoriteSong: null,
         },
       ];
 
@@ -224,6 +228,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [],
+          favoriteSong: null,
         },
       ];
 
@@ -252,6 +257,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
+          favoriteSong: null,
         },
       ];
 
@@ -271,6 +277,7 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: TODAY.toISOString(),
           albums: [dailyAlbumListen()],
+          favoriteSong: null,
         },
       ];
 
@@ -289,10 +296,12 @@ describe('Dashboard Page - Component Tests', () => {
         {
           date: firstOfMonth.toISOString(),
           albums: [],
+          favoriteSong: null,
         },
         {
           date: TODAY.toISOString(),
           albums: [dailyAlbumListen()],
+          favoriteSong: null,
         },
       ];
 

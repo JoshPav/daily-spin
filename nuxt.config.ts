@@ -37,6 +37,11 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true,
     },
-    ignore: ['**/*.test.ts', '**/*.integration.ts', '**/*.component.ts', '**/*.spec.ts'],
+    ignore: [
+      '**/*.test.ts',
+      '**/*.integration.ts',
+      '**/*.component.ts',
+      '**/*.spec.ts',
+    ],
   },
 });

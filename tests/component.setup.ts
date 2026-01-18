@@ -36,11 +36,6 @@ class MockIntersectionObserver {
   readonly rootMargin: string = '';
   readonly thresholds: readonly number[] = [];
 
-  constructor(
-    _callback: IntersectionObserverCallback,
-    _options?: IntersectionObserverInit,
-  ) {}
-
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();

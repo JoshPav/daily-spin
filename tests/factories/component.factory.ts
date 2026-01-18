@@ -1,5 +1,9 @@
-import type { DailyAlbumListen, DailyListens, GetListensResponse } from '~~/shared/schema';
-import { album, dailyAlbumListen } from './api.factory';
+import type {
+  DailyAlbumListen,
+  DailyListens,
+  GetListensResponse,
+} from '~~/shared/schema';
+import { dailyAlbumListen } from './api.factory';
 
 /**
  * Generate a list of daily listens for testing dashboard display.
@@ -11,7 +15,12 @@ export const generateDailyListens = (options: {
   todayAlbums?: DailyAlbumListen[];
   includeRandomAlbums?: boolean;
 }): GetListensResponse => {
-  const { startDate, endDate, todayAlbums, includeRandomAlbums = true } = options;
+  const {
+    startDate,
+    endDate,
+    todayAlbums,
+    includeRandomAlbums = true,
+  } = options;
   const listens: DailyListens[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -40,6 +49,7 @@ export const generateDailyListens = (options: {
       listens.push({
         date: current.toISOString(),
         albums,
+        favoriteSong: null,
       });
     }
 
@@ -74,6 +84,7 @@ export const createDayListens = (
 ): DailyListens => ({
   date: date.toISOString(),
   albums,
+  favoriteSong: null,
 });
 
 /**
@@ -86,4 +97,4 @@ export const createTodayListen = (albums: DailyAlbumListen[]): DailyListens => {
 };
 
 // Re-export commonly used factories from api.factory
-export { album, dailyAlbumListen, artist, listenMetadata } from './api.factory';
+export { album, artist, dailyAlbumListen, listenMetadata } from './api.factory';
