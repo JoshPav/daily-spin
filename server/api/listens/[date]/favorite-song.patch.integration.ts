@@ -17,6 +17,7 @@ import {
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import { albumListenInput } from '~~/tests/factories/prisma.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
+import { mockGetAccessToken } from '~~/tests/mocks/authMock';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 import {
   mockSpotifyApi,
@@ -38,6 +39,11 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
     const user = await createUser();
     userId = user.id;
     userAccount = user.accounts[0];
+
+    // Mock BetterAuth to return the user's access token
+    mockGetAccessToken.mockResolvedValue({
+      accessToken: userAccount.accessToken,
+    });
 
     // Mock Spotify API responses
     vi.mocked(mockSpotifyApi.playlists.createPlaylist).mockResolvedValue({
@@ -389,7 +395,12 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
     });
 
     it('should not create playlist when feature is disabled', async () => {
-      // Given - feature disabled (default)
+      // Given - explicitly disable the feature
+      await prisma.user.update({
+        where: { id: userId },
+        data: { createSongOfDayPlaylist: false },
+      });
+
       const date = new Date('2026-01-15');
       const dailyListen = await createDailyListens({
         userId,
