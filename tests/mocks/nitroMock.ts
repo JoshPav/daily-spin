@@ -24,6 +24,12 @@ vi.stubGlobal('getRouterParam', (event: HandlerEvent, param: string) => {
   return params?.[param];
 });
 
+vi.stubGlobal('getRouterParams', (event: HandlerEvent) => {
+  const params = (event as unknown as { _routerParams: Record<string, string> })
+    ._routerParams;
+  return params ?? {};
+});
+
 vi.stubGlobal(
   'createError',
   (options: { statusCode: number; message: string }) => {
