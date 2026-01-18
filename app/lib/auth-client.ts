@@ -1,4 +1,10 @@
 import { createAuthClient } from 'better-auth/vue';
 
-export const { signIn, signOut, useSession, getSession, getAccessToken } =
-  createAuthClient();
+export const {
+  signIn,
+  signOut,
+  useSession,
+  getSession,
+  getAccessToken,
+  refreshToken,
+} = createAuthClient();

@@ -6,8 +6,19 @@ import type {
 } from '#shared/schema';
 import { useAuth } from '../auth/useAuth';
 
-const INITIAL_DAYS = 21;
-const FETCH_MORE_DAYS = 14;
+// Fetch fewer days on mobile since fewer are visible
+const MOBILE_BREAKPOINT = 768;
+const INITIAL_DAYS = { mobile: 14, desktop: 21 };
+const FETCH_MORE_DAYS = { mobile: 7, desktop: 14 };
+
+const isMobile = () =>
+  import.meta.client && window.innerWidth < MOBILE_BREAKPOINT;
+
+const getInitialDays = () =>
+  isMobile() ? INITIAL_DAYS.mobile : INITIAL_DAYS.desktop;
+
+const getFetchMoreDays = () =>
+  isMobile() ? FETCH_MORE_DAYS.mobile : FETCH_MORE_DAYS.desktop;
 
 export interface UseListensReturn {
   data: Ref<DailyListens[]>;
@@ -76,7 +87,7 @@ export const useListens = (): UseListensReturn => {
     try {
       const today = new Date();
       const endDate = endOfDay(today);
-      const startDate = startOfDay(subDays(today, INITIAL_DAYS));
+      const startDate = startOfDay(subDays(today, getInitialDays()));
 
       const result = await fetchDateRange(startDate, endDate);
 
@@ -108,7 +119,7 @@ export const useListens = (): UseListensReturn => {
     try {
       // Fetch the next batch of older days
       const endDate = startOfDay(subDays(oldestLoadedDate.value, 1));
-      const startDate = startOfDay(subDays(endDate, FETCH_MORE_DAYS));
+      const startDate = startOfDay(subDays(endDate, getFetchMoreDays()));
 
       const result = await fetchDateRange(startDate, endDate);
 

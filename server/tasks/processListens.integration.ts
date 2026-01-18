@@ -28,10 +28,7 @@ import {
   toPlayHistory,
 } from '~~/tests/factories/spotify.factory';
 import { mockRuntimeConfig } from '~~/tests/integration.setup';
-import {
-  mockGetAccessToken,
-  mockRefreshSpotifyToken,
-} from '~~/tests/mocks/authMock';
+import { mockGetAccessToken } from '~~/tests/mocks/authMock';
 import {
   mockSpotifyApi,
   mockWithAccessToken,
@@ -143,8 +140,6 @@ describe('processListens Task Integration Tests', () => {
         expect(mockGetAccessToken).toHaveBeenCalledWith({
           body: {
             providerId: 'spotify',
-          },
-          query: {
             userId: expiredUserId,
           },
         });
@@ -166,22 +161,15 @@ describe('processListens Task Integration Tests', () => {
         });
       });
 
-      it('should handle token refresh failure gracefully when both BetterAuth and fallback fail', async () => {
+      it('should handle token refresh failure gracefully', async () => {
         // Given
         const { history } = createFullAlbumPlayHistory();
 
         // Reset mocks to ensure clean state
         mockGetAccessToken.mockReset();
-        mockRefreshSpotifyToken.mockReset();
 
-        // Mock BetterAuth getAccessToken failure
         mockGetAccessToken.mockImplementation(() => {
           return Promise.reject(new Error('BetterAuth token refresh failed'));
-        });
-
-        // Mock fallback refreshSpotifyToken to also fail
-        mockRefreshSpotifyToken.mockImplementation(() => {
-          return Promise.reject(new Error('Spotify token refresh failed'));
         });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(
@@ -193,8 +181,6 @@ describe('processListens Task Integration Tests', () => {
 
         // Then - BetterAuth was attempted
         expect(mockGetAccessToken).toHaveBeenCalled();
-        // Then - fallback was also attempted
-        expect(mockRefreshSpotifyToken).toHaveBeenCalled();
 
         // Then - error is handled gracefully, user processing continues as "successful"
         // but without any listens (the error is logged but processing continues)
@@ -249,8 +235,6 @@ describe('processListens Task Integration Tests', () => {
         expect(mockGetAccessToken).toHaveBeenCalledWith({
           body: {
             providerId: 'spotify',
-          },
-          query: {
             userId: soonToExpireUserId,
           },
         });
@@ -276,8 +260,8 @@ describe('processListens Task Integration Tests', () => {
         userAccount = user.accounts[0];
 
         // Default: BetterAuth returns the user's access token
-        mockGetAccessToken.mockImplementation(({ query }) => {
-          if (query?.userId === userId) {
+        mockGetAccessToken.mockImplementation(({ body }) => {
+          if (body?.userId === userId) {
             return Promise.resolve({ accessToken: userAccount.accessToken });
           }
           // For any other user, return a generic token
@@ -541,7 +525,6 @@ describe('processListens Task Integration Tests', () => {
 
       it('should not save history from previous days', async () => {
         // Given
-
         const { history } = createFullAlbumPlayHistory({
           tracksInAlbum: 4,
           date: `2025-12-31`,
@@ -632,8 +615,6 @@ describe('processListens Task Integration Tests', () => {
         expect(mockGetAccessToken).toHaveBeenCalledWith({
           body: {
             providerId: 'spotify',
-          },
-          query: {
             userId,
           },
         });

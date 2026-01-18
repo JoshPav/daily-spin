@@ -6,8 +6,11 @@ export const useSpotifyApi = async () => {
     public: { spotifyClientId },
   } = useRuntimeConfig();
 
+  const { user } = useAuth();
+
   const { data } = await getAccessToken({
     providerId: 'spotify',
+    userId: user.value?.id,
   });
 
   if (!data) {
