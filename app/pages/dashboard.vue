@@ -215,7 +215,7 @@ onUnmounted(() => {
         </div>
         <template v-for="day in days" :key="day.date">
           <FutureAlbumDay
-            v-if="isTodayOrFuture(day.date)"
+            v-if="isTodayOrFuture(day.date) && !day.dailyListens?.albums.length"
             :date="day.date"
             :future-album="day.futureAlbum"
             :ref="el => {
