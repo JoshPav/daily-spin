@@ -45,7 +45,7 @@ export type AddListen = EndpointContract<typeof addListenSchema>;
 // PATCH /api/listens/[date]/favorite-song
 export const updateFavoriteSongSchema = {
   params: z.object({
-    date: z.string(),
+    date: z.iso.date().transform((d) => new Date(d)),
   }),
   body: z.union([FavoriteSongSchema, z.object({ spotifyId: z.null() })]),
   response: z.object({

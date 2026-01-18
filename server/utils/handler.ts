@@ -84,19 +84,34 @@ export function createEventHandler<TSchema extends ApiSchema>(
       return await handler(validatedEvent);
     } catch (error) {
       if (error instanceof ZodError) {
-        const validationErrors = error.issues.map((issue) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-          code: issue.code,
-        }));
-        throw handleError(
-          new ValidationError('Validation failed', {
-            errors: validationErrors,
-          }),
-          logContext,
-        );
+        throw handleZodError(error, logContext);
       }
       throw handleError(error, logContext);
     }
   });
 }
+
+const handleZodError = (
+  error: ZodError,
+  logContext: Record<string, unknown>,
+) => {
+  const validationErrors = error.issues.map((issue) => ({
+    path: issue.path.join('.'),
+    message: issue.message,
+    code: issue.code,
+  }));
+
+  // Use the first error message as the main message for better UX
+  const [firstError] = validationErrors;
+  const mainMessage =
+    validationErrors.length === 1 && firstError
+      ? firstError.message
+      : 'Validation failed';
+
+  throw handleError(
+    new ValidationError(mainMessage, {
+      errors: validationErrors,
+    }),
+    logContext,
+  );
+};

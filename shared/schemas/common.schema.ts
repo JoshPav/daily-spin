@@ -1,16 +1,11 @@
 import { z } from 'zod';
 
 // API Schema utility types
-export type ApiSchema<
-  TParams = unknown,
-  TQuery = unknown,
-  TBody = unknown,
-  TResponse = unknown,
-> = {
-  params?: z.ZodType<TParams>;
-  query?: z.ZodType<TQuery>;
-  body?: z.ZodType<TBody>;
-  response?: z.ZodType<TResponse>;
+export type ApiSchema = {
+  params?: z.ZodType;
+  query?: z.ZodType;
+  body?: z.ZodType;
+  response?: z.ZodType;
 };
 
 type InferOrNever<T> = T extends z.ZodType ? z.infer<T> : never;

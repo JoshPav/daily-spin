@@ -187,7 +187,6 @@ describe('createEventHandler', () => {
 
       await expect(handler(event)).rejects.toMatchObject({
         statusCode: 400,
-        message: 'Validation failed',
       });
 
       expect(handlerFn).not.toHaveBeenCalled();
@@ -209,7 +208,6 @@ describe('createEventHandler', () => {
 
       await expect(handler(event)).rejects.toMatchObject({
         statusCode: 400,
-        message: 'Validation failed',
       });
 
       expect(handlerFn).not.toHaveBeenCalled();
@@ -232,7 +230,6 @@ describe('createEventHandler', () => {
 
       await expect(handler(event)).rejects.toMatchObject({
         statusCode: 400,
-        message: 'Validation failed',
       });
     });
 

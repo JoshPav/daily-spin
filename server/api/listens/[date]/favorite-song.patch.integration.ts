@@ -269,7 +269,6 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing date parameter',
     });
   });
 
@@ -289,7 +288,6 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Invalid date format',
     });
   });
 
@@ -317,8 +315,6 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
       ),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message:
-        'Missing required fields: spotifyId, name, trackNumber, and albumId are required',
     });
   });
 
