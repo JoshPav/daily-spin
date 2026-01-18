@@ -223,6 +223,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  requiresReauth        Boolean   @default(false)
 
   @@index([userId])
   @@map("account")
