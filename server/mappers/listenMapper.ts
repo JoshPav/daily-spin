@@ -6,15 +6,8 @@ export const mapDailyListens = (
 ): DailyListens => ({
   date: dailyListens.date.toISOString(),
   albums: dailyListens.albums.map(
-    ({
-      album,
-      listenOrder,
-      listenMethod,
-      listenTime,
-      favoriteSongId,
-      favoriteSongName,
-      favoriteSongTrackNumber,
-    }) => ({
+    ({ id, album, listenOrder, listenMethod, listenTime }) => ({
+      id,
       album: {
         albumId: album.spotifyId,
         albumName: album.name,
@@ -28,15 +21,31 @@ export const mapDailyListens = (
         listenOrder,
         listenMethod,
         listenTime,
-        favoriteSong:
-          favoriteSongId && favoriteSongName && favoriteSongTrackNumber
-            ? {
-                spotifyId: favoriteSongId,
-                name: favoriteSongName,
-                trackNumber: favoriteSongTrackNumber,
-              }
-            : null,
       },
     }),
   ),
+  favoriteSong: (() => {
+    if (
+      !dailyListens.favoriteSongId ||
+      !dailyListens.favoriteSongName ||
+      dailyListens.favoriteSongTrackNumber === null ||
+      !dailyListens.favoriteSongAlbumId
+    ) {
+      return null;
+    }
+    // Find the album's Spotify ID from the albums array using the internal ID
+    const albumListen = dailyListens.albums.find(
+      (al) => al.album.id === dailyListens.favoriteSongAlbumId,
+    );
+    const albumSpotifyId = albumListen?.album.spotifyId;
+    if (!albumSpotifyId) {
+      return null;
+    }
+    return {
+      spotifyId: dailyListens.favoriteSongId,
+      name: dailyListens.favoriteSongName,
+      trackNumber: dailyListens.favoriteSongTrackNumber,
+      albumId: albumSpotifyId,
+    };
+  })(),
 });

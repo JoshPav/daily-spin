@@ -169,6 +169,7 @@ export class DailyListenService {
       return {
         date: day.toISOString(),
         albums: [],
+        favoriteSong: null,
       };
     });
   }

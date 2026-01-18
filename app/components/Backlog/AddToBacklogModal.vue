@@ -23,7 +23,7 @@
           <div
             v-for="i in 3"
             :key="i"
-            class="h-20 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-[length:400%_100%] animate-[skeleton-shimmer_2.5s_ease_infinite]"
+            class="h-20 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[400%_100%] animate-[skeleton-shimmer_2.5s_ease_infinite]"
           ></div>
         </div>
 
@@ -43,7 +43,7 @@
             "
             @click="toggleSelection(album)"
           >
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <UIcon
                 v-if="isSelected(album)"
                 :name="Icons.CHECK_CIRCLE_SOLID"
@@ -84,8 +84,7 @@
           class="flex justify-between items-center px-3 py-2 bg-neutral-800 rounded-lg"
         >
           <div class="font-montserrat text-sm font-semibold text-primary-500">
-            {{ selectedAlbums.length }} album
-            {{ selectedAlbums.length === 1 ? '' : 's' }}
+            {{ albumsSelectedString }}
             selected
           </div>
           <UButton
@@ -106,8 +105,7 @@
           :loading="saving"
           @click="handleAdd"
         >
-          Add {{ selectedAlbums.length }} Album
-          {{ selectedAlbums.length === 1 ? '' : 's' }}
+          {{ `Add ${albumsSelectedString}` }}
         </UButton>
       </div>
     </template>
@@ -156,6 +154,11 @@ const getArtistNames = (album: SearchResult) =>
 const handleAdd = async () => {
   await addToBacklog();
 };
+
+const albumsSelectedString = computed(
+  () =>
+    `${selectedAlbums.value.length} Album${selectedAlbums.value.length === 1 ? '' : 's'}`,
+);
 </script>
 
 <style scoped>

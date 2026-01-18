@@ -12,13 +12,13 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: 'Dashboard',
-      icon: Icons.CALENDAR,
+      icon: Icons.CALENDAR.DAYS,
       to: Route.DASHBOARD,
       active: route.path === Route.DASHBOARD,
     },
     {
       label: 'Backlog',
-      icon: Icons.BACKLOG,
+      icon: Icons.MUSIC.SONG_LIST,
       to: Route.BACKLOG,
       active: route.path === Route.BACKLOG,
     },

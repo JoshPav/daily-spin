@@ -482,6 +482,9 @@ describe('useBacklogFilters', () => {
 
       const { sortBy, viewMode } = useBacklogFilters(albums);
 
+      viewMode.value = 'albums';
+      await nextTick();
+
       sortBy.value = 'name-asc';
       expect(sortBy.value).toBe('name-asc');
 

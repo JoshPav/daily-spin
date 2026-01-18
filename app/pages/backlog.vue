@@ -28,11 +28,11 @@ const { searchTerm, sortBy, viewMode, filteredAlbums, groupedByArtist } =
   useBacklogFilters(albums);
 
 const viewModeOptions = [
-  { value: 'albums', label: 'Albums', icon: Icons.ALBUM_LIST },
+  { value: 'albums', label: 'Albums', icon: Icons.MUSIC.ALBUMS },
   {
     value: 'artists',
     label: 'Artists',
-    icon: Icons.ARTIST,
+    icon: Icons.MUSIC.ARTIST,
   },
 ];
 </script>
@@ -91,30 +91,27 @@ const viewModeOptions = [
           No albums found matching your search
         </div>
 
-        <!-- Album List View -->
-        <div
-          v-else-if="viewMode === 'albums'"
-          class="flex flex-col gap-3 overflow-y-auto flex-1"
-        >
-          <BacklogItem
-            v-for="album in filteredAlbums"
-            :key="album.id"
-            :album="album"
-            :search-term="searchTerm"
-            @deleted="handleDeleted"
-          />
-        </div>
+        <div v-else class="flex flex-col gap-2 overflow-y-auto flex-1">
+          <template v-if="viewMode === 'albums'">
+            <BacklogItem
+              v-for="album in filteredAlbums"
+              :key="album.id"
+              :album="album"
+              :search-term="searchTerm"
+              @deleted="handleDeleted"
+            />
+          </template>
 
-        <!-- Artist Grouped View -->
-        <div v-else class="flex flex-col gap-6 overflow-y-auto flex-1">
-          <BacklogArtistGroup
-            v-for="[artistKey, group] in groupedByArtist"
-            :key="artistKey"
-            :artist="group.artist"
-            :albums="group.albums"
-            :search-term="searchTerm"
-            @deleted="handleDeleted"
-          />
+          <template v-else>
+            <BacklogArtistGroup
+              v-for="[artistKey, group] in groupedByArtist"
+              :key="artistKey"
+              :artist="group.artist"
+              :albums="group.albums"
+              :search-term="searchTerm"
+              @deleted="handleDeleted"
+            />
+          </template>
         </div>
       </div>
     </main>

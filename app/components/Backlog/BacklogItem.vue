@@ -12,7 +12,7 @@
       v-else
       class="w-16 h-16 rounded shrink-0 bg-neutral-600 flex items-center justify-center"
     >
-      <UIcon :name="Icons.MUSICAL_NOTE" class="text-3xl text-neutral-500" />
+      <UIcon :name="Icons.MUSIC.NOTE" class="text-3xl text-neutral-500" />
     </div>
     <div class="flex-1 flex flex-col gap-1 min-w-0">
       <div

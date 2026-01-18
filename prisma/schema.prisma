@@ -53,14 +53,19 @@ enum PlaylistType {
 }
 
 model DailyListen {
-  id        String        @id @default(cuid())
-  userId    String
-  date      DateTime      @db.Date
-  albums    AlbumListen[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id                      String        @id @default(cuid())
+  userId                  String
+  date                    DateTime      @db.Date
+  albums                  AlbumListen[]
+  favoriteSongId          String?
+  favoriteSongName        String?
+  favoriteSongTrackNumber Int?
+  favoriteSongAlbumId     String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favoriteSongAlbum Album? @relation(fields: [favoriteSongAlbumId], references: [id])
 
   @@unique([userId, date])
   @@index([userId])
@@ -69,17 +74,14 @@ model DailyListen {
 }
 
 model AlbumListen {
-  id               String       @id @default(cuid())
-  dailyListenId    String
-  albumId          String
-  listenOrder      ListenOrder  @default(ordered)
-  listenMethod     ListenMethod @default(spotify)
-  listenTime       ListenTime?
-  favoriteSongId          String?
-  favoriteSongName        String?
-  favoriteSongTrackNumber Int?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  dailyListenId String
+  albumId       String
+  listenOrder   ListenOrder  @default(ordered)
+  listenMethod  ListenMethod @default(spotify)
+  listenTime    ListenTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   dailyListen DailyListen @relation(fields: [dailyListenId], references: [id], onDelete: Cascade)
   album       Album       @relation(fields: [albumId], references: [id], onDelete: Cascade)
@@ -114,10 +116,11 @@ model Album {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  artists       AlbumArtist[]
-  backlogItems  BacklogItem[]
-  listens       AlbumListen[]
-  futureListens FutureListen[]
+  artists                AlbumArtist[]
+  backlogItems           BacklogItem[]
+  listens                AlbumListen[]
+  futureListens          FutureListen[]
+  favoriteSongDailyLists DailyListen[]
 
   @@index([spotifyId])
   @@map("album")

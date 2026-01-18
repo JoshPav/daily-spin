@@ -24,7 +24,7 @@ export interface BacklogFilters {
 export function useBacklogFilters(albums: Ref<BacklogAlbum[]>): BacklogFilters {
   const searchTerm = ref('');
   const sortBy = ref<SortOption>('date-added-desc');
-  const viewMode = ref<ViewMode>('albums');
+  const viewMode = ref<ViewMode>('artists');
 
   // When switching to artist view, ensure sort option is valid
   watch(viewMode, (newMode) => {

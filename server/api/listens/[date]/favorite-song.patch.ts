@@ -1,3 +1,5 @@
+import { tz } from '@date-fns/tz';
+import { startOfDay } from 'date-fns';
 import type {
   UpdateFavoriteSong,
   UpdateFavoriteSongBody,
@@ -14,15 +16,23 @@ export default defineEventHandler<
   { body: UpdateFavoriteSongBody },
   Promise<UpdateFavoriteSong['response']>
 >(async (event) => {
-  const albumListenId = getRouterParam(event, 'albumListenId');
+  const dateParam = getRouterParam(event, 'date');
   const logContext = getLogContext(event);
 
-  if (!albumListenId) {
+  if (!dateParam) {
     throw handleError(
-      new ValidationError('Missing albumListenId parameter'),
+      new ValidationError('Missing date parameter'),
       logContext,
     );
   }
+
+  // Parse and validate date
+  const parsedDate = new Date(dateParam);
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw handleError(new ValidationError('Invalid date format'), logContext);
+  }
+
+  const date = startOfDay(parsedDate, { in: tz('UTC') });
 
   const { userId } = event.context;
   const body = await readBody<UpdateFavoriteSongBody>(event);
@@ -35,11 +45,12 @@ export default defineEventHandler<
   const isClearing = body.spotifyId === null;
   const favoriteSong = isClearing
     ? null
-    : 'name' in body && 'trackNumber' in body
+    : 'name' in body && 'trackNumber' in body && 'albumId' in body
       ? {
           spotifyId: body.spotifyId,
           name: body.name,
           trackNumber: body.trackNumber,
+          albumId: body.albumId,
         }
       : null;
 
@@ -47,43 +58,32 @@ export default defineEventHandler<
   if (!isClearing && !favoriteSong) {
     throw handleError(
       new ValidationError(
-        'Missing required fields: spotifyId, name, and trackNumber are required',
+        'Missing required fields: spotifyId, name, trackNumber, and albumId are required',
       ),
       logContext,
     );
   }
 
-  logger.info('Updating favorite song for album listen', {
+  logger.info('Updating favorite song for daily listen', {
     ...logContext,
-    albumListenId,
+    date: date.toISOString(),
     isClearing,
   });
 
   const repository = new DailyListenRepository();
 
   try {
-    const result = await repository.updateFavoriteSong(
-      userId,
-      albumListenId,
-      favoriteSong,
-    );
+    await repository.updateFavoriteSong(userId, date, favoriteSong);
 
     logger.info('Successfully updated favorite song', {
       ...logContext,
-      albumListenId,
+      date: date.toISOString(),
     });
 
+    // Return the favoriteSong with Spotify album ID (from request body)
+    // The database stores the internal album ID, but the API returns Spotify ID
     return {
-      favoriteSong:
-        result.favoriteSongId &&
-        result.favoriteSongName &&
-        result.favoriteSongTrackNumber
-          ? {
-              spotifyId: result.favoriteSongId,
-              name: result.favoriteSongName,
-              trackNumber: result.favoriteSongTrackNumber,
-            }
-          : null,
+      favoriteSong,
     };
   } catch (error) {
     // Handle Prisma P2025 (record not found)
@@ -94,14 +94,14 @@ export default defineEventHandler<
       error.code === 'P2025'
     ) {
       throw handleError(
-        new NotFoundError('Album listen', { albumListenId }),
+        new NotFoundError('Daily listen', { date: dateParam }),
         logContext,
       );
     }
 
     throw handleError(error, {
       ...logContext,
-      albumListenId,
+      date: dateParam,
     });
   }
 });

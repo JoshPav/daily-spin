@@ -60,6 +60,7 @@ export const listenMetadata = createFactory<ListenMetadata>(() => ({
 }));
 
 export const dailyAlbumListen = createFactory<DailyAlbumListen>(() => ({
+  id: uuid(),
   album: album(),
   listenMetadata: listenMetadata(),
 }));
@@ -69,6 +70,8 @@ export const addAlbumListenBody = createFactory<AddAlbumListenBody>(() => ({
   listenMetadata: listenMetadata(),
   date: date.recent().toISOString(),
 }));
+
+// Note: addAlbumListenBody doesn't need 'id' since it's for POST requests (id is server-generated)
 
 export const backlogArtist = createFactory<BacklogArtist>(() => ({
   spotifyId: uuid(),

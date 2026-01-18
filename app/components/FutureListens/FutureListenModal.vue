@@ -21,7 +21,6 @@
           </div>
         </div>
 
-        <!-- Album info (centered) -->
         <div class="text-center">
           <h3
             class="font-montserrat text-xl font-bold text-white leading-tight"
@@ -35,16 +34,14 @@
 
         <!-- Actions -->
         <div class="flex flex-col gap-3 w-full">
-          <UButton
+          <OpenInSpotifyButton
+            variant="solid"
             block
-            color="primary"
+            type="album"
+            text="Open in Spotify"
             size="lg"
-            :to="spotifyUrl"
-            target="_blank"
-          >
-            <UIcon :name="Icons.SPOTIFY" class="mr-2" />
-            Open in Spotify
-          </UButton>
+            :spotify-id="futureListenItem.id"
+          />
           <UButton
             block
             color="neutral"
@@ -53,7 +50,7 @@
             :loading="removing"
             @click="handleRemove"
           >
-            <UIcon name="i-lucide-calendar-x" class="mr-2" />
+            <UIcon :name="Icons.CALENDAR.REMOVE" class="size-4.5" />
             Remove from schedule
           </UButton>
         </div>
@@ -66,6 +63,7 @@
 import { Icons } from '~/components/common/icons';
 import { formatDate } from '~/utils/dateUtils';
 import type { FutureListenItem } from '~~/shared/schema';
+import { album } from '~~/tests/factories/api.factory';
 
 const { futureListenItem } = defineProps<{
   futureListenItem: FutureListenItem;

@@ -10,14 +10,7 @@
       <div
         class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
       >
-        <button
-          v-if="isToday"
-          class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-[#1ed760] hover:scale-110 active:scale-105"
-          @click.stop="openAddModal"
-        >
-          <PlusCircleIcon class="w-9 h-9" />
-        </button>
-        <UTooltip v-else text="No albums listened to this day">
+        <UTooltip text="No albums listened to this day">
           <span>—</span>
         </UTooltip>
       </div>
@@ -27,7 +20,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { LazyDailyListensModal, LazyLogAlbumModal } from '#components';
+import { LazyDailyListensModal } from '#components';
 import type { DailyListens } from '#shared/schema';
 import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
@@ -38,12 +31,8 @@ const { dayListens, pending = false } = defineProps<{
 
 const overlay = useOverlay();
 const dailyListensModal = overlay.create(LazyDailyListensModal);
-const addAlbumModal = overlay.create(LazyLogAlbumModal);
 
-const {
-  date,
-  relative: { isToday },
-} = useDate(dayListens.date);
+const { date } = useDate(dayListens.date);
 
 const hasAlbums = computed(() => dayListens.albums.length > 0);
 
@@ -54,10 +43,6 @@ const albumCardInfo = computed<AlbumCardInfo[]>(() =>
     albumName: a.album.albumName,
   })),
 );
-
-const openAddModal = () => {
-  addAlbumModal.open({ dateOfListen: date.value });
-};
 
 const handleClick = () => {
   if (!hasAlbums.value) return;

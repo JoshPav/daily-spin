@@ -1,18 +1,25 @@
 <template>
-  <div class="flex flex-col gap-3">
-    <!-- Artist Header -->
-    <div class="flex items-center gap-3 px-3">
-      <UAvatar :src="artistImage" :alt="artist.name" size="lg" />
-      <div class="flex flex-col">
-        <div class="text-lg font-bold text-white">
-          <HighlightedText :text="artist.name" :search-term="searchTerm" />
-        </div>
-        <div class="text-sm text-muted">
-          {{ albumCount }}
-          {{ albumCount === 1 ? 'album' : 'albums' }}
+  <CollapsibleSection
+    v-model="open"
+    variant="ghost"
+    size="xl"
+    container-class="flex flex-col gap-3"
+    button-class="justify-start"
+  >
+    <template #trigger>
+      <div class="flex items-center gap-3 flex-1">
+        <UAvatar :src="artistImage" :alt="artist.name" size="lg" />
+        <div class="flex flex-col items-start">
+          <div class="text-lg font-bold text-white">
+            <HighlightedText :text="artist.name" :search-term="searchTerm" />
+          </div>
+          <div class="text-sm text-muted">
+            {{ albumCount }}
+            {{ albumCount === 1 ? 'album' : 'albums' }}
+          </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <!-- Albums in this group -->
     <div class="flex flex-col gap-3 pl-4">
@@ -25,7 +32,7 @@
         @deleted="emit('deleted')"
       />
     </div>
-  </div>
+  </CollapsibleSection>
 </template>
 
 <script setup lang="ts">
@@ -41,6 +48,7 @@ const emit = defineEmits<{
   deleted: [];
 }>();
 
+const open = ref(false);
 const albumCount = computed(() => props.albums.length);
 
 // Get artist image from first album (Spotify doesn't provide artist images in simplified artist objects)
