@@ -4,35 +4,36 @@ import { createConsola, type LogLevel } from 'consola';
  * Centralized logger configuration for server-side logging.
  *
  * Log level can be set via LOG_LEVEL environment variable:
- * - Accepts numeric values: 0 (trace) through 6 (fatal)
- * - Accepts level names: trace, debug, verbose, info, warn, error, fatal
+ * - Accepts numeric values: 0-5 (higher = more verbose)
+ * - Accepts level names: fatal, error, warn, log, info, debug, trace, verbose
  *
  * Default log levels by environment (when LOG_LEVEL is not set):
  * - Production: info (3)
- * - Staging: debug (1)
- * - Development: trace (0) - all levels
+ * - Staging: debug (4)
+ * - Development: trace (5) - all levels
  */
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Map of log level names to numeric values
+// Map of log level names to numeric values (higher = more verbose)
 const logLevelMap: Record<string, LogLevel> = {
-  trace: 0,
-  debug: 1,
-  verbose: 2,
+  fatal: 0,
+  error: 0,
+  warn: 1,
+  log: 2,
   info: 3,
-  warn: 4,
-  error: 5,
-  fatal: 6,
+  debug: 4,
+  trace: 5,
+  verbose: 5,
 };
 
-// Environment-based default log level
-const defaultLogLevel: LogLevel = isDevelopment ? 0 : isProduction ? 3 : 2;
+// Environment-based default log level (higher = more verbose)
+const defaultLogLevel: LogLevel = isDevelopment ? 5 : isProduction ? 3 : 4;
 
 /**
  * Parse LOG_LEVEL environment variable.
- * Accepts numeric values (0-6) or level names (trace, debug, info, warn, error, fatal).
+ * Accepts numeric values (0-5) or level names (fatal, error, warn, log, info, debug, trace, verbose).
  */
 function parseLogLevel(level: string | undefined): LogLevel | undefined {
   if (!level) return undefined;
@@ -41,7 +42,7 @@ function parseLogLevel(level: string | undefined): LogLevel | undefined {
 
   // Try parsing as number
   const numeric = Number(trimmed);
-  if (!Number.isNaN(numeric) && numeric >= 0 && numeric <= 6) {
+  if (!Number.isNaN(numeric) && numeric >= 0 && numeric <= 5) {
     return numeric as LogLevel;
   }
 
@@ -75,28 +76,6 @@ export function createTaggedLogger(tag: string) {
   return logger.withTag(tag);
 }
 
-/**
- * Log levels:
- * - trace (0): Very detailed, function entry/exit (dev only)
- * - debug (1): Detailed diagnostic information (dev/staging)
- * - info (3): Important business events
- * - warn (4): Unexpected behavior, but operation succeeded
- * - error (5): Operation failed, requires investigation
- * - fatal (6): Application crash, immediate attention
- */
-
-/**
- * Filters sensitive data from objects before logging.
- * Removes access tokens, refresh tokens, passwords, and other sensitive fields.
- *
- * @example
- * const safeData = filterSensitiveData({
- *   userId: '123',
- *   accessToken: 'secret_token',
- *   albumName: 'Abbey Road',
- * });
- * // Returns: { userId: '123', albumName: 'Abbey Road' }
- */
 export function filterSensitiveData(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
