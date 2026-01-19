@@ -1,4 +1,5 @@
 import { endOfDay, startOfDay, subDays } from 'date-fns';
+import { type Ref, ref, watch } from 'vue';
 import type {
   DailyListens,
   FavoriteSong,
@@ -35,20 +36,13 @@ export interface UseListensReturn {
 }
 
 export const useListens = (): UseListensReturn => {
-  // Use useState for SSR-safe shared state (isolated per request on server, shared on client)
-  const listensData = useState<DailyListens[]>('listens-data', () => []);
-  const listensPending = useState<boolean>('listens-pending', () => true);
-  const listensLoadingMore = useState<boolean>(
-    'listens-loading-more',
-    () => false,
-  );
-  const listensHasMore = useState<boolean>('listens-has-more', () => true);
-  const listensError = useState<Error | null>('listens-error', () => null);
-  const oldestLoadedDate = useState<Date | null>(
-    'listens-oldest-date',
-    () => null,
-  );
-  const initialized = useState<boolean>('listens-initialized', () => false);
+  const listensData = ref<DailyListens[]>([]);
+  const listensPending = ref(true);
+  const listensLoadingMore = ref(false);
+  const listensHasMore = ref(true);
+  const listensError = ref<Error | null>(null);
+  const oldestLoadedDate = ref<Date | null>(null);
+  const initialized = ref(false);
 
   const updateFavoriteSongForDate = (
     date: string,
@@ -147,30 +141,19 @@ export const useListens = (): UseListensReturn => {
     await fetchInitial();
   };
 
-  // Wait for auth to be ready before fetching (only once per environment)
+  // Wait for auth to be ready before fetching
   const { loading: authLoading } = useAuth();
 
-  // On client, reset initialization if server didn't complete the fetch
-  // This handles SSR hydration where initialized=true but data wasn't loaded
-  const needsClientInit =
-    import.meta.client &&
-    initialized.value &&
-    listensPending.value &&
-    listensData.value.length === 0;
-
-  if (!initialized.value || needsClientInit) {
-    // Set immediately to prevent race condition with multiple synchronous calls
-    initialized.value = true;
-    watch(
-      authLoading,
-      (isLoading) => {
-        if (!isLoading) {
-          fetchInitial();
-        }
-      },
-      { immediate: true },
-    );
-  }
+  watch(
+    authLoading,
+    (isLoading) => {
+      if (!isLoading && !initialized.value) {
+        initialized.value = true;
+        fetchInitial();
+      }
+    },
+    { immediate: true },
+  );
 
   return {
     data: listensData,

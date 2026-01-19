@@ -33,13 +33,21 @@ import type { AlbumTrack } from '~/composables/api/useAlbumTracks';
 import { formatDate } from '~/utils/dateUtils';
 import type { DailyListens, FavoriteSong } from '~~/shared/schema';
 
-const props = defineProps<{ dailyListens: DailyListens }>();
+const props = defineProps<{
+  dailyListens: DailyListens;
+  onFavoriteSongUpdate: (
+    date: string,
+    favoriteSong: FavoriteSong | null,
+  ) => void;
+}>();
 
 const emit = defineEmits<{
   close: [];
 }>();
 
-const { saving, updateFavoriteSong, clearFavoriteSong } = useFavoriteSong();
+const { saving, updateFavoriteSong, clearFavoriteSong } = useFavoriteSong({
+  onUpdate: props.onFavoriteSongUpdate,
+});
 
 // Ref to carousel for programmatic control
 const carouselRef = ref<InstanceType<typeof AlbumCarousel>>();

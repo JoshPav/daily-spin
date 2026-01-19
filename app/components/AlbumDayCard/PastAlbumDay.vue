@@ -28,12 +28,20 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { LazyDailyListensModal } from '#components';
-import type { DailyListens } from '#shared/schema';
+import type { DailyListens, FavoriteSong } from '#shared/schema';
 import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
-const { dayListens, pending = false } = defineProps<{
+const {
+  dayListens,
+  pending = false,
+  onFavoriteSongUpdate,
+} = defineProps<{
   dayListens: DailyListens;
   pending?: boolean;
+  onFavoriteSongUpdate: (
+    date: string,
+    favoriteSong: FavoriteSong | null,
+  ) => void;
 }>();
 
 const overlay = useOverlay();
@@ -56,7 +64,10 @@ const albumCardInfo = computed<AlbumCardInfo[]>(() =>
 
 const handleClick = () => {
   if (!hasAlbums.value) return;
-  dailyListensModal.open({ dailyListens: dayListens });
+  dailyListensModal.open({
+    dailyListens: dayListens,
+    onFavoriteSongUpdate,
+  });
 };
 
 // Sticky month header tracking

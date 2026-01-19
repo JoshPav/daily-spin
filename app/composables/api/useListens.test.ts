@@ -150,20 +150,6 @@ describe('useListens', () => {
       expect(error.value?.message).toBe('Network error');
       expect(pending.value).toBe(false);
     });
-
-    it('should only fetch once even with multiple useListens calls', async () => {
-      mockAuthLoading.value = true;
-      mockFetch.mockResolvedValue([]);
-
-      useListens();
-      useListens();
-      useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('fetchMore', () => {
@@ -443,27 +429,6 @@ describe('useListens', () => {
       expect(() => {
         updateFavoriteSongForDate('2026-01-20', createFavoriteSong('album-1'));
       }).not.toThrow();
-    });
-  });
-
-  describe('shared state', () => {
-    it('should share state between multiple useListens calls', async () => {
-      mockAuthLoading.value = true;
-      mockFetch.mockResolvedValueOnce([
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-      ]);
-
-      const result1 = useListens();
-      const result2 = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      // Both should reference the same data
-      expect(result1.data.value).toBe(result2.data.value);
-      expect(result1.data.value).toHaveLength(1);
     });
   });
 });

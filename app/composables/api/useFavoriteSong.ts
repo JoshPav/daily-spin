@@ -1,10 +1,12 @@
 import type { FavoriteSong, UpdateFavoriteSong } from '#shared/schema';
 
-export const useFavoriteSong = () => {
+interface UseFavoriteSongOptions {
+  onUpdate?: (date: string, favoriteSong: FavoriteSong | null) => void;
+}
+
+export const useFavoriteSong = (options: UseFavoriteSongOptions = {}) => {
   const saving = ref(false);
   const error = ref<string | null>(null);
-
-  const { updateFavoriteSongForDate } = useListens();
 
   const updateFavoriteSong = async (
     date: string,
@@ -39,8 +41,8 @@ export const useFavoriteSong = () => {
         },
       );
 
-      // Update the shared listens state so it persists across component re-renders
-      updateFavoriteSongForDate(date, result.favoriteSong);
+      // Notify caller of the update so they can update their state
+      options.onUpdate?.(date, result.favoriteSong);
 
       return result.favoriteSong;
     } catch (e) {
