@@ -62,23 +62,6 @@ export type InferredResponse<TSchema extends ApiSchema> =
  * @param schema - ApiSchema object containing Zod schemas for params, query, body, and response
  * @param handler - Async function that receives the validated event and returns the response
  * @returns A Nitro event handler
- *
- * @example
- * // Define schema in shared/schemas/listens.schema.ts
- * export const getListensSchema = {
- *   query: z.object({
- *     startDate: z.string(),
- *     endDate: z.string(),
- *   }),
- *   response: z.array(DailyListensSchema),
- * } satisfies ApiSchema;
- *
- * // Use in handler
- * export default createEventHandler(getListensSchema, async (event) => {
- *   const { startDate, endDate } = event.validatedQuery;
- *   // Types are inferred, validation is automatic!
- *   return listens;
- * });
  */
 export function createEventHandler<TSchema extends ApiSchema>(
   schema: TSchema,

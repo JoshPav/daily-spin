@@ -1,111 +1,84 @@
-import { PlaylistType } from '@prisma/client';
+import type { PlaylistType } from '@prisma/client';
 import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import type { ConsolaInstance } from 'consola';
 import { UserPlaylistRepository } from '~~/server/repositories/userPlaylist.repository';
-import { createTaggedLogger } from '~~/server/utils/logger';
+import type { UserWithAuthTokens } from '../user.service';
+import { SpotifyService } from './spotify.service';
 
-const logger = createTaggedLogger('Service:Playlist');
+export type PlaylistConfig = {
+  type: PlaylistType;
+  name: string;
+  description: string;
+};
 
-export class PlaylistService {
+type SpotifyContext = {
+  spotifyClient: SpotifyApi;
+  spotifyUserId: string;
+};
+
+export abstract class PlaylistService {
   constructor(
-    private futureListenRepo = new FutureListenRepository(),
+    private logger: ConsolaInstance,
+    private spotifyService: SpotifyService = new SpotifyService(),
     private userPlaylistRepo = new UserPlaylistRepository(),
   ) {}
+
+  protected async getSpotifyContext(
+    user: UserWithAuthTokens,
+  ): Promise<SpotifyContext> {
+    const spotifyClient = await this.spotifyService.getClientForUser(
+      user.id,
+      user.auth,
+    );
+    const spotifyUser = await spotifyClient.currentUser.profile();
+    return { spotifyClient, spotifyUserId: spotifyUser.id };
+  }
 
   /**
    * Creates or updates the daily-spin playlist for today's scheduled album
    * @returns Playlist details or null if no album scheduled
    */
-  async updateTodaysAlbumPlaylist(
+  protected async upsertSpotifyPlaylist(
     userId: string,
     spotifyUserId: string,
     spotifyClient: SpotifyApi,
-  ): Promise<{
-    playlistId: string;
-    playlistUrl: string;
-    trackCount: number;
-    isNew: boolean;
-  } | null> {
-    logger.info("Updating today's album playlist", { userId });
-
-    // Get today's scheduled album
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const futureListen = await this.futureListenRepo.getFutureListenByDate(
-      userId,
-      today,
-    );
-
-    if (!futureListen) {
-      logger.debug('No album scheduled for today', {
-        userId,
-        date: today.toISOString(),
-      });
-      return null;
-    }
-
-    const { album } = futureListen;
-    const artists = album.artists.map((a) => ({ name: a.artist.name }));
-
-    logger.info('Found scheduled album', {
-      userId,
-      albumId: album.spotifyId,
-      albumName: album.name,
-    });
-
-    // Fetch album tracks from Spotify
-    const tracks = await this.getAlbumTracks(spotifyClient, album.spotifyId);
-
-    if (tracks.length === 0) {
-      logger.warn('Album has no tracks', { userId, albumId: album.spotifyId });
-      return null;
-    }
-
-    const trackUris = tracks.map((track) => track.uri);
-    const playlistName = this.generatePlaylistName(album.name, artists);
-
-    // Get or create playlist
+    trackUris: string[],
+    config: PlaylistConfig,
+  ) {
     const { playlistId, isNew } = await this.getOrCreatePlaylist(
       userId,
       spotifyUserId,
       spotifyClient,
-      playlistName,
+      config,
     );
 
-    // Update playlist with today's album
-    await this.updatePlaylist(
-      spotifyClient,
-      playlistId,
-      playlistName,
-      trackUris,
-    );
+    await this.updatePlaylist(spotifyClient, playlistId, trackUris, config);
 
-    const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
-
-    logger.info('Successfully updated playlist', {
+    this.logger.info('Successfully updated playlist', {
       userId,
       playlistId,
-      trackCount: tracks.length,
+      name: config.name,
+      type: config.type,
+      trackCount: trackUris.length,
       isNew,
     });
 
-    return { playlistId, playlistUrl, trackCount: tracks.length, isNew };
+    return {
+      playlistId,
+      trackCount: trackUris.length,
+      isNew,
+    };
   }
 
-  /**
-   * Gets existing playlist or creates a new one.
-   * Handles case where user deleted the playlist (404) by creating a new one.
-   */
   private async getOrCreatePlaylist(
     userId: string,
     spotifyUserId: string,
     spotifyClient: SpotifyApi,
-    playlistName: string,
+    playlistConfig: PlaylistConfig,
   ): Promise<{ playlistId: string; isNew: boolean }> {
     const existingPlaylist = await this.userPlaylistRepo.getByType(
       userId,
-      PlaylistType.album_of_the_day,
+      playlistConfig.type,
     );
 
     if (existingPlaylist) {
@@ -120,7 +93,7 @@ export class PlaylistService {
       }
 
       // Playlist was deleted by user, create a new one
-      logger.info('Existing playlist was deleted, creating new one', {
+      this.logger.info('Existing playlist was deleted, creating new one', {
         userId,
         oldPlaylistId: existingPlaylist.spotifyPlaylistId,
       });
@@ -130,17 +103,17 @@ export class PlaylistService {
     const playlist = await this.createSpotifyPlaylist(
       spotifyClient,
       spotifyUserId,
-      playlistName,
+      playlistConfig,
     );
 
     // Save to database (upsert handles both insert and update)
     await this.userPlaylistRepo.upsert(
       userId,
-      PlaylistType.album_of_the_day,
+      playlistConfig.type,
       playlist.id,
     );
 
-    logger.info('Created new playlist and saved to database', {
+    this.logger.info('Created new playlist and saved to database', {
       userId,
       playlistId: playlist.id,
     });
@@ -165,19 +138,15 @@ export class PlaylistService {
     }
   }
 
-  /**
-   * Updates playlist name and replaces all tracks
-   */
   private async updatePlaylist(
     spotifyClient: SpotifyApi,
     playlistId: string,
-    name: string,
     trackUris: string[],
+    playlistConfig: PlaylistConfig,
   ): Promise<void> {
-    // Update name and description
     await spotifyClient.playlists.changePlaylistDetails(playlistId, {
-      name,
-      description: 'Auto-generated by DailySpin - Your album of the day',
+      name: playlistConfig.name,
+      description: playlistConfig.description,
     });
 
     // Replace all tracks (clears existing and adds new in one call)
@@ -186,36 +155,17 @@ export class PlaylistService {
     });
   }
 
-  private async getAlbumTracks(
-    spotifyClient: SpotifyApi,
-    albumSpotifyId: string,
-  ): Promise<{ uri: string }[]> {
-    logger.debug('Fetching album tracks', { albumSpotifyId });
-
-    const albumTracks = await spotifyClient.albums.tracks(albumSpotifyId);
-
-    return albumTracks.items.map((track) => ({ uri: track.uri }));
-  }
-
   private async createSpotifyPlaylist(
     spotifyClient: SpotifyApi,
     spotifyUserId: string,
-    name: string,
+    { name, description }: PlaylistConfig,
   ): Promise<{ id: string }> {
-    logger.debug('Creating Spotify playlist', { spotifyUserId, name });
+    this.logger.debug('Creating Spotify playlist', { spotifyUserId, name });
 
     return spotifyClient.playlists.createPlaylist(spotifyUserId, {
       name,
-      description: 'Auto-generated by DailySpin - Your album of the day',
+      description,
       public: false,
     });
-  }
-
-  private generatePlaylistName(
-    albumName: string,
-    artists: { name: string }[],
-  ): string {
-    const artistNames = artists.map((a) => a.name).join(', ');
-    return `DailySpin: ${albumName} - ${artistNames}`;
   }
 }

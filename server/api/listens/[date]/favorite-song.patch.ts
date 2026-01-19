@@ -3,7 +3,6 @@ import { startOfDay } from 'date-fns';
 import { DailyListenRepository } from '~~/server/repositories/dailyListen.repository';
 import { UserRepository } from '~~/server/repositories/user.repository';
 import { SongOfDayPlaylistService } from '~~/server/services/spotify/songOfDayPlaylist.service';
-import { SpotifyService } from '~~/server/services/spotify/spotify.service';
 import { NotFoundError } from '~~/server/utils/errors';
 import {
   createContextLogger,
@@ -52,27 +51,21 @@ export default createEventHandler(updateFavoriteSongSchema, async (event) => {
   // Update Song of the Day playlist (don't block on failure)
   try {
     const userRepo = new UserRepository();
-    const spotifyService = new SpotifyService();
-
     const user = await userRepo.getUser(userId);
     const account = user?.accounts[0];
 
     if (account) {
-      const auth = {
-        accessToken: account.accessToken,
-        refreshToken: account.refreshToken,
-        accessTokenExpiresAt: account.accessTokenExpiresAt,
-        scope: account.scope,
-      };
-
-      const spotifyClient = await spotifyService.getClientForUser(userId, auth);
       const playlistService = new SongOfDayPlaylistService();
 
-      await playlistService.updateSongOfDayPlaylist(
-        userId,
-        account.accountId,
-        spotifyClient,
-      );
+      await playlistService.updateSongOfDayPlaylist({
+        id: userId,
+        auth: {
+          accessToken: account.accessToken,
+          refreshToken: account.refreshToken,
+          accessTokenExpiresAt: account.accessTokenExpiresAt,
+          scope: account.scope,
+        },
+      });
 
       log.info('Successfully updated Song of the Day playlist');
     }

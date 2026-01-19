@@ -1,5 +1,4 @@
-import { PlaylistService } from '~~/server/services/spotify/playlist.service';
-import { SpotifyService } from '~~/server/services/spotify/spotify.service';
+import { TodaysAlbumPlaylistService } from '~~/server/services/spotify/todaysAlbumPlaylist.service';
 import { UserService } from '~~/server/services/user.service';
 import { createTaggedLogger } from '~~/server/utils/logger';
 
@@ -20,8 +19,7 @@ export const updateTodaysAlbumPlaylist = async (): Promise<TaskResult> => {
   logger.info('Starting updateTodaysAlbumPlaylist task');
 
   const userService = new UserService();
-  const playlistService = new PlaylistService();
-  const spotifyService = new SpotifyService();
+  const playlistService = new TodaysAlbumPlaylistService();
 
   // Fetch users with the feature enabled
   const users = await userService.fetchUsersForPlaylistCreation();
@@ -46,25 +44,10 @@ export const updateTodaysAlbumPlaylist = async (): Promise<TaskResult> => {
   // Process users in parallel
   const results = await Promise.allSettled(
     users.map(async (user) => {
-      const { id: userId, auth } = user;
+      const { id: userId } = user;
 
       try {
-        // Get Spotify client for user
-        const spotifyClient = await spotifyService.getClientForUser(
-          userId,
-          auth,
-        );
-
-        // Get Spotify user ID
-        const spotifyUser = await spotifyClient.currentUser.profile();
-        const spotifyUserId = spotifyUser.id;
-
-        // Create or update playlist
-        const result = await playlistService.updateTodaysAlbumPlaylist(
-          userId,
-          spotifyUserId,
-          spotifyClient,
-        );
+        const result = await playlistService.updateTodaysAlbumPlaylist(user);
 
         if (result) {
           logger.info('Successfully processed user playlist', {
