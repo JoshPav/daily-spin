@@ -2,7 +2,15 @@
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type { DailyListens, FutureListenItem } from '~~/shared/schema';
 
-const { data, pending, error, loadingMore, hasMore, fetchMore } = useListens();
+const {
+  data,
+  pending,
+  error,
+  loadingMore,
+  hasMore,
+  fetchMore,
+  updateFavoriteSongForDate,
+} = useListens();
 const { data: futureListensData } = useFutureListens();
 
 // ScrollArea ref
@@ -227,6 +235,7 @@ onUnmounted(() => {
           <PastAlbumDay
             v-else-if="day.dailyListens"
             :day-listens="day.dailyListens"
+            :on-favorite-song-update="updateFavoriteSongForDate"
             :ref="el => {
               if (day.date.split('T')[0] === today) {
                 todayItem = (el as any)?.$el ?? el ?? null;
