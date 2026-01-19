@@ -34,6 +34,7 @@ import {
   mockSpotifyApi,
   mockWithAccessToken,
 } from '~~/tests/mocks/spotifyMock';
+import { processListens as processEvent } from './processListens';
 
 vi.stubGlobal('defineTask', (task: Task<string>) => task);
 
@@ -46,15 +47,9 @@ describe('processListens Task Integration Tests', () => {
 
   const spotifyClientId = 'test-spotify-client-id';
 
-  let processEvent: () => ReturnType<Task['run']>;
-
   beforeAll(async () => {
     vi.setSystemTime(today);
     mockRuntimeConfig.spotifyClientId = spotifyClientId;
-
-    const eventHandler = (await import('./processListens')).default.run;
-    processEvent = () =>
-      eventHandler({ name: 'event', context: {}, payload: {} });
   });
 
   afterEach(() => {

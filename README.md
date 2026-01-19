@@ -71,6 +71,9 @@ DATABASE_URL=postgresql://user:password@localhost:5432/album_history
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
+
+# Required for production cron jobs
+CRON_SECRET=your_cron_secret
 ```
 
 ---
@@ -126,6 +129,18 @@ The app is deployed on **Vercel**.
 * Ensure all environment variables are configured in the Vercel dashboard
 * Prisma migrations should be handled as part of CI or a dedicated migration step
 * Uses **Node 24 runtime** on Vercel
+
+### Scheduled Tasks
+
+Scheduled tasks are managed via [cron-job.org](https://cron-job.org) (Vercel Hobby tier doesn't support multiple cron schedules).
+
+| Task | Endpoint | Schedule |
+|------|----------|----------|
+| Process listens | `/api/cron/process-listens` | Hourly (0 * * * *) |
+| Schedule backlog| `/api/cron/schedule-backlog` | Daily 1 AM UTC (0 1 * * *) |
+| Update playlist | `/api/cron/update-playlist` | Daily 2 AM UTC (0 2 * * *) |
+
+Each cron job requires an `Authorization: Bearer <CRON_SECRET>` header for authentication.
 
 ---
 

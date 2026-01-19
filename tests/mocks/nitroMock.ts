@@ -1,4 +1,5 @@
 import type { defineEventHandler } from 'h3';
+import type { Task } from 'nitropack/types';
 import { vi } from 'vitest';
 
 export type EventHandler<T = unknown> = ReturnType<
@@ -42,3 +43,5 @@ vi.stubGlobal(
 vi.stubGlobal('setResponseStatus', (event: HandlerEvent, status: number) => {
   (event as unknown as { _responseStatus: number })._responseStatus = status;
 });
+
+vi.stubGlobal('defineTask', (task: Task<string>) => task);

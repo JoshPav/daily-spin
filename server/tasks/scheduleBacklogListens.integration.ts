@@ -1,4 +1,3 @@
-import type { Task } from 'nitropack/types';
 import {
   afterEach,
   beforeAll,
@@ -15,21 +14,15 @@ import {
   getBacklogItemsForUser,
   getFutureListensForUser,
 } from '~~/tests/db/utils';
-
-vi.stubGlobal('defineTask', (task: Task<string>) => task);
+import { scheduleBacklogListens as scheduleEvent } from './scheduleBacklogListens';
 
 describe('scheduleBacklogListens Task Integration Tests', () => {
   const today = new Date('2026-01-15T03:00:00.000Z'); // 3 AM UTC when task runs
 
-  let scheduleEvent: () => ReturnType<Task['run']>;
   let userId: string;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
-
-    const eventHandler = (await import('./scheduleBacklogListens')).default.run;
-    scheduleEvent = () =>
-      eventHandler({ name: 'event', context: {}, payload: {} });
   });
 
   beforeEach(async () => {
