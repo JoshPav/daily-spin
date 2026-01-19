@@ -7,33 +7,34 @@ import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 import type { DailyListens, GetFutureListensResponse } from '~~/shared/schema';
+import { resetListensState } from '~/composables/api/useListens';
 import { album, dailyAlbumListen } from '~~/tests/factories/component.factory';
 // @ts-expect-error - Vue files are handled by Nuxt test environment at runtime
 import Dashboard from './dashboard.vue';
 
+// Helper to wait for all async operations to complete
+const waitForAsyncUpdates = async () => {
+  // Multiple rounds to ensure all microtasks and Vue updates complete
+  await flushPromises();
+  await nextTick();
+  await flushPromises();
+  await nextTick();
+};
+
 /**
- * EXPERIMENTAL: Component tests using API-level mocking with registerEndpoint.
+ * Component tests using API-level mocking with registerEndpoint.
  *
  * This approach:
  * - Uses registerEndpoint to mock Nuxt's internal API routes
  * - Mocks only useAuth to bypass auth loading (minimal composable mocking)
  * - Lets the real useListens and useFutureListens composables run
  *
- * FINDINGS:
+ * Key findings:
  * 1. MSW doesn't work for Nuxt API routes because $fetch uses Nitro's
  *    internal router, not actual HTTP requests.
  * 2. registerEndpoint IS the correct approach for mocking Nuxt API routes.
  * 3. The real useListens composable CAN run with API-level mocking.
- *
- * LIMITATIONS:
- * - useState shares state between tests, causing test isolation issues.
- * - Once data is loaded in one test, it persists in subsequent tests.
- * - Tests must be carefully ordered or run in isolation.
- *
- * RECOMMENDATION:
- * For reliable, isolated component tests, prefer composable-level mocking
- * (see dashboard.component.ts). API-level mocking is more realistic but
- * requires careful state management.
+ * 4. Module-level singleton state with resetListensState() enables test isolation.
  */
 
 // Mock only useAuth to bypass auth loading - use proper Vue refs
@@ -51,29 +52,34 @@ mockNuxtImport('useAuth', () => {
   });
 });
 
-// Skip these tests by default due to useState isolation issues.
-// Run with: bun vitest run --config vitest.config.component.ts app/pages/dashboard.api-mocking.component.ts
-describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => {
+describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
   const TODAY = new Date('2026-01-15T12:00:00.000Z');
+
+  // Store unregister functions to clean up between tests
+  const unregisterFns: Array<() => void> = [];
 
   // Helper to set up API handlers using Nuxt's registerEndpoint
   const setupListensHandler = (listens: DailyListens[]) => {
-    registerEndpoint('/api/listens', {
+    const unregister = registerEndpoint('/api/listens', {
       method: 'GET',
       handler: () => listens,
     });
+    unregisterFns.push(unregister);
   };
 
   const setupFutureListensHandler = (
     response: GetFutureListensResponse = { items: [] },
   ) => {
-    registerEndpoint('/api/future-listens', {
+    const unregister = registerEndpoint('/api/future-listens', {
       method: 'GET',
       handler: () => response,
     });
+    unregisterFns.push(unregister);
   };
 
   beforeEach(() => {
+    // Reset state BEFORE each test to ensure clean slate
+    resetListensState();
     vi.setSystemTime(TODAY);
     // Set up default handlers
     setupFutureListensHandler();
@@ -81,19 +87,19 @@ describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => 
 
   afterEach(() => {
     vi.useRealTimers();
+    // Clean up registered endpoints
+    unregisterFns.forEach((fn) => fn());
+    unregisterFns.length = 0;
   });
 
   describe('Album Display with registerEndpoint', () => {
-    // Note: Empty state test runs first because useState shares state between tests.
-    // Once data is loaded in a test, it persists in subsequent tests.
     it('should show empty state when API returns empty array', async () => {
       // Given - Empty response from API
       setupListensHandler([]);
 
       // When
       const wrapper = await mountSuspended(Dashboard);
-      await flushPromises();
-      await nextTick();
+      await waitForAsyncUpdates();
 
       // Then
       expect(wrapper.text()).toContain('No listens yet for this month');
@@ -118,8 +124,7 @@ describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => 
 
       // When - Mount the dashboard and wait for async data
       const wrapper = await mountSuspended(Dashboard);
-      await flushPromises();
-      await nextTick();
+      await waitForAsyncUpdates();
 
       // Then - Album image should be visible
       const img = wrapper.find('img');
@@ -145,8 +150,7 @@ describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => 
 
       // When
       const wrapper = await mountSuspended(Dashboard);
-      await flushPromises();
-      await nextTick();
+      await waitForAsyncUpdates();
 
       // Then - Should show count badge
       expect(wrapper.text()).toContain('2');

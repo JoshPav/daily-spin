@@ -1,5 +1,6 @@
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { resetListensState } from '~/composables/api/useListens';
 
 // Create MSW server - handlers will be added per-test
 export const mswServer = setupServer();
@@ -13,6 +14,8 @@ beforeAll(() => {
 afterEach(() => {
   mswServer.resetHandlers();
   vi.clearAllMocks();
+  // Reset module-level singleton state for test isolation
+  resetListensState();
 });
 
 // Close MSW server after all tests
