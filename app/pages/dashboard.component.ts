@@ -55,7 +55,7 @@ mockNuxtImport('useAuth', () => {
 });
 
 // Skip these tests - see documentation above for why
-describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => {
+describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
   const TODAY = new Date('2026-01-15T12:00:00.000Z');
 
   // Store unregister functions to clean up between tests
@@ -89,7 +89,7 @@ describe.skip('Dashboard Page - API-level mocking with registerEndpoint', () => 
   afterEach(() => {
     vi.useRealTimers();
     // Clean up registered endpoints
-    unregisterFns.forEach((fn) => fn());
+    unregisterFns.forEach((fn) => void fn());
     unregisterFns.length = 0;
   });
 
