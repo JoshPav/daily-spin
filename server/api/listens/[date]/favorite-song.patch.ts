@@ -2,8 +2,8 @@ import { tz } from '@date-fns/tz';
 import { startOfDay } from 'date-fns';
 import { DailyListenRepository } from '~~/server/repositories/dailyListen.repository';
 import { UserRepository } from '~~/server/repositories/user.repository';
-import { SongOfDayPlaylistService } from '~~/server/services/songOfDayPlaylist.service';
-import { SpotifyService } from '~~/server/services/spotify.service';
+import { SongOfDayPlaylistService } from '~~/server/services/spotify/songOfDayPlaylist.service';
+import { SpotifyService } from '~~/server/services/spotify/spotify.service';
 import { NotFoundError } from '~~/server/utils/errors';
 import {
   createContextLogger,

@@ -1,24 +1,22 @@
 import { PlaylistType } from '@prisma/client';
 import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { DailyListenRepository } from '../repositories/dailyListen.repository';
-import { UserRepository } from '../repositories/user.repository';
-import { UserPlaylistRepository } from '../repositories/userPlaylist.repository';
-import { createTaggedLogger } from '../utils/logger';
+import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { UserPlaylistRepository } from '~~/server/repositories/userPlaylist.repository';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
-const logger = createTaggedLogger('Service:SongOfDayPlaylist');
+const logger = createTaggedLogger('Service:Playlist');
 
-export class SongOfDayPlaylistService {
+export class PlaylistService {
   constructor(
-    private dailyListenRepo = new DailyListenRepository(),
+    private futureListenRepo = new FutureListenRepository(),
     private userPlaylistRepo = new UserPlaylistRepository(),
-    private userRepo = new UserRepository(),
   ) {}
 
   /**
-   * Updates the Song of the Day playlist with all favorite songs from the current year
-   * @returns Playlist details or null if feature disabled or no favorites
+   * Creates or updates the daily-spin playlist for today's scheduled album
+   * @returns Playlist details or null if no album scheduled
    */
-  async updateSongOfDayPlaylist(
+  async updateTodaysAlbumPlaylist(
     userId: string,
     spotifyUserId: string,
     spotifyClient: SpotifyApi,
@@ -28,34 +26,44 @@ export class SongOfDayPlaylistService {
     trackCount: number;
     isNew: boolean;
   } | null> {
-    logger.info('Updating Song of the Day playlist', { userId });
+    logger.info("Updating today's album playlist", { userId });
 
-    // Check if user has feature enabled
-    const preferences = await this.userRepo.getPreferences(userId);
-    if (!preferences?.createSongOfDayPlaylist) {
-      logger.debug('Song of day playlist feature disabled for user', {
+    // Get today's scheduled album
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const futureListen = await this.futureListenRepo.getFutureListenByDate(
+      userId,
+      today,
+    );
+
+    if (!futureListen) {
+      logger.debug('No album scheduled for today', {
         userId,
+        date: today.toISOString(),
       });
       return null;
     }
 
-    // Get current year
-    const currentYear = new Date().getUTCFullYear();
+    const { album } = futureListen;
+    const artists = album.artists.map((a) => ({ name: a.artist.name }));
 
-    // Fetch all favorite songs for the year
-    const favoriteSongs = await this.dailyListenRepo.getFavoriteSongsForYear(
+    logger.info('Found scheduled album', {
       userId,
-      currentYear,
-    );
-
-    logger.info('Found favorite songs for year', {
-      userId,
-      year: currentYear,
-      count: favoriteSongs.length,
+      albumId: album.spotifyId,
+      albumName: album.name,
     });
 
-    // Generate playlist name
-    const playlistName = `DailySpin - Song of the Day ${currentYear}`;
+    // Fetch album tracks from Spotify
+    const tracks = await this.getAlbumTracks(spotifyClient, album.spotifyId);
+
+    if (tracks.length === 0) {
+      logger.warn('Album has no tracks', { userId, albumId: album.spotifyId });
+      return null;
+    }
+
+    const trackUris = tracks.map((track) => track.uri);
+    const playlistName = this.generatePlaylistName(album.name, artists);
 
     // Get or create playlist
     const { playlistId, isNew } = await this.getOrCreatePlaylist(
@@ -65,12 +73,7 @@ export class SongOfDayPlaylistService {
       playlistName,
     );
 
-    // Build track URIs (Spotify track URIs are in the format: spotify:track:{id})
-    const trackUris = favoriteSongs.map(
-      (song) => `spotify:track:${song.favoriteSongId}`,
-    );
-
-    // Update playlist with all favorite songs
+    // Update playlist with today's album
     await this.updatePlaylist(
       spotifyClient,
       playlistId,
@@ -80,19 +83,14 @@ export class SongOfDayPlaylistService {
 
     const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
 
-    logger.info('Successfully updated Song of the Day playlist', {
+    logger.info('Successfully updated playlist', {
       userId,
       playlistId,
-      trackCount: favoriteSongs.length,
+      trackCount: tracks.length,
       isNew,
     });
 
-    return {
-      playlistId,
-      playlistUrl,
-      trackCount: favoriteSongs.length,
-      isNew,
-    };
+    return { playlistId, playlistUrl, trackCount: tracks.length, isNew };
   }
 
   /**
@@ -107,7 +105,7 @@ export class SongOfDayPlaylistService {
   ): Promise<{ playlistId: string; isNew: boolean }> {
     const existingPlaylist = await this.userPlaylistRepo.getByType(
       userId,
-      PlaylistType.song_of_the_day,
+      PlaylistType.album_of_the_day,
     );
 
     if (existingPlaylist) {
@@ -138,7 +136,7 @@ export class SongOfDayPlaylistService {
     // Save to database (upsert handles both insert and update)
     await this.userPlaylistRepo.upsert(
       userId,
-      PlaylistType.song_of_the_day,
+      PlaylistType.album_of_the_day,
       playlist.id,
     );
 
@@ -179,13 +177,24 @@ export class SongOfDayPlaylistService {
     // Update name and description
     await spotifyClient.playlists.changePlaylistDetails(playlistId, {
       name,
-      description: `Auto-generated by DailySpin - Your favorite songs from ${new Date().getUTCFullYear()}`,
+      description: 'Auto-generated by DailySpin - Your album of the day',
     });
 
     // Replace all tracks (clears existing and adds new in one call)
     await spotifyClient.playlists.updatePlaylistItems(playlistId, {
       uris: trackUris,
     });
+  }
+
+  private async getAlbumTracks(
+    spotifyClient: SpotifyApi,
+    albumSpotifyId: string,
+  ): Promise<{ uri: string }[]> {
+    logger.debug('Fetching album tracks', { albumSpotifyId });
+
+    const albumTracks = await spotifyClient.albums.tracks(albumSpotifyId);
+
+    return albumTracks.items.map((track) => ({ uri: track.uri }));
   }
 
   private async createSpotifyPlaylist(
@@ -197,8 +206,16 @@ export class SongOfDayPlaylistService {
 
     return spotifyClient.playlists.createPlaylist(spotifyUserId, {
       name,
-      description: `Auto-generated by DailySpin - Your favorite songs from ${new Date().getUTCFullYear()}`,
+      description: 'Auto-generated by DailySpin - Your album of the day',
       public: false,
     });
+  }
+
+  private generatePlaylistName(
+    albumName: string,
+    artists: { name: string }[],
+  ): string {
+    const artistNames = artists.map((a) => a.name).join(', ');
+    return `DailySpin: ${albumName} - ${artistNames}`;
   }
 }

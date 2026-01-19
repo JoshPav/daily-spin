@@ -1,5 +1,5 @@
-import { BacklogRepository } from '../repositories/backlog.repository';
-import { createTaggedLogger } from '../utils/logger';
+import { BacklogRepository } from '~~/server/repositories/backlog.repository';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:BacklogCleanup');
 

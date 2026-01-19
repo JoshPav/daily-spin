@@ -1,4 +1,4 @@
-import { RecentlyPlayedService } from '../services/recentlyPlayed.service';
+import { RecentlyPlayedService } from '../services/spotify/recentlyPlayed.service';
 import { UserService } from '../services/user.service';
 import { createTaggedLogger } from '../utils/logger';
 

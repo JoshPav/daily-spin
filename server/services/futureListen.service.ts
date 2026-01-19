@@ -1,6 +1,6 @@
 import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
-import { FutureListenRepository } from '../repositories/futureListen.repository';
-import { createTaggedLogger } from '../utils/logger';
+import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:FutureListen');
 

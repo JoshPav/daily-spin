@@ -4,20 +4,26 @@ import { getTrackListenTime } from '#shared/utils/listenTime.utils';
 import {
   type CreateAlbum,
   DailyListenRepository,
-} from '../repositories/dailyListen.repository';
-import { getAlbumArtwork } from '../utils/albums.utils';
-import { getStartOfDayTimestamp, isPlayedToday } from '../utils/datetime.utils';
-import { createTaggedLogger } from '../utils/logger';
+} from '~~/server/repositories/dailyListen.repository';
+import { BacklogService } from '~~/server/services/backlog.service';
+import { SpotifyService } from '~~/server/services/spotify/spotify.service';
+import type {
+  AuthDetails,
+  UserWithAuthTokens,
+} from '~~/server/services/user.service';
+import { getAlbumArtwork } from '~~/server/utils/albums.utils';
+import {
+  getStartOfDayTimestamp,
+  isPlayedToday,
+} from '~~/server/utils/datetime.utils';
+import { createTaggedLogger } from '~~/server/utils/logger';
 import {
   areTracksInOrder,
   areTracksPlayedContinuously,
   type GroupedTracks,
   groupTracksByAlbum,
   type PlayHistoryWithIndex,
-} from '../utils/tracks.utils';
-import { BacklogService } from './backlog.service';
-import { SpotifyService } from './spotify.service';
-import type { AuthDetails, UserWithAuthTokens } from './user.service';
+} from '~~/server/utils/tracks.utils';
 
 const logger = createTaggedLogger('Service:RecentlyPlayed');
 

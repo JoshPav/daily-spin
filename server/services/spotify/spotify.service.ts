@@ -1,9 +1,15 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { UserRepository } from '~~/server/repositories/user.repository';
+import type { AuthDetails } from '~~/server/services/user.service';
+import {
+  ExternalServiceError,
+  UnauthorizedError,
+} from '~~/server/utils/errors';
+import {
+  createTaggedLogger,
+  filterSensitiveData,
+} from '~~/server/utils/logger';
 import { auth } from '~~/shared/auth';
-import { UserRepository } from '../repositories/user.repository';
-import { ExternalServiceError, UnauthorizedError } from '../utils/errors';
-import { createTaggedLogger, filterSensitiveData } from '../utils/logger';
-import type { AuthDetails } from './user.service';
 
 const logger = createTaggedLogger('Service:Spotify');
 

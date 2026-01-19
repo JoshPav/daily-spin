@@ -3,9 +3,9 @@ import type {
   LinkedPlaylist,
   UserPreferences,
 } from '#shared/schema';
-import { UserRepository } from '../repositories/user.repository';
-import { NotFoundError } from '../utils/errors';
-import { createTaggedLogger } from '../utils/logger';
+import { UserRepository } from '~~/server/repositories/user.repository';
+import { NotFoundError } from '~~/server/utils/errors';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:UserPreferences');
 

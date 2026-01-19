@@ -1,7 +1,7 @@
-import { PlaylistService } from '../services/playlist.service';
-import { SpotifyService } from '../services/spotify.service';
-import { UserService } from '../services/user.service';
-import { createTaggedLogger } from '../utils/logger';
+import { PlaylistService } from '~~/server/services/spotify/playlist.service';
+import { SpotifyService } from '~~/server/services/spotify/spotify.service';
+import { UserService } from '~~/server/services/user.service';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Task:UpdateTodaysAlbumPlaylist');
 
