@@ -1,4 +1,5 @@
 import { auth } from '~~/shared/auth';
+import { verifyCronAuth } from '../utils/cron';
 
 /**
  * Authentication middleware that runs for all API routes.
@@ -10,6 +11,12 @@ export default defineEventHandler(async (event) => {
 
   // Skip auth check for auth routes themselves
   if (path.startsWith('/api/auth/')) {
+    return;
+  }
+
+  // Cron routes use CRON_SECRET bearer token auth
+  if (path.startsWith('/api/cron/')) {
+    verifyCronAuth(event);
     return;
   }
 

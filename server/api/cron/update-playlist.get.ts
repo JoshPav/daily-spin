@@ -1,14 +1,11 @@
 import { updateTodaysAlbumPlaylist } from '~~/server/tasks/updateTodaysAlbumPlaylist';
-import { verifyCronAuth } from '~~/server/utils/cron';
 import { handleError } from '~~/server/utils/errorHandler';
 import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Cron:UpdatePlaylist');
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
-    verifyCronAuth(event);
-
     logger.info('CRON job triggered: updateTodaysAlbumPlaylist');
     const result = await updateTodaysAlbumPlaylist();
     logger.info('CRON job completed: updateTodaysAlbumPlaylist', {

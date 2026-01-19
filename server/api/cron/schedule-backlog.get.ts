@@ -1,14 +1,11 @@
 import { scheduleBacklogListens } from '~~/server/tasks/scheduleBacklogListens';
-import { verifyCronAuth } from '~~/server/utils/cron';
 import { handleError } from '~~/server/utils/errorHandler';
 import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Cron:ScheduleBacklog');
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
-    verifyCronAuth(event);
-
     logger.info('CRON job triggered: scheduleBacklogListens');
     const result = await scheduleBacklogListens();
     logger.info('CRON job completed: scheduleBacklogListens', {
