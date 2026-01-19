@@ -1,5 +1,5 @@
-import { UserRepository } from '../repositories/user.repository';
-import { createTaggedLogger } from '../utils/logger';
+import { UserRepository } from '~~/server/repositories/user.repository';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:User');
 

@@ -1,7 +1,7 @@
 import type { AddBacklogItemBody, BacklogAlbum } from '#shared/schema';
-import { BacklogRepository } from '../repositories/backlog.repository';
-import { FutureListenRepository } from '../repositories/futureListen.repository';
-import { createTaggedLogger } from '../utils/logger';
+import { BacklogRepository } from '~~/server/repositories/backlog.repository';
+import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:Backlog');
 

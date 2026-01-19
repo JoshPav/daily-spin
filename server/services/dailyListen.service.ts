@@ -10,7 +10,7 @@ import { dateInRange, isToday } from '../utils/datetime.utils';
 import { createTaggedLogger } from '../utils/logger';
 import { BacklogService } from './backlog.service';
 import { FutureListenService } from './futureListen.service';
-import { RecentlyPlayedService } from './recentlyPlayed.service';
+import { RecentlyPlayedService } from './spotify/recentlyPlayed.service';
 
 const logger = createTaggedLogger('Service:DailyListen');
 

@@ -45,6 +45,12 @@ describe('PATCH /api/listens/[date]/favorite-song Integration Tests', () => {
       accessToken: userAccount.accessToken,
     });
 
+    // Mock Spotify user profile (needed by getSpotifyContext)
+    vi.mocked(mockSpotifyApi.currentUser.profile).mockResolvedValue({
+      id: userAccount.accountId,
+      // biome-ignore lint/suspicious/noExplicitAny: Testing mock
+    } as any);
+
     // Mock Spotify API responses
     vi.mocked(mockSpotifyApi.playlists.createPlaylist).mockResolvedValue({
       id: 'playlist-123',
