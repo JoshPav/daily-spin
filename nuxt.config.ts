@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     baseUrl: process.env.BASE_URL,
     disableAutoFetch: process.env.DISABLE_AUTO_FETCH,
+    cronSecret: process.env.CRON_SECRET,
     public: {
       spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
     },

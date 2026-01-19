@@ -1,6 +1,6 @@
 import type { defineEventHandler } from 'h3';
-import { vi } from 'vitest';
 import type { Task } from 'nitropack/types';
+import { vi } from 'vitest';
 
 export type EventHandler<T = unknown> = ReturnType<
   typeof defineEventHandler<Request, Promise<T>>

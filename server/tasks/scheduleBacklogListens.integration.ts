@@ -1,4 +1,3 @@
-import type { Task } from 'nitropack/types';
 import {
   afterEach,
   beforeAll,
