@@ -34,14 +34,9 @@ const waitForAsyncUpdates = async () => {
  * 2. registerEndpoint IS the correct approach for mocking Nuxt API routes.
  *
  * LIMITATION:
- * With local refs in useListens, the Nuxt test environment appears to cache
- * composable state between tests in ways that are difficult to reset.
- * This causes test isolation issues where the first test's state persists.
- *
- * RECOMMENDATION:
- * Use composable-level mocking (see dashboard.component.ts) for reliable,
- * isolated component tests. API-level mocking is more realistic but requires
- * careful state management that conflicts with production code patterns.
+ * The Nuxt test environment appears to cache composable state between tests
+ * in ways that are difficult to reset. This causes test isolation issues
+ * where the first test's state persists to subsequent tests.
  */
 
 // Mock only useAuth to bypass auth loading - use proper Vue refs
