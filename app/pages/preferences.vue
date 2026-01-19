@@ -83,7 +83,6 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
               v-model="localPreferences.createSongOfDayPlaylist"
               title="Create Song of the Day Playlist"
               description="Automatically create/update a Spotify playlist for daily song picks"
-              coming-soon
             />
           </div>
         </PreferencesCard>
