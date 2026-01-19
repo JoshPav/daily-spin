@@ -88,7 +88,7 @@ prisma/
 
 ### Data Flow
 
-1. **Automatic tracking**: A CRON job (configured in nuxt.config.ts under `nitro.scheduledTasks`) runs hourly to call `RecentlyPlayedService.processTodaysListens()`, which:
+1. **Automatic tracking**: A CRON job (scheduled via cron-job.org, calling `/api/cron/process-listens`) runs hourly to call `RecentlyPlayedService.processTodaysListens()`, which:
    - Fetches recently played tracks from Spotify API
    - Filters tracks played today from albums with 5+ tracks
    - Groups tracks by album
@@ -124,6 +124,7 @@ prisma/
 Required runtime config (nuxt.config.ts runtimeConfig):
 - `SPOTIFY_CLIENT_ID`: Spotify API client ID (exposed to client via public.spotifyClientId)
 - `DISABLE_AUTO_FETCH`: Set to 'true' to disable automatic fetching of today's listens
+- `CRON_SECRET`: Secret token for authenticating cron job requests from cron-job.org
 
 Test environment variables go in `.env.test`.
 
@@ -554,9 +555,12 @@ query: z.object({
 4. Update TypeScript types in `shared/schema.ts` if needed
 
 ### Adding a scheduled task
-1. Create a file in `server/tasks/` with `defineTask()` export
-2. Register in `nuxt.config.ts` under `nitro.scheduledTasks` (CRON format)
-3. Tasks run in production on Vercel via Vercel Cron
+1. Create a file in `server/tasks/` exporting an async function with the task logic
+2. Create an API endpoint in `server/api/cron/` that calls the task function (use `verifyCronAuth()` for auth)
+3. Configure the cron schedule in [cron-job.org](https://cron-job.org) with:
+   - The endpoint URL (e.g., `https://your-domain.com/api/cron/your-task`)
+   - `Authorization: Bearer <CRON_SECRET>` header
+   - Desired schedule (CRON format)
 
 ### Component auto-imports
 Components in `app/components/` are auto-imported without path prefix (configured in nuxt.config.ts). Composables in `composables/**` are also auto-imported.

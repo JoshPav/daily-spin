@@ -5,8 +5,8 @@ import { createTaggedLogger } from './logger';
 const logger = createTaggedLogger('Cron');
 
 /**
- * Verifies that a request is from Vercel CRON.
- * Vercel sends an Authorization header with Bearer token matching CRON_SECRET.
+ * Verifies that a request is from an authenticated CRON.
+ * Service sends an Authorization header with Bearer token matching CRON_SECRET.
  *
  * @throws UnauthorizedError if the request is not authorized
  */
