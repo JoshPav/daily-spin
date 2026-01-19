@@ -16,14 +16,7 @@ export const usePreferencesForm = () => {
   });
 
   const linkedPlaylists = computed<LinkedPlaylist[]>(
-    () => [
-      {
-        type: 'album_of_the_day',
-        spotifyPlaylistId: '1NXfpShIzj49qPvuDyoUWQ',
-        spotifyUrl: '',
-      },
-    ],
-    // () => data.value?.linkedPlaylists ?? [],
+    () => data.value?.linkedPlaylists ?? [],
   );
 
   // Local state for toggle values - only initialized when data loads
