@@ -16,9 +16,8 @@
       <template #empty>
         <div
           class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
-          title="No albums listened to this day"
         >
-          <span>—</span>
+          <UTooltip text="No albums listened to this day">—</UTooltip>
         </div>
       </template>
     </AlbumDayCard>
