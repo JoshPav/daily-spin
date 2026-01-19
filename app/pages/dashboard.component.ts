@@ -1,12 +1,8 @@
-import {
-  mockNuxtImport,
-  mountSuspended,
-  registerEndpoint,
-} from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
-import type { DailyListens, GetFutureListensResponse } from '~~/shared/schema';
+import type { DailyListens } from '~~/shared/schema';
 import { album, dailyAlbumListen } from '~~/tests/factories/api.factory';
 // @ts-expect-error - Vue files are handled by Nuxt test environment at runtime
 import Dashboard from './dashboard.vue';
@@ -21,25 +17,17 @@ const waitForAsyncUpdates = async () => {
 };
 
 /**
- * EXPERIMENTAL: Component tests using API-level mocking with registerEndpoint.
+ * Component tests using composable-level mocking.
  *
- * This approach:
- * - Uses registerEndpoint to mock Nuxt's internal API routes
- * - Mocks only useAuth to bypass auth loading (minimal composable mocking)
- * - Lets the real useListens and useFutureListens composables run
- *
- * Key findings:
- * 1. MSW doesn't work for Nuxt API routes because $fetch uses Nitro's
- *    internal router, not actual HTTP requests.
- * 2. registerEndpoint IS the correct approach for mocking Nuxt API routes.
- *
- * LIMITATION:
- * The Nuxt test environment appears to cache composable state between tests
- * in ways that are difficult to reset. This causes test isolation issues
- * where the first test's state persists to subsequent tests.
+ * This approach mocks useListens and useFutureListens directly, giving full
+ * control over the data and loading states without relying on registerEndpoint.
  */
 
-// Mock only useAuth to bypass auth loading - use proper Vue refs
+// Shared mock state that tests can modify
+let mockListensData: DailyListens[] = [];
+let mockListensPending = true;
+
+// Mock useAuth to bypass auth loading
 mockNuxtImport('useAuth', () => {
   return () => ({
     loggedIn: computed(() => true),
@@ -54,49 +42,49 @@ mockNuxtImport('useAuth', () => {
   });
 });
 
-// Skip these tests - see documentation above for why
-describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
+// Mock useListens to return controlled data
+mockNuxtImport('useListens', () => {
+  return () => ({
+    data: computed(() => mockListensData),
+    pending: computed(() => mockListensPending),
+    loadingMore: ref(false),
+    hasMore: ref(false),
+    error: ref(null),
+    fetchMore: vi.fn(),
+    refresh: vi.fn(),
+    updateFavoriteSongForDate: vi.fn(),
+  });
+});
+
+// Mock useFutureListens to return empty data
+mockNuxtImport('useFutureListens', () => {
+  return () => ({
+    data: ref({ items: [] }),
+    pending: ref(false),
+    error: ref(null),
+    refresh: vi.fn(),
+  });
+});
+
+describe('Dashboard Page', () => {
   const TODAY = new Date('2026-01-15T12:00:00.000Z');
-
-  // Store unregister functions to clean up between tests
-  const unregisterFns: Array<() => void> = [];
-
-  // Helper to set up API handlers using Nuxt's registerEndpoint
-  const setupListensHandler = (listens: DailyListens[]) => {
-    const unregister = registerEndpoint('/api/listens', {
-      method: 'GET',
-      handler: () => listens,
-    });
-    unregisterFns.push(unregister);
-  };
-
-  const setupFutureListensHandler = (
-    response: GetFutureListensResponse = { items: [] },
-  ) => {
-    const unregister = registerEndpoint('/api/future-listens', {
-      method: 'GET',
-      handler: () => response,
-    });
-    unregisterFns.push(unregister);
-  };
 
   beforeEach(() => {
     vi.setSystemTime(TODAY);
-    // Set up default handlers
-    setupFutureListensHandler();
+    // Reset mock state
+    mockListensData = [];
+    mockListensPending = false;
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    // Clean up registered endpoints
-    unregisterFns.forEach((fn) => void fn());
-    unregisterFns.length = 0;
   });
 
-  describe('Album Display with registerEndpoint', () => {
-    it('should show empty state when API returns empty array', async () => {
-      // Given - Empty response from API
-      setupListensHandler([]);
+  describe('Album Display', () => {
+    it('should show empty state when no listens', async () => {
+      // Given - Empty listens data
+      mockListensData = [];
+      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
@@ -106,8 +94,8 @@ describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
       expect(wrapper.text()).toContain('No listens yet for this month');
     });
 
-    it('should display album when API returns data', async () => {
-      // Given - API returns listens with today's album
+    it('should display album when data is present', async () => {
+      // Given - Listens with today's album
       const todayAlbum = dailyAlbumListen({
         album: album({
           albumName: "Today's Album",
@@ -115,13 +103,14 @@ describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
         }),
       });
 
-      setupListensHandler([
+      mockListensData = [
         {
           date: TODAY.toISOString(),
           albums: [todayAlbum],
           favoriteSong: null,
         },
-      ]);
+      ];
+      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
@@ -133,7 +122,7 @@ describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
     });
 
     it('should display multiple albums for a day', async () => {
-      // Given - API returns multiple albums for today
+      // Given - Multiple albums for today
       const album1 = dailyAlbumListen({
         album: album({ albumName: 'First Album' }),
       });
@@ -141,13 +130,14 @@ describe('Dashboard Page - API-level mocking with registerEndpoint', () => {
         album: album({ albumName: 'Second Album' }),
       });
 
-      setupListensHandler([
+      mockListensData = [
         {
           date: TODAY.toISOString(),
           albums: [album1, album2],
           favoriteSong: null,
         },
-      ]);
+      ];
+      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
