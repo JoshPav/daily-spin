@@ -6,6 +6,22 @@ import { album, dailyAlbumListen } from '~~/tests/factories/component.factory';
 // @ts-expect-error - Vue files are handled by Nuxt test environment at runtime
 import Dashboard from './dashboard.vue';
 
+/**
+ * Component tests for the Dashboard page.
+ *
+ * Testing approach:
+ * - Both `useListens` and `useFutureListens` are mocked at the composable level
+ *   using `mockNuxtImport` for reliable test isolation
+ * - `useListens` requires composable-level mocking because it uses `useState`,
+ *   watchers, and other internal Nuxt utilities that require full Nuxt context
+ * - Auth is mocked via ~/lib/auth-client in component.setup.ts
+ *
+ * Note: API-level mocking via `registerEndpoint` is an alternative approach
+ * for simpler composables, but requires careful handling of async data flow.
+ * For complex composables like `useListens` that use `useState`, composable-level
+ * mocking is more reliable.
+ */
+
 // Mock useListens composable
 const mockListensData = ref<DailyListens[]>([]);
 const mockListensPending = ref(false);
@@ -16,7 +32,11 @@ mockNuxtImport('useListens', () => {
     data: mockListensData,
     pending: mockListensPending,
     error: mockListensError,
+    loadingMore: ref(false),
+    hasMore: ref(true),
+    fetchMore: vi.fn(),
     refresh: vi.fn(),
+    updateFavoriteSongForDate: vi.fn(),
   });
 });
 
