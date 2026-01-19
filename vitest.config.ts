@@ -74,7 +74,6 @@ export default defineConfig({
           environment: 'nuxt',
           include: ['**/*.component.ts'],
           exclude: ['node_modules/**'],
-          setupFiles: ['./tests/component.setup.ts'],
           environmentOptions: {
             nuxt: {
               domEnvironment: 'happy-dom',

@@ -1,5 +1,6 @@
 <template>
   <UChip
+    data-testid="past-album-day"
     size="3xl"
     :show="needsFavoriteSong"
     color="warning"
@@ -15,10 +16,9 @@
       <template #empty>
         <div
           class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+          title="No albums listened to this day"
         >
-          <UTooltip text="No albums listened to this day">
-            <span>—</span>
-          </UTooltip>
+          <span>—</span>
         </div>
       </template>
     </AlbumDayCard>

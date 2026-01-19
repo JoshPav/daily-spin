@@ -14,6 +14,11 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
+  // Skip auth check for internal Nuxt module routes
+  if (path.startsWith('/api/_nuxt_icon/')) {
+    return;
+  }
+
   // Cron routes use CRON_SECRET bearer token auth
   if (path.startsWith('/api/cron/')) {
     verifyCronAuth(event);
