@@ -9,7 +9,6 @@ import Dashboard from './dashboard.vue';
 
 // Helper to wait for all async operations to complete
 const waitForAsyncUpdates = async () => {
-  // Multiple rounds to ensure all microtasks and Vue updates complete
   await flushPromises();
   await nextTick();
   await flushPromises();
@@ -19,13 +18,16 @@ const waitForAsyncUpdates = async () => {
 /**
  * Component tests using composable-level mocking.
  *
+ * registerEndpoint doesn't work because $fetch in client-side code makes
+ * actual HTTP requests, not going through Nitro's internal router.
+ *
  * This approach mocks useListens and useFutureListens directly, giving full
- * control over the data and loading states without relying on registerEndpoint.
+ * control over the data and loading states.
  */
 
 // Shared mock state that tests can modify
 let mockListensData: DailyListens[] = [];
-let mockListensPending = true;
+let mockListensPending = false;
 
 // Mock useAuth to bypass auth loading
 mockNuxtImport('useAuth', () => {
@@ -82,9 +84,8 @@ describe('Dashboard Page', () => {
 
   describe('Album Display', () => {
     it('should show empty state when no listens', async () => {
-      // Given - Empty listens data
+      // Given
       mockListensData = [];
-      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
@@ -95,7 +96,7 @@ describe('Dashboard Page', () => {
     });
 
     it('should display album when data is present', async () => {
-      // Given - Listens with today's album
+      // Given
       const todayAlbum = dailyAlbumListen({
         album: album({
           albumName: "Today's Album",
@@ -110,19 +111,18 @@ describe('Dashboard Page', () => {
           favoriteSong: null,
         },
       ];
-      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
       await waitForAsyncUpdates();
 
-      // Then - Album image should be visible
+      // Then
       const img = wrapper.find('img');
       expect(img.exists()).toBe(true);
     });
 
     it('should display multiple albums for a day', async () => {
-      // Given - Multiple albums for today
+      // Given
       const album1 = dailyAlbumListen({
         album: album({ albumName: 'First Album' }),
       });
@@ -137,13 +137,12 @@ describe('Dashboard Page', () => {
           favoriteSong: null,
         },
       ];
-      mockListensPending = false;
 
       // When
       const wrapper = await mountSuspended(Dashboard);
       await waitForAsyncUpdates();
 
-      // Then - Should show count badge
+      // Then
       expect(wrapper.text()).toContain('2');
     });
   });
