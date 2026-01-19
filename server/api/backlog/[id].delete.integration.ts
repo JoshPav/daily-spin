@@ -29,7 +29,7 @@ const testAlbumItem = {
 
 describe('DELETE /api/backlog/[id] Integration Tests', () => {
   let userId: string;
-  let handler: EventHandler<null>;
+  let handler: EventHandler;
 
   beforeAll(async () => {
     handler = (await import('./[id].delete')).default;
@@ -99,7 +99,6 @@ describe('DELETE /api/backlog/[id] Integration Tests', () => {
       handler(createHandlerEvent(userId, { params: {} })),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing id parameter',
     });
   });
 

@@ -48,6 +48,7 @@ bun run generate               # Generate static site
 - **Framework**: Nuxt 4 with Vue 3
 - **Runtime**: Node.js 24, Bun for package management and scripts
 - **Database**: PostgreSQL with Prisma ORM
+- **Validation**: Zod for API schema validation and type inference
 - **External APIs**: Spotify Web API (@spotify/web-api-ts-sdk)
 - **Styling**: Tailwind CSS (via @nuxt/ui) with scoped CSS for complex component styles
 - **Testing**: Vitest with separate unit and integration test projects
@@ -75,7 +76,12 @@ server/
   mappers/            # Transform DB models to API responses
   utils/              # Utility functions
 shared/
-  schema.ts           # Type definitions shared between client and server
+  schema.ts           # Legacy type definitions (being migrated to schemas/)
+  schemas/            # Zod schemas for API validation and type inference
+    common.schema.ts  # Shared types (Artist, Album, enums, helpers)
+    listens.schema.ts # Listens endpoint schemas
+    backlog.schema.ts # Backlog endpoint schemas
+    etc.
 prisma/
   schema.prisma       # Database schema
 ```
@@ -463,10 +469,83 @@ This approach saves time and tokens by using the user's knowledge of the codebas
 ## Common Patterns
 
 ### Adding a new API endpoint
-1. Create a route handler in `server/api/` (e.g., `endpoint.get.ts` or `endpoint.post.ts`)
-2. Define types in `shared/schema.ts` for request/response
-3. Use services from `server/services/` for business logic
-4. Return data using `return` (Nuxt handles serialization)
+
+All API handlers use `createEventHandler` with Zod schemas for automatic validation and type inference.
+
+1. **Define the schema** in `shared/schemas/` (or add to existing schema file):
+
+```typescript
+// shared/schemas/myFeature.schema.ts
+import { z } from 'zod';
+import { type ApiSchema, AlbumSchema } from './common.schema';
+
+export const getMyFeatureSchema = {
+  query: z.object({
+    limit: z.coerce.number().optional(),
+  }),
+  response: z.array(AlbumSchema),
+} satisfies ApiSchema;
+
+export const createMyFeatureSchema = {
+  body: z.object({
+    name: z.string(),
+    albumId: z.string(),
+  }),
+  response: z.object({
+    id: z.string(),
+  }),
+} satisfies ApiSchema;
+```
+
+2. **Create the handler** in `server/api/`:
+
+```typescript
+// server/api/my-feature/index.get.ts
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { getMyFeatureSchema } from '~~/shared/schemas/myFeature.schema';
+
+export default createEventHandler(getMyFeatureSchema, async (event) => {
+  const log = createContextLogger(event, 'API:my-feature.get');
+  const { userId } = event.context;
+  const query = event.validatedQuery; // Typed from schema
+
+  log.info('Fetching my feature');
+
+  // Use services for business logic
+  const result = await myService.getData(userId, query);
+
+  log.info('Successfully fetched my feature', { count: result.length });
+
+  return result; // Type-checked against schema.response
+});
+```
+
+**Key points**:
+- Use `createEventHandler(schema, handler)` - provides automatic Zod validation
+- Access validated data via `event.validatedQuery`, `event.validatedBody`, `event.validatedParams`
+- Use `createContextLogger(event, tag)` for logging with automatic request context
+- Throw errors directly (e.g., `throw new NotFoundError(...)`) - error handling is automatic
+- No explicit return types needed - TypeScript infers from schema
+
+**Common schema helpers** (`shared/schemas/common.schema.ts`):
+
+```typescript
+import { dateParam, optionalDateTimeQuery } from './common.schema';
+
+// For path params - validates ISO date and transforms to Date
+params: z.object({
+  date: dateParam,  // "/api/listens/2026-01-15" → Date object
+}),
+
+// For query params - optional ISO datetime that transforms to Date
+query: z.object({
+  startDate: optionalDateTimeQuery,  // "?startDate=2026-01-15T00:00:00Z" → Date | undefined
+  endDate: optionalDateTimeQuery,
+}),
+```
 
 ### Modifying the database schema
 1. Edit `prisma/schema.prisma`
@@ -551,21 +630,33 @@ throw new ExternalServiceError('Spotify', 'fetch user data', { userId, attempts:
 - `ConflictError` (409) - Duplicate records
 
 **API Handler Pattern**:
+
+With `createEventHandler`, error handling is automatic. Just throw errors directly:
+
 ```typescript
-import { handleError } from '../utils/errorHandler';
-import { getLogContext } from '../utils/requestContext';
+import { createContextLogger, createEventHandler } from '~~/server/utils/handler';
+import { NotFoundError } from '~~/server/utils/errors';
+import { mySchema } from '~~/shared/schemas/my.schema';
 
-export default defineEventHandler(async (event) => {
-  const logContext = getLogContext(event);
+export default createEventHandler(mySchema, async (event) => {
+  const log = createContextLogger(event, 'API:my-endpoint');
+  const { userId } = event.context;
 
-  try {
-    // Handler logic
-    return result;
-  } catch (error) {
-    throw handleError(error, logContext);
+  const result = await myService.getData(userId);
+
+  if (!result) {
+    throw new NotFoundError('Resource', { userId }); // Automatic error handling
   }
+
+  return result;
 });
 ```
+
+The `createEventHandler` wrapper automatically:
+- Validates request params/query/body against Zod schemas
+- Catches and formats Zod validation errors as 400 responses
+- Catches other errors and passes them through `handleError`
+- Includes request context in error logs
 
 **Service/Repository Pattern**:
 ```typescript
@@ -593,31 +684,28 @@ catch (error) {
 
 The application uses structured logging with tagged loggers for traceability.
 
-**Creating a Logger**:
-```typescript
-import { createTaggedLogger } from '../utils/logger';
+**API Handler Logging** - Use `createContextLogger`:
 
-const logger = createTaggedLogger('Service:MyService');
+```typescript
+import { createContextLogger, createEventHandler } from '~~/server/utils/handler';
+
+export default createEventHandler(schema, async (event) => {
+  const log = createContextLogger(event, 'API:my-endpoint');
+
+  log.info('Processing request');  // Automatically includes requestId, userId, path, method
+  log.info('Found items', { count: 5 });  // Extra fields merged with context
+  log.error('Something failed', { error: err.message });
+});
 ```
 
-**Log Levels**:
-- `logger.debug()` - Detailed diagnostic info (dev only)
-- `logger.info()` - Important business events (user actions, API calls)
-- `logger.warn()` - Unexpected behavior that succeeded
-- `logger.error()` - Operation failures requiring investigation
+**Service/Repository Logging** - Use `createTaggedLogger`:
 
-**Logging Pattern**:
 ```typescript
-// API handlers - use request context
-import { getLogContext } from '../utils/requestContext';
+import { createTaggedLogger } from '~~/server/utils/logger';
 
-const logContext = getLogContext(event);
-logger.info('Processing request', {
-  ...logContext,  // Includes requestId, userId, path, method
-  additionalField: value
-});
+const logger = createTaggedLogger('Service:MyService');
 
-// Services/Repositories - include relevant context
+// Include relevant context manually
 logger.debug('Fetching user data', { userId });
 logger.info('Successfully created record', { userId, recordId });
 logger.error('Failed to update record', {
@@ -627,6 +715,12 @@ logger.error('Failed to update record', {
   stack: error instanceof Error ? error.stack : undefined,
 });
 ```
+
+**Log Levels**:
+- `log.debug()` - Detailed diagnostic info (dev only)
+- `log.info()` - Important business events (user actions, API calls)
+- `log.warn()` - Unexpected behavior that succeeded
+- `log.error()` - Operation failures requiring investigation
 
 **Sensitive Data**:
 Never log access tokens, refresh tokens, passwords, or full session objects. Use token previews if needed:

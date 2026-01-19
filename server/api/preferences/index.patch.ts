@@ -1,38 +1,25 @@
-import type {
-  GetPreferencesResponse,
-  UpdatePreferencesBody,
-} from '#shared/schema';
 import { UserPreferencesService } from '~~/server/services/userPreferences.service';
-import { handleError } from '~~/server/utils/errorHandler';
-import { createTaggedLogger } from '~~/server/utils/logger';
-import { getLogContext } from '~~/server/utils/requestContext';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { updatePreferencesSchema } from '~~/shared/schemas/preferences.schema';
 
-const logger = createTaggedLogger('API:preferences.patch');
+export default createEventHandler(updatePreferencesSchema, async (event) => {
+  const log = createContextLogger(event, 'API:preferences.patch');
+  const { userId } = event.context;
+  const body = event.validatedBody;
+  const preferencesService = new UserPreferencesService();
 
-export default defineEventHandler<Promise<GetPreferencesResponse>>(
-  async (event) => {
-    const { userId } = event.context;
-    const logContext = getLogContext(event);
-    const preferencesService = new UserPreferencesService();
+  log.info('Updating user preferences', {
+    updatedFields: Object.keys(body),
+  });
 
-    const body = await readBody<UpdatePreferencesBody>(event);
+  const result = await preferencesService.updatePreferences(userId, body);
 
-    logger.info('Updating user preferences', {
-      ...logContext,
-      updatedFields: Object.keys(body),
-    });
+  log.info('Successfully updated user preferences', {
+    updatedFields: Object.keys(body),
+  });
 
-    try {
-      const result = await preferencesService.updatePreferences(userId, body);
-
-      logger.info('Successfully updated user preferences', {
-        ...logContext,
-        updatedFields: Object.keys(body),
-      });
-
-      return result;
-    } catch (error) {
-      throw handleError(error, logContext);
-    }
-  },
-);
+  return result;
+});

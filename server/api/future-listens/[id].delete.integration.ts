@@ -29,7 +29,7 @@ const testAlbumItem = {
 
 describe('DELETE /api/future-listens/[id] Integration Tests', () => {
   let userId: string;
-  let handler: EventHandler<void>;
+  let handler: EventHandler;
 
   beforeAll(async () => {
     handler = (await import('./[id].delete')).default;
@@ -102,7 +102,6 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
       handler(createHandlerEvent(userId, { params: {} })),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Missing future listen ID',
     });
   });
 

@@ -1,25 +1,22 @@
-import type { GetBacklogResponse } from '#shared/schema';
-import { BacklogService } from '../../services/backlog.service';
-import { createTaggedLogger } from '../../utils/logger';
-import { getLogContext } from '../../utils/requestContext';
+import { BacklogService } from '~~/server/services/backlog.service';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { getBacklogSchema } from '~~/shared/schemas/backlog.schema';
 
-const logger = createTaggedLogger('API:backlog.get');
+export default createEventHandler(getBacklogSchema, async (event) => {
+  const log = createContextLogger(event, 'API:backlog.get');
+  const { userId } = event.context;
+  const backlogService = new BacklogService();
 
-export default defineEventHandler<Promise<GetBacklogResponse>>(
-  async (event) => {
-    const { userId } = event.context;
-    const logContext = getLogContext(event);
-    const backlogService = new BacklogService();
+  log.info('Fetching backlog');
 
-    logger.info('Fetching backlog', logContext);
+  const albums = await backlogService.getBacklog(userId);
 
-    const albums = await backlogService.getBacklog(userId);
+  log.info('Successfully fetched backlog', {
+    albumCount: albums.length,
+  });
 
-    logger.info('Successfully fetched backlog', {
-      ...logContext,
-      albumCount: albums.length,
-    });
-
-    return { albums };
-  },
-);
+  return { albums };
+});

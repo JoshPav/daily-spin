@@ -1,25 +1,22 @@
-import type { GetFutureListensResponse } from '#shared/schema';
-import { FutureListenService } from '../../services/futureListen.service';
-import { createTaggedLogger } from '../../utils/logger';
-import { getLogContext } from '../../utils/requestContext';
+import { FutureListenService } from '~~/server/services/futureListen.service';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { getFutureListensSchema } from '~~/shared/schemas/futureListen.schema';
 
-const logger = createTaggedLogger('API:future-listens.get');
+export default createEventHandler(getFutureListensSchema, async (event) => {
+  const log = createContextLogger(event, 'API:future-listens.get');
+  const { userId } = event.context;
+  const service = new FutureListenService();
 
-export default defineEventHandler<Promise<GetFutureListensResponse>>(
-  async (event) => {
-    const { userId } = event.context;
-    const logContext = getLogContext(event);
-    const service = new FutureListenService();
+  log.info('Fetching future listens');
 
-    logger.info('Fetching future listens', logContext);
+  const items = await service.getFutureListens(userId);
 
-    const items = await service.getFutureListens(userId);
+  log.info('Successfully fetched future listens', {
+    itemCount: items.length,
+  });
 
-    logger.info('Successfully fetched future listens', {
-      ...logContext,
-      itemCount: items.length,
-    });
-
-    return { items };
-  },
-);
+  return { items };
+});

@@ -1,46 +1,28 @@
-import { FutureListenService } from '../../services/futureListen.service';
-import { createTaggedLogger } from '../../utils/logger';
-import { getLogContext } from '../../utils/requestContext';
+import { FutureListenService } from '~~/server/services/futureListen.service';
+import { NotFoundError } from '~~/server/utils/errors';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { deleteFutureListenSchema } from '~~/shared/schemas/futureListen.schema';
 
-const logger = createTaggedLogger('API:future-listens.delete');
-
-export default defineEventHandler(async (event): Promise<void> => {
+export default createEventHandler(deleteFutureListenSchema, async (event) => {
+  const log = createContextLogger(event, 'API:future-listens.delete');
   const { userId } = event.context;
-  const logContext = getLogContext(event);
-  const id = getRouterParam(event, 'id');
-
-  if (!id) {
-    logger.error('Missing future listen ID', logContext);
-    throw createError({
-      statusCode: 400,
-      message: 'Missing future listen ID',
-    });
-  }
-
+  const { id } = event.validatedParams;
   const service = new FutureListenService();
 
-  logger.info('Removing future listen', {
-    ...logContext,
+  log.info('Removing future listen', {
     futureListenId: id,
   });
 
   try {
     await service.removeFutureListen(userId, id);
 
-    logger.info('Successfully removed future listen', {
-      ...logContext,
+    log.info('Successfully removed future listen', {
       futureListenId: id,
     });
-  } catch (error) {
-    logger.error('Failed to remove future listen', {
-      ...logContext,
-      futureListenId: id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw createError({
-      statusCode: 404,
-      message: 'Future listen not found',
-    });
+  } catch (_error) {
+    throw new NotFoundError('Future listen', { id });
   }
 });

@@ -1,40 +1,27 @@
-import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
-import { FutureListenService } from '../../services/futureListen.service';
-import { createTaggedLogger } from '../../utils/logger';
-import { getLogContext } from '../../utils/requestContext';
+import { FutureListenService } from '~~/server/services/futureListen.service';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { addFutureListenSchema } from '~~/shared/schemas/futureListen.schema';
 
-const logger = createTaggedLogger('API:future-listens.post');
-
-export default defineEventHandler(async (event): Promise<FutureListenItem> => {
+export default createEventHandler(addFutureListenSchema, async (event) => {
+  const log = createContextLogger(event, 'API:future-listens.post');
   const { userId } = event.context;
-  const logContext = getLogContext(event);
+  const body = event.validatedBody;
   const service = new FutureListenService();
 
-  const body = await readBody<AddFutureListenBody>(event);
-
-  logger.info('Adding future listen', {
-    ...logContext,
+  log.info('Adding future listen', {
     albumSpotifyId: body.spotifyId,
     scheduledDate: body.date,
   });
 
-  try {
-    const result = await service.addFutureListen(userId, body);
+  const result = await service.addFutureListen(userId, body);
 
-    logger.info('Successfully added future listen', {
-      ...logContext,
-      futureListenId: result.id,
-      albumSpotifyId: body.spotifyId,
-    });
+  log.info('Successfully added future listen', {
+    futureListenId: result.id,
+    albumSpotifyId: body.spotifyId,
+  });
 
-    return result;
-  } catch (error) {
-    logger.error('Failed to add future listen', {
-      ...logContext,
-      albumSpotifyId: body.spotifyId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw error;
-  }
+  return result;
 });
