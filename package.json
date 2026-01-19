@@ -18,7 +18,7 @@
     "test:integration:run": "vitest run --project integration",
     "test:integration": "bun run test:db:up && bun test:integration:run && bun run test:db:down",
     "test:unit": "vitest run --project unit",
-    "test:component": "vitest run --config vitest.config.component.ts"
+    "test:component": "vitest run --project component"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",

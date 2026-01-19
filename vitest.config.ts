@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { defineVitestProject } from '@nuxt/test-utils/config';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vitest/config';
 
@@ -67,6 +68,20 @@ export default defineConfig({
           fileParallelism: false,
         },
       },
+      await defineVitestProject({
+        test: {
+          name: 'component',
+          environment: 'nuxt',
+          include: ['**/*.component.ts'],
+          exclude: ['node_modules/**'],
+          setupFiles: ['./tests/component.setup.ts'],
+          environmentOptions: {
+            nuxt: {
+              domEnvironment: 'happy-dom',
+            },
+          },
+        },
+      }),
     ],
   },
 });
