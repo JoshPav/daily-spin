@@ -29,18 +29,7 @@ import {
   mockSpotifyApi,
   mockWithAccessToken,
 } from '~~/tests/mocks/spotifyMock';
-
-vi.stubGlobal('defineTask', (task: Task<string>) => task);
-
-type TaskResult = {
-  result: string;
-  total?: number;
-  created?: number;
-  updated?: number;
-  skipped?: number;
-  failed?: number;
-  duration: number;
-};
+import { updateTodaysAlbumPlaylist as processEvent } from './updateTodaysAlbumPlaylist';
 
 describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
   const mockCreatePlaylist = vi.mocked(mockSpotifyApi.playlists.createPlaylist);
@@ -60,20 +49,9 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
   const spotifyClientId = 'test-spotify-client-id';
   const spotifyUserId = 'spotify-user-123';
 
-  let processEvent: () => Promise<TaskResult>;
-
   beforeAll(async () => {
     vi.setSystemTime(today);
     mockRuntimeConfig.spotifyClientId = spotifyClientId;
-
-    const eventHandler = (await import('./updateTodaysAlbumPlaylist')).default
-      .run;
-    processEvent = () =>
-      eventHandler({
-        name: 'event',
-        context: {},
-        payload: {},
-      }) as Promise<TaskResult>;
   });
 
   beforeEach(async () => {

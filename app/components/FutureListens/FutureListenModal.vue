@@ -40,7 +40,7 @@
             type="album"
             text="Open in Spotify"
             size="lg"
-            :spotify-id="futureListenItem.id"
+            :spotify-id="futureListenItem.album.spotifyId"
           />
           <UButton
             block
@@ -80,10 +80,6 @@ const modalSubheading = computed(() =>
 
 const artistNames = computed(() =>
   futureListenItem.album.artists.map((a) => a.name).join(', '),
-);
-
-const spotifyUrl = computed(
-  () => `https://open.spotify.com/album/${futureListenItem.album.spotifyId}`,
 );
 
 const handleRemove = async () => {
