@@ -1,23 +1,8 @@
-import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 
-// Create MSW server - handlers will be added per-test
-export const mswServer = setupServer();
-
-// Start MSW server before all tests
-beforeAll(() => {
-  mswServer.listen({ onUnhandledRequest: 'bypass' });
-});
-
-// Reset handlers and clean up after each test
+// Reset mocks after each test
 afterEach(() => {
-  mswServer.resetHandlers();
   vi.clearAllMocks();
-});
-
-// Close MSW server after all tests
-afterAll(() => {
-  mswServer.close();
 });
 
 // Mock consola to suppress logging during tests

@@ -26,40 +26,17 @@ dashboard.vue
         └── AlbumCarousel.vue
 ```
 
-## Testing Approaches
-
-### Approach 1: Composable-Level Mocking (Recommended for complex composables)
-
-Use `mockNuxtImport` to mock composables at the function level. This provides full control over state and behavior.
-
-**When to use:**
-- Composables with complex internal state (watchers, computed, etc.)
-- When you need precise control over loading/error states
-- When testing component behavior, not the composable itself
-
-**Example:** See `dashboard.component.ts`
-
-### Approach 2: API-Level Mocking (Experimental)
+## Testing Approach: API-Level Mocking with registerEndpoint
 
 Use `registerEndpoint` to mock Nuxt's internal API routes while letting real composables run.
 
 **Status:** Currently skipped due to test isolation challenges.
 
-**When to use:**
-- Testing actual composable behavior with mocked API responses
-- More realistic integration tests
-
 **Example:** See `dashboard.api-mocking.component.ts` (tests are skipped)
 
-**Note:** MSW (Mock Service Worker) does NOT work for Nuxt API routes because `$fetch` uses Nitro's internal router, not actual HTTP requests. Use `registerEndpoint` instead.
+**Important:** MSW (Mock Service Worker) does NOT work for Nuxt API routes because `$fetch` uses Nitro's internal router, not actual HTTP requests. Use `registerEndpoint` instead.
 
-**Limitation:** The Nuxt test environment caches composable state between tests in ways that are difficult to reset with local refs. This causes test isolation issues where the first test's state persists to subsequent tests.
-
-### State Management for Test Isolation
-
-The `useListens` composable uses local refs inside the function, meaning each call to `useListens()` should create fresh state. However, in the Nuxt test environment, there appears to be caching that prevents this from working correctly for API-level mocking.
-
-For composable-level mocking (Approach 1), state is controlled directly via mocks, avoiding these issues.
+**Current Limitation:** The Nuxt test environment caches composable state between tests in ways that are difficult to reset. This causes test isolation issues where the first test's state persists to subsequent tests, even though composables use local refs that should create fresh state per call.
 
 ## Implementation Steps
 
@@ -101,8 +78,5 @@ bun run test:component
 bunx vitest --project component --watch
 
 # Run specific test file
-bunx vitest --project component app/pages/dashboard.component.ts
-
-# Run API-level mocking tests
 bunx vitest --project component app/pages/dashboard.api-mocking.component.ts
 ```
