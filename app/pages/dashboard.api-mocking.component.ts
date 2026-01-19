@@ -7,7 +7,7 @@ import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 import type { DailyListens, GetFutureListensResponse } from '~~/shared/schema';
-import { album, dailyAlbumListen } from '~~/tests/factories/component.factory';
+import { album, dailyAlbumListen } from '~~/tests/factories/api.factory';
 // @ts-expect-error - Vue files are handled by Nuxt test environment at runtime
 import Dashboard from './dashboard.vue';
 
