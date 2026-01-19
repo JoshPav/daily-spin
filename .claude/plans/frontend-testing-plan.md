@@ -39,38 +39,27 @@ Use `mockNuxtImport` to mock composables at the function level. This provides fu
 
 **Example:** See `dashboard.component.ts`
 
-### Approach 2: API-Level Mocking (Realistic integration tests)
+### Approach 2: API-Level Mocking (Experimental)
 
 Use `registerEndpoint` to mock Nuxt's internal API routes while letting real composables run.
+
+**Status:** Currently skipped due to test isolation challenges.
 
 **When to use:**
 - Testing actual composable behavior with mocked API responses
 - More realistic integration tests
-- When composables use module-level singleton state (with reset functions)
 
-**Key requirement:** Composables must provide a `resetState()` function for test isolation.
-
-**Example:** See `dashboard.api-mocking.component.ts`
+**Example:** See `dashboard.api-mocking.component.ts` (tests are skipped)
 
 **Note:** MSW (Mock Service Worker) does NOT work for Nuxt API routes because `$fetch` uses Nitro's internal router, not actual HTTP requests. Use `registerEndpoint` instead.
 
+**Limitation:** The Nuxt test environment caches composable state between tests in ways that are difficult to reset with local refs. This causes test isolation issues where the first test's state persists to subsequent tests.
+
 ### State Management for Test Isolation
 
-The `useListens` composable uses module-level singleton refs (instead of `useState`) to enable test isolation:
+The `useListens` composable uses local refs inside the function, meaning each call to `useListens()` should create fresh state. However, in the Nuxt test environment, there appears to be caching that prevents this from working correctly for API-level mocking.
 
-```typescript
-// Module-level singleton state
-let listensData: Ref<DailyListens[]> | null = null;
-// ... other refs
-
-// Reset function for test isolation
-export const resetListensState = () => {
-  listensData = null;
-  // ... reset other refs
-};
-```
-
-The `resetListensState()` function is called in `afterEach` hooks (in `component.setup.ts`) to ensure clean state between tests.
+For composable-level mocking (Approach 1), state is controlled directly via mocks, avoiding these issues.
 
 ## Implementation Steps
 
@@ -86,7 +75,7 @@ The `resetListensState()` function is called in `afterEach` hooks (in `component
 1. Create component test factories (or reuse existing `api.factory.ts`)
 2. Mock `IntersectionObserver` and `scrollTo` globally
 3. Set up auth mocking for component tests
-4. Add `resetListensState()` to `afterEach` for test isolation
+4. Clean up `registerEndpoint` registrations in `afterEach`
 
 ### Phase 3: Dashboard Tests ✅
 
