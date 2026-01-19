@@ -17,6 +17,16 @@ export type EndpointContract<T extends ApiSchema> = {
   response: InferOrNever<T['response']>;
 };
 
+// Common schema helpers
+/** ISO date string param that transforms to a Date object */
+export const dateParam = z.iso.date().transform((d) => new Date(d));
+
+/** Optional ISO datetime string that transforms to a Date object */
+export const optionalDateTimeQuery = z
+  .string()
+  .optional()
+  .transform((d) => (d ? new Date(d) : undefined));
+
 // Enums
 export const ListenMethodSchema = z.enum(['spotify', 'vinyl', 'streamed']);
 export const ListenOrderSchema = z.enum(['ordered', 'shuffled', 'interrupted']);

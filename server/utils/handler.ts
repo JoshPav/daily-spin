@@ -3,7 +3,35 @@ import { ZodError, type ZodType, type z } from 'zod';
 import type { ApiSchema } from '~~/shared/schemas/common.schema';
 import { handleError } from './errorHandler';
 import { ValidationError } from './errors';
+import { createTaggedLogger } from './logger';
 import { getLogContext } from './requestContext';
+
+/**
+ * Creates a logger that automatically includes request context in all log calls.
+ *
+ * @example
+ * const log = createContextLogger(event, 'API:listens.get');
+ * log.info('Fetching data');  // logContext auto-included
+ * log.info('Found items', { count: 5 });  // merged with logContext
+ */
+export function createContextLogger(
+  event: { logContext: Record<string, unknown> },
+  tag: string,
+) {
+  const baseLogger = createTaggedLogger(tag);
+  const { logContext } = event;
+
+  return {
+    debug: (message: string, extra?: Record<string, unknown>) =>
+      baseLogger.debug(message, { ...logContext, ...extra }),
+    info: (message: string, extra?: Record<string, unknown>) =>
+      baseLogger.info(message, { ...logContext, ...extra }),
+    warn: (message: string, extra?: Record<string, unknown>) =>
+      baseLogger.warn(message, { ...logContext, ...extra }),
+    error: (message: string, extra?: Record<string, unknown>) =>
+      baseLogger.error(message, { ...logContext, ...extra }),
+  };
+}
 
 /**
  * Extended H3Event with validated data attached.

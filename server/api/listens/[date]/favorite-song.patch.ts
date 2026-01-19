@@ -1,21 +1,21 @@
 import { tz } from '@date-fns/tz';
 import { startOfDay } from 'date-fns';
+import { DailyListenRepository } from '~~/server/repositories/dailyListen.repository';
+import { UserRepository } from '~~/server/repositories/user.repository';
+import { SongOfDayPlaylistService } from '~~/server/services/songOfDayPlaylist.service';
+import { SpotifyService } from '~~/server/services/spotify.service';
+import { NotFoundError } from '~~/server/utils/errors';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
 import { updateFavoriteSongSchema } from '~~/shared/schemas/listens.schema';
-import { DailyListenRepository } from '../../../repositories/dailyListen.repository';
-import { UserRepository } from '../../../repositories/user.repository';
-import { SongOfDayPlaylistService } from '../../../services/songOfDayPlaylist.service';
-import { SpotifyService } from '../../../services/spotify.service';
-import { NotFoundError } from '../../../utils/errors';
-import { createEventHandler } from '../../../utils/handler';
-import { createTaggedLogger } from '../../../utils/logger';
-
-const logger = createTaggedLogger('API:favorite-song.patch');
 
 export default createEventHandler(updateFavoriteSongSchema, async (event) => {
+  const log = createContextLogger(event, 'API:favorite-song.patch');
   const { date: parsedDate } = event.validatedParams;
   const body = event.validatedBody;
   const { userId } = event.context;
-  const { logContext } = event;
 
   const date = startOfDay(parsedDate, { in: tz('UTC') });
 
@@ -23,8 +23,7 @@ export default createEventHandler(updateFavoriteSongSchema, async (event) => {
   const isClearing = body.spotifyId === null;
   const favoriteSong = isClearing ? null : body;
 
-  logger.info('Updating favorite song for daily listen', {
-    ...logContext,
+  log.info('Updating favorite song for daily listen', {
     date: date.toISOString(),
     isClearing,
   });
@@ -46,8 +45,7 @@ export default createEventHandler(updateFavoriteSongSchema, async (event) => {
     throw error;
   }
 
-  logger.info('Successfully updated favorite song', {
-    ...logContext,
+  log.info('Successfully updated favorite song', {
     date: date.toISOString(),
   });
 
@@ -76,14 +74,11 @@ export default createEventHandler(updateFavoriteSongSchema, async (event) => {
         spotifyClient,
       );
 
-      logger.info('Successfully updated Song of the Day playlist', {
-        ...logContext,
-      });
+      log.info('Successfully updated Song of the Day playlist');
     }
   } catch (playlistError) {
     // Log but don't fail the request if playlist update fails
-    logger.error('Failed to update Song of the Day playlist', {
-      ...logContext,
+    log.error('Failed to update Song of the Day playlist', {
       error:
         playlistError instanceof Error
           ? playlistError.message

@@ -1,67 +1,42 @@
-import { endOfDay, isValid, startOfDay, subDays } from 'date-fns';
-import type { GetListensQueryParams, GetListensResponse } from '#shared/schema';
+import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { DailyListenService } from '~~/server/services/dailyListen.service';
-import { createTaggedLogger } from '~~/server/utils/logger';
-import { getLogContext } from '~~/server/utils/requestContext';
+import { ValidationError } from '~~/server/utils/errors';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { getListensSchema } from '~~/shared/schemas/listens.schema';
 
-const logger = createTaggedLogger('API:listens.get');
+export default createEventHandler(getListensSchema, async (event) => {
+  const log = createContextLogger(event, 'API:listens.get');
+  const query = event.validatedQuery;
+  const { userId } = event.context;
 
-export default defineEventHandler<Promise<GetListensResponse>>(
-  async (event) => {
-    const query = getQuery<GetListensQueryParams>(event);
-    const { userId } = event.context;
-    const logContext = getLogContext(event);
+  // Default to last 2 weeks if no range specified
+  const today = new Date();
+  const startDate = query?.startDate ?? startOfDay(subDays(today, 14));
+  const endDate = query?.endDate ?? endOfDay(today);
 
-    // Default to last 2 weeks if no range specified
-    const today = new Date();
-    const defaultEnd = endOfDay(today);
-    const defaultStart = startOfDay(subDays(today, 14));
+  log.info('Fetching listening history', {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+  });
 
-    const startDate = query.startDate
-      ? new Date(query.startDate)
-      : defaultStart;
-    const endDate = query.endDate ? new Date(query.endDate) : defaultEnd;
-
-    logger.info('Fetching listening history', {
-      ...logContext,
+  if (startDate > endDate) {
+    throw new ValidationError('startDate must be before endDate', {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     });
+  }
 
-    if (!isValid(startDate) || !isValid(endDate)) {
-      logger.error('Invalid date format provided', {
-        ...logContext,
-        startDateParam: query.startDate,
-        endDateParam: query.endDate,
-      });
-      throw createError({
-        statusCode: 400,
-        message: 'Invalid date format',
-      });
-    }
+  const result = await new DailyListenService().getListensInRange(userId, {
+    start: startDate,
+    end: endDate,
+  });
 
-    if (startDate > endDate) {
-      logger.error('Invalid date range: startDate after endDate', {
-        ...logContext,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
-      throw createError({
-        statusCode: 400,
-        message: 'startDate must be before endDate',
-      });
-    }
+  log.info('Successfully fetched listening history', {
+    resultCount: result.length,
+  });
 
-    const result = await new DailyListenService().getListensInRange(userId, {
-      start: startDate,
-      end: endDate,
-    });
-
-    logger.info('Successfully fetched listening history', {
-      ...logContext,
-      resultCount: result.length,
-    });
-
-    return result;
-  },
-);
+  return result;
+});

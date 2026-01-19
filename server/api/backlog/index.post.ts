@@ -1,43 +1,26 @@
-import type {
-  AddBacklogItemsBody,
-  AddBacklogItemsResponse,
-} from '~~/shared/schema';
-import { BacklogService } from '../../services/backlog.service';
-import { createTaggedLogger } from '../../utils/logger';
-import { getLogContext } from '../../utils/requestContext';
+import { BacklogService } from '~~/server/services/backlog.service';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { addBacklogItemsSchema } from '~~/shared/schemas/backlog.schema';
 
-const logger = createTaggedLogger('API:backlog.post');
+export default createEventHandler(addBacklogItemsSchema, async (event) => {
+  const log = createContextLogger(event, 'API:backlog.post');
+  const service = new BacklogService();
+  const { userId } = event.context;
+  const body = event.validatedBody;
 
-export default defineEventHandler(
-  async (event): Promise<AddBacklogItemsResponse> => {
-    const service = new BacklogService();
-    const userId = event.context.userId;
-    const logContext = getLogContext(event);
+  log.info('Adding items to backlog', {
+    itemCount: body.length,
+  });
 
-    const body = await readBody<AddBacklogItemsBody>(event);
+  const result = await service.addBacklogItems(userId, body);
 
-    logger.info('Adding items to backlog', {
-      ...logContext,
-      itemCount: body.length,
-    });
+  log.info('Successfully added items to backlog', {
+    addedCount: result.added.length,
+    skippedCount: result.skipped.length,
+  });
 
-    try {
-      const result = await service.addBacklogItems(userId, body);
-
-      logger.info('Successfully added items to backlog', {
-        ...logContext,
-        addedCount: result.added.length,
-        skippedCount: result.skipped.length,
-      });
-
-      return result;
-    } catch (error) {
-      logger.error('Failed to add items to backlog', {
-        ...logContext,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw error;
-    }
-  },
-);
+  return result;
+});

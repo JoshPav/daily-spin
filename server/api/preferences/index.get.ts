@@ -1,25 +1,22 @@
-import type { GetPreferencesResponse } from '#shared/schema';
 import { UserPreferencesService } from '~~/server/services/userPreferences.service';
-import { createTaggedLogger } from '~~/server/utils/logger';
-import { getLogContext } from '~~/server/utils/requestContext';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { getPreferencesSchema } from '~~/shared/schemas/preferences.schema';
 
-const logger = createTaggedLogger('API:preferences.get');
+export default createEventHandler(getPreferencesSchema, async (event) => {
+  const log = createContextLogger(event, 'API:preferences.get');
+  const { userId } = event.context;
+  const preferencesService = new UserPreferencesService();
 
-export default defineEventHandler<Promise<GetPreferencesResponse>>(
-  async (event) => {
-    const { userId } = event.context;
-    const logContext = getLogContext(event);
-    const preferencesService = new UserPreferencesService();
+  log.info('Fetching user preferences');
 
-    logger.info('Fetching user preferences', logContext);
+  const result = await preferencesService.getPreferences(userId);
 
-    const result = await preferencesService.getPreferences(userId);
+  log.info('Successfully fetched user preferences', {
+    playlistCount: result.linkedPlaylists.length,
+  });
 
-    logger.info('Successfully fetched user preferences', {
-      ...logContext,
-      playlistCount: result.linkedPlaylists.length,
-    });
-
-    return result;
-  },
-);
+  return result;
+});

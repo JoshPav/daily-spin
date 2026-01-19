@@ -1,37 +1,26 @@
 import { DailyListenService } from '~~/server/services/dailyListen.service';
-import { handleError } from '~~/server/utils/errorHandler';
-import { createTaggedLogger } from '~~/server/utils/logger';
-import { getLogContext } from '~~/server/utils/requestContext';
-import type { AddAlbumListenBody } from '~~/shared/schema';
+import {
+  createContextLogger,
+  createEventHandler,
+} from '~~/server/utils/handler';
+import { addListenSchema } from '~~/shared/schemas/listens.schema';
 
-const logger = createTaggedLogger('API:listens.post');
-
-export default defineEventHandler(async (event) => {
+export default createEventHandler(addListenSchema, async (event) => {
+  const log = createContextLogger(event, 'API:listens.post');
   const service = new DailyListenService();
-  const userId = event.context.userId;
-  const logContext = getLogContext(event);
+  const { userId } = event.context;
+  const body = event.validatedBody;
 
-  const body = await readBody<AddAlbumListenBody>(event);
-
-  logger.info('Manually logging album listen', {
-    ...logContext,
+  log.info('Manually logging album listen', {
     albumId: body.album.albumId,
     albumName: body.album.albumName,
     date: body.date,
     listenMethod: body.listenMetadata.listenMethod,
   });
 
-  try {
-    await service.addAlbumListen(userId, body);
+  await service.addAlbumListen(userId, body);
 
-    logger.info('Successfully logged album listen', {
-      ...logContext,
-      albumId: body.album.albumId,
-    });
-  } catch (error) {
-    throw handleError(error, {
-      ...logContext,
-      albumId: body.album.albumId,
-    });
-  }
+  log.info('Successfully logged album listen', {
+    albumId: body.album.albumId,
+  });
 });
