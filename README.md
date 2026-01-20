@@ -1,178 +1,28 @@
-# 🎵 DailySpin
+# DailySpin
 
-Track the albums you actually listen to — automatically.
+DailySpin is a web app that automatically tracks the albums you listen to on Spotify and turns your listening habits into a daily music journal.
 
-**Album History** connects to your Spotify account, polls your daily listening activity, and builds a personal history of the albums you’ve listened to over time.
+By monitoring your recent listening activity, DailySpin detects when you’ve completed an album and records it in a calendar-style view. You can also build an album backlog, schedule future listens, and let DailySpin generate Spotify playlists for each day—so deciding what to listen to is effortless.
 
----
+Over time, your favourite track from each day is collected into an automatically managed yearly playlist, creating a personal soundtrack to your year.
 
-## ✨ Features
+👉 **Check it out:** [https://dailyspin.app](https://dailyspin.app)
 
-* 🎧 **Daily Spotify polling**
-  Automatically tracks albums from your daily listening activity.
+## Automation
 
-* 📚 **Album listening history**
-  View a chronological history of all albums you’ve listened to.
+DailySpin is designed to work quietly in the background, with minimal manual input:
 
-* 🔄 **Automatic updates**
-  Keeps your listening history up to date without manual input.
+- **Hourly listening checks**  
+  Spotify’s Recently Played Tracks API is polled hourly to detect completed album listens and update your calendar automatically.
 
-* ☁️ **Cloud-hosted**
-  Deployed on **Vercel** for fast, reliable access.
+- **Daily backlog processing**  
+  At midnight, scheduled backlog albums are processed and daily Spotify playlists are generated for upcoming listens.
 
----
+## Tech
 
-## 🛠 Tech Stack
+DailySpin is built with a modern, automation-friendly stack:
 
-* **Framework**: [Nuxt](https://nuxt.com/)
-* **Runtime**: **Node.js 24**
-* **Package Manager / Runner**: **Bun**
-* **Database ORM**: [Prisma](https://www.prisma.io/)
-* **Database**: PostgreSQL
-* **Deployment**: [Vercel](https://vercel.com/)
-* **External APIs**: Spotify Web API
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-* **Node.js 24**
-* **Bun**
-* **Docker** (required for integration tests)
-* PostgreSQL (local development or Docker)
-* Spotify Developer account
-
----
-
-### Installation
-
-```bash
-# Install dependencies
-bun install
-
-# Generate Prisma client
-bunx prisma generate
-
-# Run database migrations
-bunx prisma migrate dev
-```
-
----
-
-### Environment Variables
-
-Create a `.env` file:
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/album_history
-
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
-
-# Required for production cron jobs
-CRON_SECRET=your_cron_secret
-```
-
----
-
-### Development
-
-```bash
-bun run dev
-```
-
-App available at:
-
-```
-http://localhost:3000
-```
-
----
-
-## 🧪 Testing
-
-This project includes **unit** and **integration** tests.
-
-### Unit Tests
-
-Run fast, isolated tests without external dependencies:
-
-```bash
-bun run test:unit
-```
-
----
-
-### Integration Tests
-
-Integration tests spin up a **PostgreSQL Docker container** and run tests against a real database.
-
-```bash
-bun run test:integration
-```
-
-> ⚠️ **Docker is required** for integration tests.
-
-The test database is created and torn down automatically during the test run.
-
----
-
-### Component Tests
-
-Component tests mount the full Nuxt app and test page-level interactions in a simulated browser environment.
-
-```bash
-bun run vitest run --project component
-```
-
-Component test files use the `*.component.ts` naming convention and are placed alongside the page/component they test.
-
----
-
-## 📦 Deployment
-
-The app is deployed on **Vercel**.
-
-### Deployment Notes
-
-* Ensure all environment variables are configured in the Vercel dashboard
-* Prisma migrations should be handled as part of CI or a dedicated migration step
-* Uses **Node 24 runtime** on Vercel
-
-### Scheduled Tasks
-
-Scheduled tasks are managed via [cron-job.org](https://cron-job.org) (Vercel Hobby tier doesn't support multiple cron schedules).
-
-| Task | Endpoint | Schedule |
-|------|----------|----------|
-| Process listens | `/api/cron/process-listens` | Hourly (0 * * * *) |
-| Schedule backlog| `/api/cron/schedule-backlog` | Daily 1 AM UTC (0 1 * * *) |
-| Update playlist | `/api/cron/update-playlist` | Daily 2 AM UTC (0 2 * * *) |
-
-Each cron job requires an `Authorization: Bearer <CRON_SECRET>` header for authentication.
-
----
-
-## 🔐 Spotify Permissions
-
-The app requests access to:
-
-* Recently played tracks
-* User listening history
-
-These permissions are used **only** to track album listens and are never shared.
-
----
-
-## 📈 Roadmap
-
-* 📊 Listening insights & trends
-* 📆 Calendar-based album history
-* 🏷 Album tagging & notes
-* 📤 Export listening history
-
----
-
+- **Nuxt 4** for the web application
+- **Spotify Web API** for listening history, playlists, and playback data
+- **Server-side scheduled jobs** for polling, scheduling, and playlist automation
+- **OAuth authentication** via Spotify
