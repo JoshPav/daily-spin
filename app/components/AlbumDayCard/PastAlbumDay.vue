@@ -1,5 +1,6 @@
 <template>
   <UChip
+    data-testid="past-album-day"
     size="3xl"
     :show="needsFavoriteSong"
     color="warning"

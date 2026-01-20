@@ -120,6 +120,18 @@ The test database is created and torn down automatically during the test run.
 
 ---
 
+### Component Tests
+
+Component tests mount the full Nuxt app and test page-level interactions in a simulated browser environment.
+
+```bash
+bun run vitest run --project component
+```
+
+Component test files use the `*.component.ts` naming convention and are placed alongside the page/component they test.
+
+---
+
 ## 📦 Deployment
 
 The app is deployed on **Vercel**.

@@ -28,6 +28,7 @@ bunx prisma generate           # Regenerate Prisma client after schema changes
 ```bash
 bun run test:unit              # Run unit tests (*.test.ts files, happy-dom environment)
 bun run test:integration       # Run integration tests (*.integration.ts files, spins up Docker PostgreSQL)
+bun run vitest run --project component  # Run component tests (*.component.ts files, nuxt environment)
 bun run test:db:up             # Manually start test database container
 bun run test:db:down           # Manually stop and remove test database container
 bun run test:db:migrate        # Apply migrations to test database
@@ -132,8 +133,9 @@ Test environment variables go in `.env.test`.
 
 - **Unit tests** (`*.test.ts`): Test utilities and pure functions in isolation using happy-dom environment
 - **Integration tests** (`*.integration.ts`): Test services and repositories against a real PostgreSQL database in Docker
+- **Component tests** (`*.component.ts`): Test pages and user interactions by mounting the full Nuxt app in happy-dom
 
-When adding tests, place unit tests next to the file being tested (e.g., `tracks.utils.test.ts` next to `tracks.utils.ts`). Integration tests should be in the same directory as the code they test.
+When adding tests, place unit tests next to the file being tested (e.g., `tracks.utils.test.ts` next to `tracks.utils.ts`). Integration tests and component tests should be in the same directory as the code they test.
 
 #### Test Factories
 
@@ -352,6 +354,188 @@ describe('My Integration Tests', () => {
 - Set `mockRuntimeConfig.spotifyClientId` in `beforeAll` for Spotify tests
 - Store `userAccount` from `createUser()` to assert on auth details
 - Call `vi.unstubAllEnvs()` in `afterEach` if any test uses `vi.stubEnv()`
+
+#### Component Test Patterns
+
+Component tests (`*.component.ts`) mount the full Nuxt app and test page-level user interactions. They run in the `nuxt` environment with happy-dom.
+
+**Run component tests:**
+```bash
+bun run vitest run --project component
+```
+
+**Shared utilities** - Import from `tests/component/`:
+
+```typescript
+import {
+  mountPage,
+  cleanupAfterTest,
+  wrapper,
+  waitFor,
+  waitForElement,
+  waitForText,
+  mockUser,
+} from '~~/tests/component';
+```
+
+**Mocking policy - ONLY mock these two things:**
+
+1. **`useAuth` composable** - Mock authentication to bypass login. Must be called at module level due to `mockNuxtImport` hoisting requirements:
+
+```typescript
+import { mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { computed, ref } from 'vue';
+
+// At module level (outside describe blocks)
+mockNuxtImport('useAuth', () => {
+  return () => ({
+    loggedIn: computed(() => true),
+    user: computed(() => ({
+      id: 'test-user-id',
+      name: 'Test User',
+      image: 'https://example.com/avatar.jpg',
+      initial: 'T',
+    })),
+    loading: ref(false),
+    requiresReauth: computed(() => false),
+  });
+});
+```
+
+2. **API endpoints** - Mock DailySpin backend endpoints and Spotify API calls using `registerEndpoint`:
+
+```typescript
+import { registerEndpoint } from '@nuxt/test-utils/runtime';
+
+// Mock backend API
+registerEndpoint('/api/listens', () => mockListensData);
+
+// Mock with dynamic responses
+registerEndpoint('/api/future-listens/:id', {
+  method: 'DELETE',
+  handler: (event) => {
+    deletedIds.push(event.context.params.id);
+    return { success: true };
+  },
+});
+
+// Mock Spotify API via composable
+mockNuxtImport('useSpotifyApi', () => {
+  return async () => ({
+    albums: { get: mockSpotifyAlbumsGet },
+  });
+});
+```
+
+**Do NOT mock** Vue components, other composables, Pinia stores, or internal application logic. Let them run as they would in production.
+
+**Mounting - Always use `mountPage`:**
+
+All component tests must mount the app at a route using `mountPage`, not mount individual components:
+
+```typescript
+import { mountPage, cleanupAfterTest, wrapper } from '~~/tests/component';
+
+describe('Dashboard Page', () => {
+  beforeEach(async () => {
+    await mountPage('/dashboard');
+  });
+
+  afterEach(() => {
+    cleanupAfterTest();
+  });
+
+  it('should render content', async () => {
+    // Use the global wrapper
+    expect(wrapper!.find('[data-testid="my-element"]').exists()).toBe(true);
+  });
+});
+```
+
+The `mountPage` function:
+- Mounts the full app at the specified route
+- Sets the global `wrapper` reference for use in tests
+- Automatically flushes promises and waits for initial render
+
+**Waiting - Prefer condition-based waits over timeouts:**
+
+Use Playwright-style `waitFor` utilities instead of arbitrary `setTimeout` delays:
+
+```typescript
+import { waitFor, waitForElement, waitForText } from '~~/tests/component';
+
+// Wait for a condition to be true
+await waitFor(() => document.querySelector('button') !== null);
+
+// Wait for an element to appear (returns the element)
+const modal = await waitForElement('[role="dialog"]');
+
+// Wait for text to appear within an element
+await waitForText(modal, 'Loading complete');
+
+// With custom timeout (default is 2000ms)
+await waitFor(() => items.length > 0, { timeout: 5000 });
+```
+
+**NEVER do this:**
+```typescript
+// ❌ Bad - arbitrary delays
+await new Promise(r => setTimeout(r, 500));
+await flushPromises();
+await nextTick();
+```
+
+**Instead do this:**
+```typescript
+// ✅ Good - wait for specific condition
+await waitFor(() => wrapper!.find('.loaded').exists());
+```
+
+**Test file structure:**
+
+```typescript
+import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
+import { cleanupAfterTest, mountPage, waitForElement, wrapper } from '~~/tests/component';
+
+// Module-level mocks (required for mockNuxtImport hoisting)
+let mockData: MyType[] = [];
+
+mockNuxtImport('useAuth', () => {
+  return () => ({ /* auth state */ });
+});
+
+registerEndpoint('/api/my-endpoint', () => mockData);
+
+describe('My Page', () => {
+  beforeEach(async () => {
+    mockData = [/* test data */];
+    clearNuxtData('my-data-key');
+    await mountPage('/my-page');
+  });
+
+  afterEach(() => {
+    cleanupAfterTest();
+  });
+
+  it('should do something', async () => {
+    // Interact with wrapper
+    await wrapper!.find('button').trigger('click');
+
+    // Wait for result
+    const modal = await waitForElement('[role="dialog"]');
+    expect(modal.textContent).toContain('Expected text');
+  });
+});
+```
+
+**Key points**:
+- Place component tests next to the page they test (e.g., `dashboard.component.ts` next to `dashboard.vue`)
+- Always call `cleanupAfterTest()` in `afterEach` to unmount and clean up modals
+- Use `clearNuxtData('key')` in `beforeEach` to reset cached data between tests
+- Access DOM directly when needed: `document.querySelector()`, `modal.textContent`
+- For modal testing, query the DOM directly since modals render outside the Vue wrapper
 
 ## Feature Tracking
 

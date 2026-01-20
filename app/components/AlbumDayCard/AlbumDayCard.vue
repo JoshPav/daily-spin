@@ -11,6 +11,7 @@
   >
     <div
       v-if="day === 1"
+      data-testid="month-label"
       class="absolute -top-8 left-0 right-0 py-1.5 px-3 bg-black/85 text-primary text-sm font-bold tracking-widest text-center z-3 pointer-events-none rounded-t"
     >
       {{ formattedMonth }}
@@ -18,6 +19,7 @@
 
     <!-- Day number overlay -->
     <div
+      data-testid="day-number"
       class="absolute bottom-2 left-2 py-1.5 px-2.5 min-w-12 rounded-md bg-black/60 text-white text-2xl font-black leading-none z-4 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
     >
       {{ day }}
@@ -26,6 +28,7 @@
     <!-- Album count badge -->
     <div
       v-if="albumCount > 1"
+      data-testid="album-count-badge"
       class="absolute top-2 left-2 flex items-center justify-center w-8 h-8 rounded-full bg-[rgba(29,185,84,0.95)] text-white text-sm font-bold shadow-[0_2px_8px_rgba(0,0,0,0.4)] z-10 pointer-events-none"
     >
       {{ albumCount }}
@@ -43,6 +46,7 @@
     <!-- Empty state -->
     <template v-else-if="images.length === 0">
       <div
+        data-testid="empty-album-cover"
         class="absolute inset-0 rounded-lg overflow-hidden flex items-center justify-center p-3 text-neutral-400 text-sm font-medium text-center"
         :class="isFuture ? 'bg-linear-to-br from-[#1c1c2a] to-[#12121f]' : 'bg-linear-to-br from-[#1a1a1a] to-[#0a0a0a]'"
       >
@@ -84,6 +88,7 @@
         :key="index"
         :src="imageUrl ?? undefined"
         alt="Album cover"
+        data-testid="album-image"
         class="stacked-album absolute inset-0 w-full h-full object-cover rounded-lg"
         :class="[`stack-${index}`, { 'opacity-70': isFuture && images.length === 1 }]"
         :style="{ zIndex: images.length - index }"

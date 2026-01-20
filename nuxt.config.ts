@@ -17,13 +17,14 @@ export default defineNuxtConfig({
     },
   },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui'],
+  modules: ['@nuxt/image', '@nuxt/ui', '@nuxt/test-utils/module'],
   components: {
     dirs: [{ path: '~/components', pathPrefix: false }],
   },
   imports: {
     dirs: ['composables/**'],
   },
+  testUtils: {},
   nitro: {
     scheduledTasks: {
       // Every hour
@@ -36,6 +37,11 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true,
     },
-    ignore: ['**/*.test.ts', '**/*.integration.ts', '**/*.spec.ts'],
+    ignore: [
+      '**/*.test.ts',
+      '**/*.integration.ts',
+      '**/*.component.ts',
+      '**/*.spec.ts',
+    ],
   },
 });
