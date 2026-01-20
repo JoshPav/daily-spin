@@ -31,6 +31,7 @@ let mockFutureListensData: FutureListenItem[] = [];
 let listensCallCount = 0;
 let deletedFutureListenIds: string[] = [];
 let favoriteSongPatchCalls: { date: string; body: unknown }[] = [];
+let shouldThrowListensError = false;
 
 // Mock track data for Spotify API
 const mockTracks = [
@@ -71,6 +72,9 @@ mockNuxtImport('useAuth', () => {
 // Returns data on first call, empty on subsequent calls (simulates no more history)
 registerEndpoint('/api/listens', () => {
   listensCallCount++;
+  if (shouldThrowListensError) {
+    throw new Error('Failed to fetch listens');
+  }
   if (listensCallCount === 1) {
     return mockListensData;
   }
@@ -96,6 +100,7 @@ describe('Dashboard Page', () => {
     listensCallCount = 0;
     deletedFutureListenIds = [];
     favoriteSongPatchCalls = [];
+    shouldThrowListensError = false;
     // Reset Spotify API mock
     mockSpotifyAlbumsGet.mockClear();
     // Clear Nuxt data cache to ensure fresh fetch
@@ -903,6 +908,114 @@ describe('Dashboard Page', () => {
           }
         });
       });
+    });
+  });
+
+  describe('when the user has no listens', () => {
+    beforeEach(() => {
+      mockListensData = [];
+      mockFutureListensData = [];
+    });
+
+    it('should render empty state message', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Then - should show empty state message
+      const emptyMessage = wrapper.find('.text-center.py-12');
+      expect(emptyMessage.exists()).toBe(true);
+      expect(emptyMessage.text()).toBe('No listens yet for this month');
+    });
+
+    it('should not render the sticky month header', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Then - sticky header should not be visible
+      const stickyHeader = wrapper.find('[data-testid="sticky-month-header"]');
+      expect(stickyHeader.exists()).toBe(false);
+    });
+
+    it('should not render any album days', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Then - no past or future album days
+      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
+      const futureDays = wrapper.findAll('[data-testid="future-album-day"]');
+      expect(pastDays).toHaveLength(0);
+      expect(futureDays).toHaveLength(0);
+    });
+  });
+
+  describe('when the API returns an error', () => {
+    beforeEach(() => {
+      shouldThrowListensError = true;
+    });
+
+    it('should render error state with error message', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Then - should show error message (Nuxt formats fetch errors as "[GET] /api/... : 500")
+      await waitFor(() => wrapper.text().includes('Error:'));
+      expect(wrapper.text()).toContain('Error:');
+      // The error message includes the failed endpoint
+      expect(wrapper.text()).toContain('/api/listens');
+    });
+
+    it('should not render the sticky month header', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Wait for error state to render
+      await waitFor(() => wrapper.text().includes('Error:'));
+
+      // Then - sticky header should not be visible
+      const stickyHeader = wrapper.find('[data-testid="sticky-month-header"]');
+      expect(stickyHeader.exists()).toBe(false);
+    });
+
+    it('should not render any album days', async () => {
+      // When
+      const wrapper = await mountDashboard();
+
+      // Wait for error state to render
+      await waitFor(() => wrapper.text().includes('Error:'));
+
+      // Then - no past or future album days
+      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
+      const futureDays = wrapper.findAll('[data-testid="future-album-day"]');
+      expect(pastDays).toHaveLength(0);
+      expect(futureDays).toHaveLength(0);
+    });
+  });
+
+  describe('infinite scroll', () => {
+    beforeEach(() => {
+      mockListensData = getListensReponse({ n: 14, startDate: TODAY });
+    });
+
+    it('should show "You\'ve reached the beginning" message when no more history', async () => {
+      // When - mount and trigger a scroll to load more (which returns empty)
+      const wrapper = await mountDashboard();
+
+      // Wait for the initial render and for hasMore to become false
+      // The endpoint returns empty array on subsequent calls, triggering hasMore = false
+      await waitFor(
+        () =>
+          wrapper
+            .text()
+            .includes("You've reached the beginning of your listening history"),
+        { timeout: 3000 },
+      );
+
+      // Then - should show end of history message
+      expect(
+        wrapper
+          .text()
+          .includes("You've reached the beginning of your listening history"),
+      ).toBe(true);
     });
   });
 });
