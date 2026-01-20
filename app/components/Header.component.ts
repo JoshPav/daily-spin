@@ -1,13 +1,15 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { computed, ref } from 'vue';
 import {
   cleanupAfterTest,
+  fireEvent,
   mockUser,
   mountPage,
+  screen,
   waitFor,
   waitForElement,
-  wrapper,
 } from '~~/tests/component';
 
 // Mock useAuth to bypass auth loading (must be at module level)
@@ -37,24 +39,26 @@ describe('Header Navigation', () => {
   describe('navigation links', () => {
     it('should display Dashboard and Backlog links in the header', () => {
       // Then - should show navigation links
-      const dashboardLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Dashboard');
-      const backlogLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Backlog');
+      const allLinks = screen.getAllByRole('link');
+      const dashboardLink = allLinks.find(
+        (link) => link.textContent === 'Dashboard',
+      );
+      const backlogLink = allLinks.find(
+        (link) => link.textContent === 'Backlog',
+      );
 
-      expect(dashboardLink?.exists()).toBe(true);
-      expect(backlogLink?.exists()).toBe(true);
+      expect(dashboardLink).toBeDefined();
+      expect(backlogLink).toBeDefined();
     });
 
     it('should show Dashboard as active when on dashboard route', () => {
       // Then - Dashboard link should have aria-current="page"
-      const dashboardLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Dashboard');
+      const allLinks = screen.getAllByRole('link');
+      const dashboardLink = allLinks.find(
+        (link) => link.textContent === 'Dashboard',
+      );
 
-      expect(dashboardLink?.attributes('aria-current')).toBe('page');
+      expect(dashboardLink?.getAttribute('aria-current')).toBe('page');
     });
 
     it('should show Backlog as active when on backlog route', async () => {
@@ -62,23 +66,25 @@ describe('Header Navigation', () => {
       await mountPage('/backlog');
 
       // Then - Backlog link should have aria-current="page"
-      const backlogLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Backlog');
+      const allLinks = screen.getAllByRole('link');
+      const backlogLink = allLinks.find(
+        (link) => link.textContent === 'Backlog',
+      );
 
-      expect(backlogLink?.attributes('aria-current')).toBe('page');
+      expect(backlogLink?.getAttribute('aria-current')).toBe('page');
     });
   });
 
   describe('navigation behavior', () => {
     it('should navigate to Backlog when Backlog link is clicked', async () => {
       // When - click Backlog link
-      const backlogLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Backlog');
+      const allLinks = screen.getAllByRole('link');
+      const backlogLink = allLinks.find(
+        (link) => link.textContent === 'Backlog',
+      );
 
       expect(backlogLink).toBeDefined();
-      await backlogLink?.trigger('click');
+      await fireEvent.click(backlogLink!);
 
       // Then - should navigate to backlog
       await waitFor(() => window.location.pathname === '/backlog');
@@ -90,12 +96,13 @@ describe('Header Navigation', () => {
       await mountPage('/backlog');
 
       // When - click Dashboard link
-      const dashboardLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text() === 'Dashboard');
+      const allLinks = screen.getAllByRole('link');
+      const dashboardLink = allLinks.find(
+        (link) => link.textContent === 'Dashboard',
+      );
 
       expect(dashboardLink).toBeDefined();
-      await dashboardLink?.trigger('click');
+      await fireEvent.click(dashboardLink!);
 
       // Then - should navigate to dashboard
       await waitFor(() => window.location.pathname === '/dashboard');
@@ -109,15 +116,16 @@ describe('Header Navigation', () => {
      * Returns the opened dialog element.
      */
     const openMobileMenu = async (): Promise<Element> => {
-      // Find the toggle button using Vue Test Utils wrapper
-      // The toggle button is the button with no text (icon only)
-      const buttons = wrapper?.findAll('button') || [];
-      const toggleButton = buttons.find((btn) => btn.text().trim() === '');
+      // Find the toggle button - it's a button with no text (icon only)
+      const allButtons = screen.getAllByRole('button');
+      const toggleButton = allButtons.find(
+        (btn) => btn.textContent?.trim() === '',
+      );
 
       expect(toggleButton).toBeDefined();
 
       // Click to open the menu
-      await toggleButton?.trigger('click');
+      await fireEvent.click(toggleButton!);
 
       // Wait for the slideover dialog to appear in the DOM
       return waitForElement('[role="dialog"]');
@@ -190,7 +198,7 @@ describe('Header Navigation', () => {
       ).find((item) => item.textContent?.includes('Preferences'));
 
       expect(preferencesLink).toBeDefined();
-      (preferencesLink as HTMLElement).click();
+      await fireEvent.click(preferencesLink as HTMLElement);
 
       // Then - should navigate to preferences
       await waitFor(() => window.location.pathname === '/preferences');
@@ -219,14 +227,13 @@ describe('Header Navigation', () => {
   describe('branding', () => {
     it('should display DailySpin title that links to dashboard', () => {
       // Then - should have title linking to dashboard (when logged in)
-      const titleLink = wrapper
-        ?.findAll('a')
-        .find((link) => link.text().includes('DailySpin'));
+      const allLinks = screen.getAllByRole('link');
+      const titleLink = allLinks.find((link) =>
+        link.textContent?.includes('DailySpin'),
+      );
 
-      expect(titleLink?.exists()).toBe(true);
-      // The title link goes to '/' but the computed `to` should make it '/dashboard'
-      // However, in the test it might just be '/' - let's check what it actually is
-      const href = titleLink?.attributes('href');
+      expect(titleLink).toBeDefined();
+      const href = titleLink?.getAttribute('href');
       expect(href).toBeTruthy();
     });
   });
