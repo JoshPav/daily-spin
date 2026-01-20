@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
-import { getDate } from 'date-fns';
+import { getDate, subDays } from 'date-fns';
 import { readBody } from 'h3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
@@ -16,7 +16,10 @@ import {
   waitForText,
 } from '~~/tests/component';
 import {
+  album,
+  artist,
   dailyAlbumListen,
+  dailyListens,
   favouriteSong,
   futureListenItem,
   getFutureListensResponse,
@@ -27,6 +30,8 @@ const mountDashboard = () => mountPage('/dashboard');
 
 // Shared mock state that tests can modify
 let mockListensData: DailyListens[] = [];
+let mockListensDataBatch2: DailyListens[] = [];
+let mockListensDataBatch3: DailyListens[] = [];
 let mockFutureListensData: FutureListenItem[] = [];
 let listensCallCount = 0;
 let deletedFutureListenIds: string[] = [];
@@ -69,7 +74,7 @@ mockNuxtImport('useAuth', () => {
 });
 
 // Register endpoint mock for /api/listens
-// Returns data on first call, empty on subsequent calls (simulates no more history)
+// Returns data based on call count to support multi-batch infinite scroll tests
 registerEndpoint('/api/listens', () => {
   listensCallCount++;
   if (shouldThrowListensError) {
@@ -78,7 +83,13 @@ registerEndpoint('/api/listens', () => {
   if (listensCallCount === 1) {
     return mockListensData;
   }
-  // Return empty days for subsequent calls (fetchMore)
+  if (listensCallCount === 2) {
+    return mockListensDataBatch2;
+  }
+  if (listensCallCount === 3) {
+    return mockListensDataBatch3;
+  }
+  // Return empty days for subsequent calls (fetchMore beyond batch 3)
   return [];
 });
 
@@ -96,6 +107,8 @@ describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.setSystemTime(TODAY);
     mockListensData = [];
+    mockListensDataBatch2 = [];
+    mockListensDataBatch3 = [];
     mockFutureListensData = [];
     listensCallCount = 0;
     deletedFutureListenIds = [];
@@ -992,30 +1005,175 @@ describe('Dashboard Page', () => {
   });
 
   describe('infinite scroll', () => {
-    beforeEach(() => {
-      mockListensData = getListensReponse({ n: 14, startDate: TODAY });
-    });
+    it('should load multiple batches and show end message when all data is fetched', async () => {
+      // Given - Set up 3 batches of data
+      // The dashboard's ensureScrollable function will automatically fetch more data
+      // when the content doesn't overflow the container (which is the case in tests)
+      const batch1StartDate = TODAY;
+      const batch2StartDate = subDays(TODAY, 5);
+      const batch3StartDate = subDays(TODAY, 10);
 
-    it('should show "You\'ve reached the beginning" message when no more history', async () => {
-      // When - mount and trigger a scroll to load more (which returns empty)
+      // Create batches - each batch has 3 days with albums
+      mockListensData = getListensReponse({ n: 3, startDate: batch1StartDate });
+      mockListensDataBatch2 = getListensReponse({
+        n: 3,
+        startDate: batch2StartDate,
+      });
+      mockListensDataBatch3 = getListensReponse({
+        n: 3,
+        startDate: batch3StartDate,
+      });
+
+      // When - mount the dashboard
+      // The ensureScrollable function will automatically trigger fetchMore
+      // until content overflows or hasMore becomes false
       const wrapper = await mountDashboard();
 
-      // Wait for the initial render and for hasMore to become false
-      // The endpoint returns empty array on subsequent calls, triggering hasMore = false
+      // Wait for all batches to load and end message to appear
+      // In test environment, ensureScrollable keeps fetching because content never overflows
       await waitFor(
         () =>
           wrapper
             .text()
             .includes("You've reached the beginning of your listening history"),
-        { timeout: 3000 },
+        { timeout: 5000 },
       );
 
-      // Then - should show end of history message
+      // Then - verify the end message is shown
       expect(
         wrapper
           .text()
           .includes("You've reached the beginning of your listening history"),
       ).toBe(true);
+
+      // Verify past album days are rendered (cards with albums have images)
+      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
+      expect(pastDays.length).toBeGreaterThan(0);
+
+      // Verify all 4 API calls were made (3 batches + 1 empty response)
+      expect(listensCallCount).toBe(4);
     });
+  });
+
+  describe('manual log album', () => {
+    it('should open the LogAlbumModal when clicking the add button on today', async () => {
+      // Given - Today has no albums (shows the + button)
+      mockListensData = getListensReponse({ n: 7, startDate: TODAY });
+      // Clear albums for today to show the + button
+      const todayData = mockListensData.find(
+        (d) => d.date.split('T')[0] === TODAY.toISOString().split('T')[0],
+      );
+      if (todayData) {
+        todayData.albums = [];
+      }
+
+      // When - mount and click the add button
+      const wrapper = await mountDashboard();
+
+      // Wait for render
+      await waitFor(() =>
+        wrapper.find('[data-testid="add-listen-button"]').exists(),
+      );
+
+      // Click the add button
+      await wrapper.find('[data-testid="add-listen-button"]').trigger('click');
+
+      // Then - modal should open with Log Album title
+      const modal = await waitForElement('[role="dialog"]');
+      expect(modal).toBeTruthy();
+      expect(modal.textContent).toContain('Log Album');
+    });
+  });
+
+  describe('multiple album modal carousel', () => {
+    const setupMultiAlbumDay = () => {
+      // Create a day with multiple albums
+      const album1 = dailyAlbumListen({
+        album: album({
+          albumId: 'album-1-id',
+          albumName: 'First Album',
+          artists: [artist({ name: 'First Artist' })],
+        }),
+      });
+      const album2 = dailyAlbumListen({
+        album: album({
+          albumId: 'album-2-id',
+          albumName: 'Second Album',
+          artists: [artist({ name: 'Second Artist' })],
+        }),
+      });
+
+      // The multi-album day is yesterday (subDays 1)
+      const multiAlbumDay = dailyListens({
+        date: subDays(TODAY, 1).toISOString(),
+        albums: [album1, album2],
+        favoriteSong: null,
+      });
+
+      // Create mock data with the multi-album day first, then other days
+      mockListensData = [
+        multiAlbumDay,
+        dailyListens({
+          date: TODAY.toISOString(),
+          albums: [dailyAlbumListen()],
+        }),
+      ];
+    };
+
+    it('should navigate to second album in carousel and show its details', async () => {
+      // Given
+      setupMultiAlbumDay();
+
+      // When - mount dashboard
+      const wrapper = await mountDashboard();
+
+      // Wait for render - find a past album day card with the album count badge
+      await waitFor(() =>
+        wrapper.find('[data-testid="album-count-badge"]').exists(),
+      );
+
+      // Find the day card with the album count badge (shows "2" for multiple albums)
+      const multiAlbumDayCard = wrapper.find('[data-testid="album-count-badge"]');
+      expect(multiAlbumDayCard.exists()).toBe(true);
+      expect(multiAlbumDayCard.text()).toBe('2');
+
+      // Click the parent past-album-day to open the modal
+      const multiAlbumDayEl = multiAlbumDayCard.element.closest(
+        '[data-testid="past-album-day"]',
+      ) as HTMLElement;
+      expect(multiAlbumDayEl).toBeTruthy();
+      multiAlbumDayEl.click();
+
+      // Wait for modal to open
+      const modal = await waitForElement('[role="dialog"]');
+      expect(modal.textContent).toContain('2 albums listened');
+      expect(modal.textContent).toContain('First Album');
+      expect(modal.textContent).toContain('First Artist');
+
+      // Find and click the next arrow to navigate to second album
+      // NuxtUI carousel uses buttons with lucide icons for navigation
+      const carouselButtons = modal.querySelectorAll('button');
+      // Find the next button (contains chevron-right or arrow-right icon)
+      const nextButton = Array.from(carouselButtons).find(
+        (btn) =>
+          btn.querySelector('[class*="chevron-right"]') ||
+          btn.querySelector('[class*="arrow-right"]') ||
+          btn.innerHTML.includes('chevron-right') ||
+          btn.innerHTML.includes('arrow-right'),
+      );
+      expect(nextButton).toBeTruthy();
+      (nextButton as HTMLElement).click();
+
+      // Wait for carousel to update
+      await waitFor(
+        () => modal.textContent?.includes('Second Album') ?? false,
+        { timeout: 3000 },
+      );
+
+      // Then - verify second album details are shown
+      expect(modal.textContent).toContain('Second Album');
+      expect(modal.textContent).toContain('Second Artist');
+    });
+
   });
 });
