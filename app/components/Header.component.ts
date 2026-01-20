@@ -6,6 +6,7 @@ import {
   mockUser,
   mountPage,
   waitFor,
+  waitForElement,
   wrapper,
 } from '~~/tests/component';
 
@@ -99,6 +100,119 @@ describe('Header Navigation', () => {
       // Then - should navigate to dashboard
       await waitFor(() => window.location.pathname === '/dashboard');
       expect(window.location.pathname).toBe('/dashboard');
+    });
+  });
+
+  describe('mobile navigation menu', () => {
+    /**
+     * Helper to find and click the mobile menu toggle button.
+     * Returns the opened dialog element.
+     */
+    const openMobileMenu = async (): Promise<Element> => {
+      // Find the toggle button using Vue Test Utils wrapper
+      // The toggle button is the button with no text (icon only)
+      const buttons = wrapper?.findAll('button') || [];
+      const toggleButton = buttons.find((btn) => btn.text().trim() === '');
+
+      expect(toggleButton).toBeDefined();
+
+      // Click to open the menu
+      await toggleButton?.trigger('click');
+
+      // Wait for the slideover dialog to appear in the DOM
+      return waitForElement('[role="dialog"]');
+    };
+
+    it('should open the navigation menu when toggle button is clicked', async () => {
+      // When - click the toggle button
+      const dialog = await openMobileMenu();
+
+      // Then - dialog should be visible
+      expect(dialog).toBeTruthy();
+      expect(dialog.getAttribute('role')).toBe('dialog');
+    });
+
+    it('should display user information in the menu', async () => {
+      // When - open the menu
+      const dialog = await openMobileMenu();
+
+      // Then - should show user name
+      expect(dialog.textContent).toContain(mockUser.name);
+
+      // And - should show user avatar
+      const avatar = dialog.querySelector(`img[src="${mockUser.image}"]`);
+      expect(avatar).toBeTruthy();
+    });
+
+    it('should display all navigation items in the menu', async () => {
+      // When - open the menu
+      const dialog = await openMobileMenu();
+
+      // Then - should show all navigation items
+      expect(dialog.textContent).toContain('Dashboard');
+      expect(dialog.textContent).toContain('Backlog');
+      expect(dialog.textContent).toContain('Bulk import');
+      expect(dialog.textContent).toContain('Preferences');
+      expect(dialog.textContent).toContain('Sign out');
+    });
+
+    it('should show Bulk import as disabled', async () => {
+      // When - open the menu
+      const dialog = await openMobileMenu();
+
+      // Then - Bulk import should be disabled
+      // Find the element containing "Bulk import" text
+      const menuItems = Array.from(dialog.querySelectorAll('button, a'));
+      const bulkImportItem = menuItems.find((item) =>
+        item.textContent?.includes('Bulk import'),
+      );
+
+      expect(bulkImportItem).toBeDefined();
+
+      // Check if it's disabled (either disabled attribute or disabled class)
+      if (bulkImportItem?.tagName === 'BUTTON') {
+        expect((bulkImportItem as HTMLButtonElement).disabled).toBe(true);
+      } else {
+        // If it's a link, check for disabled class or aria-disabled
+        const hasDisabledClass =
+          bulkImportItem?.className.includes('disabled') ||
+          bulkImportItem?.getAttribute('aria-disabled') === 'true';
+        expect(hasDisabledClass).toBe(true);
+      }
+    });
+
+    it('should navigate to Preferences when clicked in mobile menu', async () => {
+      // When - open menu and click Preferences
+      const dialog = await openMobileMenu();
+
+      const preferencesLink = Array.from(
+        dialog.querySelectorAll('a, button'),
+      ).find((item) => item.textContent?.includes('Preferences'));
+
+      expect(preferencesLink).toBeDefined();
+      (preferencesLink as HTMLElement).click();
+
+      // Then - should navigate to preferences
+      await waitFor(() => window.location.pathname === '/preferences');
+      expect(window.location.pathname).toBe('/preferences');
+    });
+
+    it('should show active state for current route in mobile menu', async () => {
+      // When - open menu on dashboard
+      const dialog = await openMobileMenu();
+
+      // Then - Dashboard should be highlighted/active
+      const menuLinks = Array.from(dialog.querySelectorAll('a'));
+      const dashboardLink = menuLinks.find((link) =>
+        link.textContent?.includes('Dashboard'),
+      ) as HTMLElement;
+
+      expect(dashboardLink).toBeDefined();
+      // Check for active indicator (aria-current or active class)
+      const isActive =
+        dashboardLink.getAttribute('aria-current') === 'page' ||
+        dashboardLink.className.includes('active');
+      expect(isActive).toBe(true);
     });
   });
 
