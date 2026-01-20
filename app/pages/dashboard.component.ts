@@ -956,8 +956,12 @@ describe('Dashboard Page', () => {
       await mountDashboard();
 
       // Then - no past or future album days
-      const pastDays = document.querySelectorAll('[data-testid="past-album-day"]');
-      const futureDays = document.querySelectorAll('[data-testid="future-album-day"]');
+      const pastDays = document.querySelectorAll(
+        '[data-testid="past-album-day"]',
+      );
+      const futureDays = document.querySelectorAll(
+        '[data-testid="future-album-day"]',
+      );
       expect(pastDays).toHaveLength(0);
       expect(futureDays).toHaveLength(0);
     });
@@ -973,7 +977,9 @@ describe('Dashboard Page', () => {
       await mountDashboard();
 
       // Then - should show error message (Nuxt formats fetch errors as "[GET] /api/... : 500")
-      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
+      await waitFor(
+        () => document.body.textContent?.includes('Error:') ?? false,
+      );
       expect(document.body.textContent).toContain('Error:');
       // The error message includes the failed endpoint
       expect(document.body.textContent).toContain('/api/listens');
@@ -984,7 +990,9 @@ describe('Dashboard Page', () => {
       await mountDashboard();
 
       // Wait for error state to render
-      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
+      await waitFor(
+        () => document.body.textContent?.includes('Error:') ?? false,
+      );
 
       // Then - sticky header should not be visible
       const stickyHeader = screen.queryByTestId('sticky-month-header');
@@ -996,11 +1004,17 @@ describe('Dashboard Page', () => {
       await mountDashboard();
 
       // Wait for error state to render
-      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
+      await waitFor(
+        () => document.body.textContent?.includes('Error:') ?? false,
+      );
 
       // Then - no past or future album days
-      const pastDays = document.querySelectorAll('[data-testid="past-album-day"]');
-      const futureDays = document.querySelectorAll('[data-testid="future-album-day"]');
+      const pastDays = document.querySelectorAll(
+        '[data-testid="past-album-day"]',
+      );
+      const futureDays = document.querySelectorAll(
+        '[data-testid="future-album-day"]',
+      );
       expect(pastDays).toHaveLength(0);
       expect(futureDays).toHaveLength(0);
     });
@@ -1076,7 +1090,8 @@ describe('Dashboard Page', () => {
 
       // Wait for render
       await waitFor(
-        () => document.querySelector('[data-testid="add-listen-button"]') !== null,
+        () =>
+          document.querySelector('[data-testid="add-listen-button"]') !== null,
       );
 
       // Click the add button
@@ -1134,7 +1149,8 @@ describe('Dashboard Page', () => {
 
       // Wait for render - find a past album day card with the album count badge
       await waitFor(
-        () => document.querySelector('[data-testid="album-count-badge"]') !== null,
+        () =>
+          document.querySelector('[data-testid="album-count-badge"]') !== null,
       );
 
       // Find the day card with the album count badge (shows "2" for multiple albums)
