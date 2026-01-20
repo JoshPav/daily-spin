@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: we are in control of test data */
+/** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { readBody } from 'h3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -6,9 +6,10 @@ import { computed, ref } from 'vue';
 import type { GetPreferencesResponse } from '~~/shared/schema';
 import {
   cleanupAfterTest,
+  fireEvent,
   mountPage,
+  screen,
   waitFor,
-  wrapper,
 } from '~~/tests/component';
 import {
   getPreferencesResponse,
@@ -68,71 +69,65 @@ describe('Preferences Page', () => {
 
   describe('page header', () => {
     it('should render the page title', async () => {
-      // When
       await mountPreferences();
 
-      // Then
-      const title = wrapper!.find('h1');
-      expect(title.exists()).toBe(true);
-      expect(title.text()).toBe('Preferences');
+      expect(
+        screen.getByRole('heading', { name: 'Preferences' }),
+      ).toBeDefined();
     });
   });
 
   describe('features card', () => {
     it('should render the Features card with correct title and description', async () => {
-      // When
       await mountPreferences();
 
-      // Then
-      expect(wrapper!.text()).toContain('Features');
-      // The description may have whitespace due to template formatting, so check for key parts
-      expect(wrapper!.text()).toContain('Control how DailySpin tracks');
-      expect(wrapper!.text()).toContain('manages your');
+      expect(screen.getByText('Features')).toBeDefined();
+      expect(
+        screen.getByText(/Control how DailySpin tracks and manages/),
+      ).toBeDefined();
     });
 
     it('should render all three preference toggles', async () => {
-      // When
       await mountPreferences();
 
-      // Then - Track Listening History toggle
-      expect(wrapper!.text()).toContain('Track Listening History');
-      expect(wrapper!.text()).toContain(
-        'Automatically detect and record albums you listen to on Spotify',
-      );
+      // Track Listening History toggle
+      expect(screen.getByText('Track Listening History')).toBeDefined();
+      expect(
+        screen.getByText(
+          'Automatically detect and record albums you listen to on Spotify',
+        ),
+      ).toBeDefined();
 
-      // And - Create Today's Album Playlist toggle
-      expect(wrapper!.text()).toContain("Create Today's Album Playlist");
-      expect(wrapper!.text()).toContain(
-        'Automatically create/update a Spotify playlist for your scheduled album',
-      );
+      // Create Today's Album Playlist toggle
+      expect(screen.getByText("Create Today's Album Playlist")).toBeDefined();
+      expect(
+        screen.getByText(
+          'Automatically create/update a Spotify playlist for your scheduled album',
+        ),
+      ).toBeDefined();
 
-      // And - Create Song of the Day Playlist toggle
-      expect(wrapper!.text()).toContain('Create Song of the Day Playlist');
-      expect(wrapper!.text()).toContain(
-        'Automatically create/update a Spotify playlist for daily song picks',
-      );
+      // Create Song of the Day Playlist toggle
+      expect(screen.getByText('Create Song of the Day Playlist')).toBeDefined();
+      expect(
+        screen.getByText(
+          'Automatically create/update a Spotify playlist for daily song picks',
+        ),
+      ).toBeDefined();
     });
 
     it('should render Save Changes button', async () => {
-      // When
       await mountPreferences();
 
-      // Then
-      const saveButton = wrapper!
-        .findAll('button')
-        .find((btn) => btn.text().includes('Save Changes'));
-      expect(saveButton).toBeDefined();
+      expect(
+        screen.getByRole('button', { name: /Save Changes/ }),
+      ).toBeDefined();
     });
 
     it('should disable Save Changes button when there are no changes', async () => {
-      // When
       await mountPreferences();
 
-      // Then
-      const saveButton = wrapper!
-        .findAll('button')
-        .find((btn) => btn.text().includes('Save Changes'));
-      expect(saveButton?.attributes('disabled')).toBeDefined();
+      const saveButton = screen.getByRole('button', { name: /Save Changes/ });
+      expect(saveButton.hasAttribute('disabled')).toBe(true);
     });
 
     describe('when toggling a preference', () => {
@@ -148,62 +143,41 @@ describe('Preferences Page', () => {
       });
 
       it('should enable Save Changes button after toggling a preference', async () => {
-        // When
         await mountPreferences();
 
-        // Find the switch buttons (buttons with role="switch")
-        const buttons = wrapper!.findAll('button');
-        const switchButtons = buttons.filter(
-          (btn) => btn.attributes('role') === 'switch',
-        );
-        expect(switchButtons.length).toBe(3);
+        const switchButtons = screen.getAllByRole('switch');
+        expect(switchButtons).toHaveLength(3);
 
-        // Verify Save Changes is initially disabled
-        const getSaveButton = () =>
-          wrapper!
-            .findAll('button')
-            .find((btn) => btn.text().includes('Save Changes'));
-        expect(getSaveButton()?.attributes('disabled')).toBeDefined();
+        const saveButton = screen.getByRole('button', { name: /Save Changes/ });
+        expect(saveButton.hasAttribute('disabled')).toBe(true);
 
         // Click the second switch (createTodaysAlbumPlaylist, currently false)
-        await switchButtons[1]!.trigger('click');
+        await fireEvent.click(switchButtons[1]!);
 
-        // Then - Save Changes button should be enabled
-        await waitFor(
-          () => getSaveButton()?.attributes('disabled') === undefined,
-        );
-        expect(getSaveButton()?.attributes('disabled')).toBeUndefined();
+        // Save Changes button should be enabled
+        await waitFor(() => !saveButton.hasAttribute('disabled'));
+        expect(saveButton.hasAttribute('disabled')).toBe(false);
       });
 
       it('should call PATCH API with updated preferences when saving', async () => {
-        // Given
         await mountPreferences();
 
-        // Find switch buttons and Save Changes button
-        const buttons = wrapper!.findAll('button');
-        const switchButtons = buttons.filter(
-          (btn) => btn.attributes('role') === 'switch',
-        );
-        const getSaveButton = () =>
-          wrapper!
-            .findAll('button')
-            .find((btn) => btn.text().includes('Save Changes'));
+        const switchButtons = screen.getAllByRole('switch');
+        const saveButton = screen.getByRole('button', { name: /Save Changes/ });
 
         // Toggle the second preference (createTodaysAlbumPlaylist: false -> true)
-        await switchButtons[1]!.trigger('click');
+        await fireEvent.click(switchButtons[1]!);
 
         // Wait for Save Changes to be enabled
-        await waitFor(
-          () => getSaveButton()?.attributes('disabled') === undefined,
-        );
+        await waitFor(() => !saveButton.hasAttribute('disabled'));
 
-        // When - click Save Changes
-        await getSaveButton()!.trigger('click');
+        // Click Save Changes
+        await fireEvent.click(saveButton);
 
-        // Then - PATCH API should have been called with updated preferences
+        // PATCH API should have been called with updated preferences
         await waitFor(() => patchCalls.length > 0);
         expect(patchCalls).toHaveLength(1);
-        expect(patchCalls[0]!.body).toEqual({
+        expect(patchCalls[0]?.body).toEqual({
           trackListeningHistory: true,
           createTodaysAlbumPlaylist: true, // toggled from false to true
           createSongOfDayPlaylist: false,
@@ -214,14 +188,10 @@ describe('Preferences Page', () => {
 
   describe('linked playlists card', () => {
     it('should render the Linked Playlists card title', async () => {
-      // When
       await mountPreferences();
 
-      // Wait for data to load
-      await waitFor(() => wrapper!.text().includes('Linked Playlists'));
-
-      // Then
-      expect(wrapper!.text()).toContain('Linked Playlists');
+      await waitFor(() => screen.queryByText('Linked Playlists') !== null);
+      expect(screen.getByText('Linked Playlists')).toBeDefined();
     });
 
     describe('when there are no linked playlists', () => {
@@ -233,14 +203,14 @@ describe('Preferences Page', () => {
       });
 
       it('should show empty state message', async () => {
-        // When
         await mountPreferences();
 
-        // Then
-        expect(wrapper!.text()).toContain('No playlists linked yet');
-        expect(wrapper!.text()).toContain(
-          'Enable playlist features above to automatically create and link Spotify playlists',
-        );
+        expect(screen.getByText('No playlists linked yet')).toBeDefined();
+        expect(
+          screen.getByText(
+            'Enable playlist features above to automatically create and link Spotify playlists',
+          ),
+        ).toBeDefined();
       });
     });
 
@@ -265,52 +235,43 @@ describe('Preferences Page', () => {
       });
 
       it('should display Album of the Day playlist with correct label and description', async () => {
-        // When
         await mountPreferences();
 
-        // Then
-        await waitFor(() => wrapper!.text().includes('Album of the Day'));
-        expect(wrapper!.text()).toContain('Album of the Day');
-        expect(wrapper!.text()).toContain(
-          'Updated daily with your scheduled album',
-        );
+        await waitFor(() => screen.queryByText('Album of the Day') !== null);
+        expect(screen.getByText('Album of the Day')).toBeDefined();
+        expect(
+          screen.getByText('Updated daily with your scheduled album'),
+        ).toBeDefined();
       });
 
       it('should display Song of the Day playlist with correct label and description', async () => {
-        // When
         await mountPreferences();
 
-        // Then - wait for data to load and render
-        await waitFor(() =>
-          wrapper!
-            .text()
-            .includes('A growing collection of your daily song picks'),
+        await waitFor(
+          () =>
+            screen.queryByText(
+              'A growing collection of your daily song picks',
+            ) !== null,
         );
-        expect(wrapper!.text()).toContain('Song of the Day');
-        expect(wrapper!.text()).toContain(
-          'A growing collection of your daily song picks',
-        );
+        expect(screen.getByText('Song of the Day')).toBeDefined();
+        expect(
+          screen.getByText('A growing collection of your daily song picks'),
+        ).toBeDefined();
       });
 
-      it('should render Open in Spotify buttons for each playlist', async () => {
-        // When
+      it('should render Open in Spotify links for each playlist', async () => {
         await mountPreferences();
 
-        // Wait for playlists to render
-        await waitFor(() => wrapper!.text().includes('Album of the Day'));
+        await waitFor(() => screen.queryByText('Album of the Day') !== null);
 
-        // Then - find links to Spotify playlists
-        const spotifyLinks = wrapper!
-          .findAll('a')
-          .filter((link) =>
-            link
-              .attributes('href')
-              ?.includes('https://open.spotify.com/playlist/'),
-          );
-        expect(spotifyLinks.length).toBe(2);
+        // Find all links - the Spotify buttons have "Open" text
+        const allLinks = screen.getAllByRole('link');
+        const spotifyLinks = allLinks.filter((link) =>
+          link.getAttribute('href')?.includes('open.spotify.com/playlist/'),
+        );
+        expect(spotifyLinks).toHaveLength(2);
 
-        // Verify the playlist IDs are in the URLs
-        const hrefs = spotifyLinks.map((link) => link.attributes('href'));
+        const hrefs = spotifyLinks.map((link) => link.getAttribute('href'));
         expect(hrefs).toContain(
           `https://open.spotify.com/playlist/${albumOfTheDayPlaylist.spotifyPlaylistId}`,
         );
@@ -320,14 +281,11 @@ describe('Preferences Page', () => {
       });
 
       it('should not show empty state message when playlists exist', async () => {
-        // When
         await mountPreferences();
 
-        // Wait for playlists to render
-        await waitFor(() => wrapper!.text().includes('Album of the Day'));
+        await waitFor(() => screen.queryByText('Album of the Day') !== null);
 
-        // Then
-        expect(wrapper!.text()).not.toContain('No playlists linked yet');
+        expect(screen.queryByText('No playlists linked yet')).toBeNull();
       });
     });
   });
