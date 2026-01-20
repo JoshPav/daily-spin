@@ -36,11 +36,11 @@ describe('Header Navigation', () => {
   describe('navigation links', () => {
     it('should display Dashboard and Backlog links in the header', () => {
       // Then - should show navigation links
-      const dashboardLink = wrapper!
-        .findAll('a')
+      const dashboardLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Dashboard');
-      const backlogLink = wrapper!
-        .findAll('a')
+      const backlogLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Backlog');
 
       expect(dashboardLink?.exists()).toBe(true);
@@ -49,8 +49,8 @@ describe('Header Navigation', () => {
 
     it('should show Dashboard as active when on dashboard route', () => {
       // Then - Dashboard link should have aria-current="page"
-      const dashboardLink = wrapper!
-        .findAll('a')
+      const dashboardLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Dashboard');
 
       expect(dashboardLink?.attributes('aria-current')).toBe('page');
@@ -61,8 +61,8 @@ describe('Header Navigation', () => {
       await mountPage('/backlog');
 
       // Then - Backlog link should have aria-current="page"
-      const backlogLink = wrapper!
-        .findAll('a')
+      const backlogLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Backlog');
 
       expect(backlogLink?.attributes('aria-current')).toBe('page');
@@ -72,12 +72,12 @@ describe('Header Navigation', () => {
   describe('navigation behavior', () => {
     it('should navigate to Backlog when Backlog link is clicked', async () => {
       // When - click Backlog link
-      const backlogLink = wrapper!
-        .findAll('a')
+      const backlogLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Backlog');
 
       expect(backlogLink).toBeDefined();
-      await backlogLink!.trigger('click');
+      await backlogLink?.trigger('click');
 
       // Then - should navigate to backlog
       await waitFor(() => window.location.pathname === '/backlog');
@@ -89,25 +89,24 @@ describe('Header Navigation', () => {
       await mountPage('/backlog');
 
       // When - click Dashboard link
-      const dashboardLink = wrapper!
-        .findAll('a')
+      const dashboardLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text() === 'Dashboard');
 
       expect(dashboardLink).toBeDefined();
-      await dashboardLink!.trigger('click');
+      await dashboardLink?.trigger('click');
 
       // Then - should navigate to dashboard
       await waitFor(() => window.location.pathname === '/dashboard');
       expect(window.location.pathname).toBe('/dashboard');
     });
-
   });
 
   describe('branding', () => {
     it('should display DailySpin title that links to dashboard', () => {
       // Then - should have title linking to dashboard (when logged in)
-      const titleLink = wrapper!
-        .findAll('a')
+      const titleLink = wrapper
+        ?.findAll('a')
         .find((link) => link.text().includes('DailySpin'));
 
       expect(titleLink?.exists()).toBe(true);
