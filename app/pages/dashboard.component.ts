@@ -932,30 +932,32 @@ describe('Dashboard Page', () => {
 
     it('should render empty state message', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Then - should show empty state message
-      const emptyMessage = wrapper.find('.text-center.py-12');
-      expect(emptyMessage.exists()).toBe(true);
-      expect(emptyMessage.text()).toBe('No listens yet for this month');
+      const emptyMessage = document.querySelector('.text-center.py-12');
+      expect(emptyMessage).not.toBeNull();
+      expect(emptyMessage?.textContent?.trim()).toBe(
+        'No listens yet for this month',
+      );
     });
 
     it('should not render the sticky month header', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Then - sticky header should not be visible
-      const stickyHeader = wrapper.find('[data-testid="sticky-month-header"]');
-      expect(stickyHeader.exists()).toBe(false);
+      const stickyHeader = screen.queryByTestId('sticky-month-header');
+      expect(stickyHeader).toBeNull();
     });
 
     it('should not render any album days', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Then - no past or future album days
-      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
-      const futureDays = wrapper.findAll('[data-testid="future-album-day"]');
+      const pastDays = document.querySelectorAll('[data-testid="past-album-day"]');
+      const futureDays = document.querySelectorAll('[data-testid="future-album-day"]');
       expect(pastDays).toHaveLength(0);
       expect(futureDays).toHaveLength(0);
     });
@@ -968,37 +970,37 @@ describe('Dashboard Page', () => {
 
     it('should render error state with error message', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Then - should show error message (Nuxt formats fetch errors as "[GET] /api/... : 500")
-      await waitFor(() => wrapper.text().includes('Error:'));
-      expect(wrapper.text()).toContain('Error:');
+      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
+      expect(document.body.textContent).toContain('Error:');
       // The error message includes the failed endpoint
-      expect(wrapper.text()).toContain('/api/listens');
+      expect(document.body.textContent).toContain('/api/listens');
     });
 
     it('should not render the sticky month header', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Wait for error state to render
-      await waitFor(() => wrapper.text().includes('Error:'));
+      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
 
       // Then - sticky header should not be visible
-      const stickyHeader = wrapper.find('[data-testid="sticky-month-header"]');
-      expect(stickyHeader.exists()).toBe(false);
+      const stickyHeader = screen.queryByTestId('sticky-month-header');
+      expect(stickyHeader).toBeNull();
     });
 
     it('should not render any album days', async () => {
       // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Wait for error state to render
-      await waitFor(() => wrapper.text().includes('Error:'));
+      await waitFor(() => document.body.textContent?.includes('Error:') ?? false);
 
       // Then - no past or future album days
-      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
-      const futureDays = wrapper.findAll('[data-testid="future-album-day"]');
+      const pastDays = document.querySelectorAll('[data-testid="past-album-day"]');
+      const futureDays = document.querySelectorAll('[data-testid="future-album-day"]');
       expect(pastDays).toHaveLength(0);
       expect(futureDays).toHaveLength(0);
     });
@@ -1027,27 +1029,29 @@ describe('Dashboard Page', () => {
       // When - mount the dashboard
       // The ensureScrollable function will automatically trigger fetchMore
       // until content overflows or hasMore becomes false
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Wait for all batches to load and end message to appear
       // In test environment, ensureScrollable keeps fetching because content never overflows
       await waitFor(
         () =>
-          wrapper
-            .text()
-            .includes("You've reached the beginning of your listening history"),
+          document.body.textContent?.includes(
+            "You've reached the beginning of your listening history",
+          ) ?? false,
         { timeout: 5000 },
       );
 
       // Then - verify the end message is shown
       expect(
-        wrapper
-          .text()
-          .includes("You've reached the beginning of your listening history"),
+        document.body.textContent?.includes(
+          "You've reached the beginning of your listening history",
+        ),
       ).toBe(true);
 
       // Verify past album days are rendered (cards with albums have images)
-      const pastDays = wrapper.findAll('[data-testid="past-album-day"]');
+      const pastDays = document.querySelectorAll(
+        '[data-testid="past-album-day"]',
+      );
       expect(pastDays.length).toBeGreaterThan(0);
 
       // Verify all 4 API calls were made (3 batches + 1 empty response)
@@ -1068,15 +1072,16 @@ describe('Dashboard Page', () => {
       }
 
       // When - mount and click the add button
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Wait for render
-      await waitFor(() =>
-        wrapper.find('[data-testid="add-listen-button"]').exists(),
+      await waitFor(
+        () => document.querySelector('[data-testid="add-listen-button"]') !== null,
       );
 
       // Click the add button
-      await wrapper.find('[data-testid="add-listen-button"]').trigger('click');
+      const addButton = screen.getByTestId('add-listen-button');
+      await fireEvent.click(addButton);
 
       // Then - modal should open with Log Album title
       const modal = await waitForElement('[role="dialog"]');
@@ -1125,24 +1130,26 @@ describe('Dashboard Page', () => {
       setupMultiAlbumDay();
 
       // When - mount dashboard
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
       // Wait for render - find a past album day card with the album count badge
-      await waitFor(() =>
-        wrapper.find('[data-testid="album-count-badge"]').exists(),
+      await waitFor(
+        () => document.querySelector('[data-testid="album-count-badge"]') !== null,
       );
 
       // Find the day card with the album count badge (shows "2" for multiple albums)
-      const multiAlbumDayCard = wrapper.find('[data-testid="album-count-badge"]');
-      expect(multiAlbumDayCard.exists()).toBe(true);
-      expect(multiAlbumDayCard.text()).toBe('2');
+      const multiAlbumDayCard = document.querySelector(
+        '[data-testid="album-count-badge"]',
+      );
+      expect(multiAlbumDayCard).not.toBeNull();
+      expect(multiAlbumDayCard?.textContent).toBe('2');
 
       // Click the parent past-album-day to open the modal
-      const multiAlbumDayEl = multiAlbumDayCard.element.closest(
+      const multiAlbumDayEl = multiAlbumDayCard?.closest(
         '[data-testid="past-album-day"]',
       ) as HTMLElement;
       expect(multiAlbumDayEl).toBeTruthy();
-      multiAlbumDayEl.click();
+      await fireEvent.click(multiAlbumDayEl);
 
       // Wait for modal to open
       const modal = await waitForElement('[role="dialog"]');
@@ -1162,7 +1169,7 @@ describe('Dashboard Page', () => {
           btn.innerHTML.includes('arrow-right'),
       );
       expect(nextButton).toBeTruthy();
-      (nextButton as HTMLElement).click();
+      await fireEvent.click(nextButton as HTMLElement);
 
       // Wait for carousel to update
       await waitFor(
@@ -1174,6 +1181,5 @@ describe('Dashboard Page', () => {
       expect(modal.textContent).toContain('Second Album');
       expect(modal.textContent).toContain('Second Artist');
     });
-
   });
 });
