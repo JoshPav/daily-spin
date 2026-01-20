@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: we are in control of test data */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
+import { readBody } from 'h3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { computed, ref } from 'vue';
 import type { GetPreferencesResponse } from '~~/shared/schema';
@@ -19,6 +20,7 @@ const mountPreferences = () => mountPage('/preferences');
 
 // Shared mock state that tests can modify
 let mockPreferencesData: GetPreferencesResponse | null = null;
+let patchCalls: { body: unknown }[] = [];
 
 // Mock useAuth to bypass auth loading (must be at module level)
 mockNuxtImport('useAuth', () => {
@@ -38,9 +40,24 @@ mockNuxtImport('useAuth', () => {
 // Register endpoint mock for /api/preferences (GET) - simple form like dashboard tests
 registerEndpoint('/api/preferences', () => mockPreferencesData);
 
+// Register endpoint mock for /api/preferences (PATCH)
+registerEndpoint('/api/preferences', {
+  method: 'PATCH',
+  handler: async (event) => {
+    const body = await readBody(event);
+    patchCalls.push({ body });
+    // Return updated preferences
+    return {
+      preferences: { ...mockPreferencesData?.preferences, ...body },
+      linkedPlaylists: mockPreferencesData?.linkedPlaylists ?? [],
+    };
+  },
+});
+
 describe('Preferences Page', () => {
   beforeEach(() => {
     mockPreferencesData = getPreferencesResponse();
+    patchCalls = [];
     // Clear Nuxt data cache to ensure fresh fetch
     clearNuxtData('preferences');
   });
@@ -130,31 +147,67 @@ describe('Preferences Page', () => {
         clearNuxtData('preferences');
       });
 
-      it('should render toggle switches for each preference', async () => {
+      it('should enable Save Changes button after toggling a preference', async () => {
         // When
         await mountPreferences();
 
-        // Then - find all switch elements by their aria role or button type
-        // Nuxt UI's USwitch renders as button elements with specific attributes
+        // Find the switch buttons (buttons with role="switch")
         const buttons = wrapper!.findAll('button');
-        const toggleButtons = buttons.filter(
-          (btn) =>
-            btn.attributes('role') === 'switch' ||
-            btn.element.classList.contains('ui-switch') ||
-            btn.element.closest('[class*="switch"]'),
+        const switchButtons = buttons.filter(
+          (btn) => btn.attributes('role') === 'switch',
+        );
+        expect(switchButtons.length).toBe(3);
+
+        // Verify Save Changes is initially disabled
+        const getSaveButton = () =>
+          wrapper!
+            .findAll('button')
+            .find((btn) => btn.text().includes('Save Changes'));
+        expect(getSaveButton()?.attributes('disabled')).toBeDefined();
+
+        // Click the second switch (createTodaysAlbumPlaylist, currently false)
+        await switchButtons[1]!.trigger('click');
+
+        // Then - Save Changes button should be enabled
+        await waitFor(
+          () => getSaveButton()?.attributes('disabled') === undefined,
+        );
+        expect(getSaveButton()?.attributes('disabled')).toBeUndefined();
+      });
+
+      it('should call PATCH API with updated preferences when saving', async () => {
+        // Given
+        await mountPreferences();
+
+        // Find switch buttons and Save Changes button
+        const buttons = wrapper!.findAll('button');
+        const switchButtons = buttons.filter(
+          (btn) => btn.attributes('role') === 'switch',
+        );
+        const getSaveButton = () =>
+          wrapper!
+            .findAll('button')
+            .find((btn) => btn.text().includes('Save Changes'));
+
+        // Toggle the second preference (createTodaysAlbumPlaylist: false -> true)
+        await switchButtons[1]!.trigger('click');
+
+        // Wait for Save Changes to be enabled
+        await waitFor(
+          () => getSaveButton()?.attributes('disabled') === undefined,
         );
 
-        // We should have toggle controls rendered (3 preference toggles)
-        // Note: In happy-dom, headless-ui components may render differently
-        // If switches render, verify we have 3; if not, at least verify the page loads
-        if (toggleButtons.length > 0) {
-          expect(toggleButtons.length).toBe(3);
-        } else {
-          // Verify the page still renders the preference sections
-          expect(wrapper!.text()).toContain('Track Listening History');
-          expect(wrapper!.text()).toContain("Create Today's Album Playlist");
-          expect(wrapper!.text()).toContain('Create Song of the Day Playlist');
-        }
+        // When - click Save Changes
+        await getSaveButton()!.trigger('click');
+
+        // Then - PATCH API should have been called with updated preferences
+        await waitFor(() => patchCalls.length > 0);
+        expect(patchCalls).toHaveLength(1);
+        expect(patchCalls[0]!.body).toEqual({
+          trackListeningHistory: true,
+          createTodaysAlbumPlaylist: true, // toggled from false to true
+          createSongOfDayPlaylist: false,
+        });
       });
     });
   });
@@ -163,6 +216,9 @@ describe('Preferences Page', () => {
     it('should render the Linked Playlists card title', async () => {
       // When
       await mountPreferences();
+
+      // Wait for data to load
+      await waitFor(() => wrapper!.text().includes('Linked Playlists'));
 
       // Then
       expect(wrapper!.text()).toContain('Linked Playlists');
