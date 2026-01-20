@@ -370,11 +370,11 @@ bun run vitest run --project component
 import {
   mountPage,
   cleanupAfterTest,
-  wrapper,
+  screen,        // Testing Library queries
+  fireEvent,     // Testing Library interactions
   waitFor,
   waitForElement,
   waitForText,
-  mockUser,
 } from '~~/tests/component';
 ```
 
@@ -434,7 +434,7 @@ mockNuxtImport('useSpotifyApi', () => {
 All component tests must mount the app at a route using `mountPage`, not mount individual components:
 
 ```typescript
-import { mountPage, cleanupAfterTest, wrapper } from '~~/tests/component';
+import { mountPage, cleanupAfterTest, screen, fireEvent } from '~~/tests/component';
 
 describe('Dashboard Page', () => {
   beforeEach(async () => {
@@ -446,16 +446,47 @@ describe('Dashboard Page', () => {
   });
 
   it('should render content', async () => {
-    // Use the global wrapper
-    expect(wrapper!.find('[data-testid="my-element"]').exists()).toBe(true);
+    // Use Testing Library queries (preferred)
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeDefined();
+    expect(screen.getByText('Welcome')).toBeDefined();
+
+    // Query by test ID when semantic queries aren't suitable
+    expect(screen.getByTestId('my-element')).toBeDefined();
+
+    // Interact with elements
+    await fireEvent.click(screen.getByRole('button', { name: /save/i }));
   });
 });
 ```
 
 The `mountPage` function:
 - Mounts the full app at the specified route
-- Sets the global `wrapper` reference for use in tests
+- Attaches to document.body so Testing Library can query the DOM
 - Automatically flushes promises and waits for initial render
+
+**Testing Library queries** - Prefer semantic queries in this order:
+
+1. `getByRole` - Best for accessibility (buttons, headings, links, etc.)
+2. `getByText` - For visible text content
+3. `getByLabelText` - For form inputs
+4. `getByTestId` - Fallback when semantic queries don't work
+
+```typescript
+// Good - semantic queries
+screen.getByRole('button', { name: /save changes/i });
+screen.getByRole('heading', { name: 'Preferences' });
+screen.getByText('No playlists linked yet');
+screen.getAllByRole('switch');  // For toggle switches
+
+// queryBy returns null instead of throwing (useful for asserting absence)
+expect(screen.queryByText('Error message')).toBeNull();
+
+// Filtering results
+const allLinks = screen.getAllByRole('link');
+const spotifyLinks = allLinks.filter(link =>
+  link.getAttribute('href')?.includes('spotify.com')
+);
+```
 
 **Waiting - Prefer condition-based waits over timeouts:**
 

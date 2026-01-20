@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: we are in control of test data */
+/** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import { getDate } from 'date-fns';
@@ -8,11 +8,12 @@ import { computed, ref } from 'vue';
 import type { DailyListens, FutureListenItem } from '~~/shared/schema';
 import {
   cleanupAfterTest,
+  fireEvent,
   mountPage,
+  screen,
   waitFor,
   waitForElement,
   waitForText,
-  wrapper,
 } from '~~/tests/component';
 import {
   dailyAlbumListen,
@@ -113,38 +114,33 @@ describe('Dashboard Page', () => {
     });
 
     it('should render the current month sticky banner', async () => {
-      // When
-      const wrapper = await mountDashboard();
+      await mountDashboard();
 
-      // Then
-      const stickyHeader = wrapper.find('[data-testid="sticky-month-header"]');
-      expect(stickyHeader.exists()).toBe(true);
-      expect(stickyHeader.text()).toBe('January 2026');
+      const stickyHeader = screen.getByTestId('sticky-month-header');
+      expect(stickyHeader.textContent).toBe('January 2026');
     });
 
     describe('past listens', () => {
       it('should render past listens correctly', async () => {
-        // When
-        const wrapper = await mountDashboard();
+        await mountDashboard();
 
-        // Then - should render all listens
-        const pastAlbumDays = wrapper.findAll('[data-testid="past-album-day"]');
+        const pastAlbumDays = screen.getAllByTestId('past-album-day');
         expect(pastAlbumDays).toHaveLength(mockListensData.length);
 
-        // And - should display the correct date and image on each listen
+        // Verify each day shows correct date and image
         for (let i = 0; i < mockListensData.length; i++) {
-          const dayNumber = pastAlbumDays[i]?.find(
+          const dayNumber = pastAlbumDays[i]!.querySelector(
             '[data-testid="day-number"]',
           );
           const expectedDay = getDate(new Date(mockListensData[i]!.date));
-          expect(dayNumber?.text()).toEqual(String(expectedDay));
+          expect(dayNumber?.textContent).toEqual(String(expectedDay));
 
-          const albumImage = pastAlbumDays[i]?.find(
+          const albumImage = pastAlbumDays[i]!.querySelector(
             '[data-testid="album-image"]',
           );
           const expectedImageUrl =
             mockListensData[i]?.albums[0]?.album.imageUrl;
-          expect(albumImage?.attributes('src')).toEqual(expectedImageUrl);
+          expect(albumImage?.getAttribute('src')).toEqual(expectedImageUrl);
         }
       });
 
@@ -157,19 +153,17 @@ describe('Dashboard Page', () => {
             listen.albums.length > 0 ? listen.albums : [dailyAlbumListen()],
         }));
 
-        // When
-        const wrapper = await mountDashboard();
+        await mountDashboard();
 
-        // Then - UChip renders a warning indicator when needsFavoriteSong is true
-        // The chip indicator is a span sibling to the album-day-card with warning background
-        const chipIndicators = wrapper.findAll(
+        // UChip renders a warning indicator when needsFavoriteSong is true
+        const chipIndicators = document.querySelectorAll(
           '[data-testid="past-album-day"] + span',
         );
         expect(chipIndicators.length).toBeGreaterThan(0);
 
         // At least some should have the warning color class
-        const hasWarningChip = chipIndicators.some((indicator) =>
-          indicator.classes().some((c) => c.includes('warning')),
+        const hasWarningChip = Array.from(chipIndicators).some((indicator) =>
+          indicator.classList.toString().includes('warning'),
         );
         expect(hasWarningChip).toBe(true);
       });
@@ -180,15 +174,11 @@ describe('Dashboard Page', () => {
           '2026-01-01T12:00:00.000Z',
         ).toISOString();
 
-        // When
-        const wrapper = await mountDashboard();
+        await mountDashboard();
 
-        // Then - find the month label on the first day (Jan 1st)
-        const monthLabels = wrapper.findAll('[data-testid="month-label"]');
+        const monthLabels = screen.getAllByTestId('month-label');
         expect(monthLabels.length).toBeGreaterThanOrEqual(1);
-
-        // The first month label should say JAN (short format)
-        expect(monthLabels[0]?.text()).toBe('JAN');
+        expect(monthLabels[0]!.textContent).toBe('JAN');
       });
 
       describe('when a day has no albums', () => {
@@ -199,27 +189,22 @@ describe('Dashboard Page', () => {
         });
 
         it('should render empty day correctly', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - past days without albums show the empty album cover
-          const emptyCovers = wrapper.findAll(
-            '[data-testid="empty-album-cover"]',
-          );
+          // Past days without albums show the empty album cover
+          const emptyCovers = screen.getAllByTestId('empty-album-cover');
           expect(emptyCovers.length).toBeGreaterThanOrEqual(1);
 
-          // And - the empty day should not have a chip indicator
-          const pastAlbumDays = wrapper.findAll(
-            '[data-testid="past-album-day"]',
-          );
-          const emptyDayCard = pastAlbumDays[0];
-          const emptyDayImages = emptyDayCard?.findAll(
+          // The empty day should not have album images
+          const pastAlbumDays = screen.getAllByTestId('past-album-day');
+          const emptyDayCard = pastAlbumDays[0]!;
+          const emptyDayImages = emptyDayCard.querySelectorAll(
             '[data-testid="album-image"]',
           );
-          expect(emptyDayImages?.length).toBe(0);
+          expect(emptyDayImages.length).toBe(0);
 
-          // The chip should not be visible for empty days (check sibling span)
-          const chipIndicator = emptyDayCard?.element.nextElementSibling;
+          // The chip should not be visible for empty days
+          const chipIndicator = emptyDayCard.nextElementSibling;
           const hasWarningClass =
             chipIndicator?.classList.contains('bg-warning');
           expect(hasWarningClass).toBeFalsy();
@@ -231,13 +216,11 @@ describe('Dashboard Page', () => {
             '2026-01-01T12:00:00.000Z',
           ).toISOString();
 
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - the empty day on Jan 1st should still show month label
-          const monthLabels = wrapper.findAll('[data-testid="month-label"]');
+          const monthLabels = screen.getAllByTestId('month-label');
           expect(monthLabels.length).toBeGreaterThanOrEqual(1);
-          expect(monthLabels[0]?.text()).toBe('JAN');
+          expect(monthLabels[0]!.textContent).toBe('JAN');
         });
       });
 
@@ -252,36 +235,30 @@ describe('Dashboard Page', () => {
         });
 
         it('should render multiple albums correctly', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - find the day with multiple albums
-          const pastAlbumDays = wrapper.findAll(
-            '[data-testid="past-album-day"]',
-          );
-          const dayWithMultiple = pastAlbumDays[0];
-          const albumImages = dayWithMultiple?.findAll(
+          const pastAlbumDays = screen.getAllByTestId('past-album-day');
+          const dayWithMultiple = pastAlbumDays[0]!;
+          const albumImages = dayWithMultiple.querySelectorAll(
             '[data-testid="album-image"]',
           );
 
           // Should have 3 stacked images with stack classes
-          expect(albumImages?.length).toBe(3);
-          expect(albumImages?.[0]?.classes()).toContain('stack-0');
-          expect(albumImages?.[1]?.classes()).toContain('stack-1');
-          expect(albumImages?.[2]?.classes()).toContain('stack-2');
+          expect(albumImages.length).toBe(3);
+          expect(albumImages[0]!.classList.contains('stack-0')).toBe(true);
+          expect(albumImages[1]!.classList.contains('stack-1')).toBe(true);
+          expect(albumImages[2]!.classList.contains('stack-2')).toBe(true);
 
-          // And - first album should be on top (highest z-index)
-          const firstImageZIndex = albumImages?.[0]?.attributes('style');
-          const secondImageZIndex = albumImages?.[1]?.attributes('style');
-          expect(firstImageZIndex).toContain('z-index: 3');
-          expect(secondImageZIndex).toContain('z-index: 2');
+          // First album should be on top (highest z-index)
+          expect(albumImages[0]!.getAttribute('style')).toContain('z-index: 3');
+          expect(albumImages[1]!.getAttribute('style')).toContain('z-index: 2');
 
-          // And - should show album count badge
-          const countBadge = dayWithMultiple?.find(
+          // Should show album count badge
+          const countBadge = dayWithMultiple.querySelector(
             '[data-testid="album-count-badge"]',
           );
-          expect(countBadge?.exists()).toBe(true);
-          expect(countBadge?.text()).toBe('3');
+          expect(countBadge).not.toBeNull();
+          expect(countBadge?.textContent).toBe('3');
         });
       });
 
@@ -310,20 +287,15 @@ describe('Dashboard Page', () => {
 
         /**
          * Opens the DailyListensModal by clicking a past listen that has albums.
-         * Waits for the modal to appear in the DOM.
          */
         const openDailyListenModal = async (): Promise<Element> => {
-          const pastAlbumDays = wrapper!.findAll(
-            '[data-testid="past-album-day"]',
-          );
-          expect(pastAlbumDays.length).toBeGreaterThan(0);
-
+          const pastAlbumDays = screen.getAllByTestId('past-album-day');
           const dayWithAlbum = pastAlbumDays.find((day) =>
-            day.find('[data-testid="album-image"]').exists(),
+            day.querySelector('[data-testid="album-image"]'),
           );
           expect(dayWithAlbum).toBeDefined();
 
-          await dayWithAlbum!.trigger('click');
+          await fireEvent.click(dayWithAlbum!);
 
           return waitForElement('[role="dialog"]');
         };
@@ -336,7 +308,7 @@ describe('Dashboard Page', () => {
             modal.querySelectorAll('button'),
           ).find((btn) => btn.textContent?.includes('View tracks'));
           expect(viewTracksButton).toBeDefined();
-          (viewTracksButton as HTMLElement).click();
+          await fireEvent.click(viewTracksButton as HTMLElement);
 
           // Wait for tracks to load from mocked Spotify API
           await waitForText(modal, 'First Track');
@@ -348,23 +320,22 @@ describe('Dashboard Page', () => {
         });
 
         it('should render the DailyListensModal correctly', async () => {
-          // When
           await mountDashboard();
           const modal = await openDailyListenModal();
 
-          // Then - modal should display the formatted date
+          // Modal should display the formatted date
           expect(modal.textContent).toContain('January 10th 2026');
 
-          // And - modal should display album count
+          // Modal should display album count
           expect(modal.textContent).toContain('1 album listened');
 
-          // And - modal should display album artwork
+          // Modal should display album artwork
           const albumImage = modal.querySelector(
             `img[src="${testDailyListen.albums[0]?.album.imageUrl}"]`,
           );
           expect(albumImage).not.toBeNull();
 
-          // And - modal should display album name and artist
+          // Modal should display album name and artist
           expect(modal.textContent).toContain(
             testDailyListen.albums[0]?.album.albumName,
           );
@@ -372,12 +343,12 @@ describe('Dashboard Page', () => {
             testDailyListen.albums[0]?.album.artists[0]?.name,
           );
 
-          // And - modal should display listen metadata
+          // Modal should display listen metadata
           expect(modal.textContent).toContain('Ordered');
           expect(modal.textContent).toContain('Morning');
           expect(modal.textContent).toContain('Spotify');
 
-          // And - modal should have Open in Spotify button
+          // Modal should have Open in Spotify button
           const spotifyLink = modal.querySelector(
             `a[href="https://open.spotify.com/album/${testDailyListen.albums[0]?.album.albumId}"]`,
           );
@@ -385,17 +356,15 @@ describe('Dashboard Page', () => {
         });
 
         it('should show Song of the Day placeholder when no favorite song is selected', async () => {
-          // Given - testDailyListen has favoriteSong: null
           await mountDashboard();
           const modal = await openDailyListenModal();
 
-          // Then - modal should show the placeholder text
           expect(modal.textContent).toContain('Song of the Day');
           expect(modal.textContent).toContain(
             'Select a track from an album below',
           );
 
-          // And - should NOT show a "Clear" button (only shown when song is selected)
+          // Should NOT show a "Clear" button
           const clearButton = Array.from(modal.querySelectorAll('button')).find(
             (btn) => btn.textContent?.includes('Clear'),
           );
@@ -411,7 +380,6 @@ describe('Dashboard Page', () => {
           };
 
           beforeEach(() => {
-            // Set the favorite song on the test data
             mockListensData[0] = {
               ...testDailyListen,
               favoriteSong: testFavoriteSong,
@@ -419,25 +387,21 @@ describe('Dashboard Page', () => {
           });
 
           it('should display the current favorite song', async () => {
-            // When
             await mountDashboard();
             const modal = await openDailyListenModal();
 
-            // Then - modal should show the song name
             expect(modal.textContent).toContain(testFavoriteSong.name);
-
-            // And - should show the track number
             expect(modal.textContent).toContain(
               `${testFavoriteSong.trackNumber}.`,
             );
 
-            // And - should show a "Clear" button
+            // Should show a "Clear" button
             const clearButton = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('Clear'));
             expect(clearButton).toBeDefined();
 
-            // And - should have a link to play the track on Spotify
+            // Should have a link to play the track on Spotify
             const spotifyTrackLink = modal.querySelector(
               `a[href="https://open.spotify.com/track/${testFavoriteSong.spotifyId}"]`,
             );
@@ -446,50 +410,37 @@ describe('Dashboard Page', () => {
         });
 
         it('should expand track list when Song of the Day placeholder is clicked', async () => {
-          // When
           await mountDashboard();
           const modal = await openDailyListenModal();
 
-          // Initially, "View tracks" section should exist but tracks should not be expanded
           expect(modal.textContent).toContain('View tracks');
 
-          // Find and click the Song of the Day placeholder (the clickable container div)
-          // The clickable div has cursor-pointer class when no song is selected
+          // Find and click the Song of the Day placeholder
           const placeholderContainer = modal.querySelector(
             'section div.cursor-pointer',
           );
           expect(placeholderContainer).not.toBeNull();
-          (placeholderContainer as HTMLElement).click();
+          await fireEvent.click(placeholderContainer as HTMLElement);
 
-          // Then - the track list should be expanded and showing tracks
           await waitForText(modal, 'First Track');
         });
 
         describe('tracks section', () => {
           it('should render tracks from Spotify API when View tracks is clicked', async () => {
-            // When
             await mountDashboard();
             const modal = await openDailyListenModal();
 
-            // Expand the track list
             await expandTrackList(modal);
 
-            // Then - Spotify API should have been called with the album ID
             expect(mockSpotifyAlbumsGet).toHaveBeenCalledWith(
               testDailyListen.albums[0]?.album.albumId,
             );
 
-            // And - tracks should be rendered
             expect(modal.textContent).toContain('First Track');
             expect(modal.textContent).toContain('Second Track');
             expect(modal.textContent).toContain('Third Track');
 
-            // And - track numbers should be displayed
-            expect(modal.textContent).toContain('1');
-            expect(modal.textContent).toContain('2');
-            expect(modal.textContent).toContain('3');
-
-            // And - durations should be formatted (3:00 for 180000ms)
+            // Durations should be formatted (3:00 for 180000ms)
             expect(modal.textContent).toContain('3:00');
             expect(modal.textContent).toContain('4:00');
           });
@@ -497,7 +448,6 @@ describe('Dashboard Page', () => {
           it('should set favorite song when a track is clicked', async () => {
             const dateParam = testDailyListen.date.split('T')[0];
 
-            // Register the favorite song update endpoint
             registerEndpoint(`/api/listens/${dateParam}/favorite-song`, {
               method: 'PATCH',
               handler: async (event) => {
@@ -514,36 +464,30 @@ describe('Dashboard Page', () => {
               },
             });
 
-            // Ensure test starts with no favorite song
             mockListensData[0] = { ...testDailyListen, favoriteSong: null };
             clearNuxtData('listens');
             listensCallCount = 0;
 
-            // When
             await mountDashboard();
             const modal = await openDailyListenModal();
 
-            // Verify we start with the placeholder (no song selected)
             expect(modal.textContent).toContain(
               'Select a track from an album below',
             );
 
-            // Expand the track list and click the first track
             await expandTrackList(modal);
             const trackButton = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('First Track'));
-            expect(trackButton).toBeDefined();
-            (trackButton as HTMLElement).click();
+            await fireEvent.click(trackButton as HTMLElement);
 
-            // Wait for the Clear button to appear (indicates selection was processed)
+            // Wait for the Clear button to appear
             await waitFor(() =>
               Array.from(modal.querySelectorAll('button')).some((btn) =>
                 btn.textContent?.includes('Clear'),
               ),
             );
 
-            // Then - the PATCH endpoint should have been called
             expect(favoriteSongPatchCalls).toHaveLength(1);
             expect(favoriteSongPatchCalls[0]).toEqual({
               date: dateParam,
@@ -554,15 +498,11 @@ describe('Dashboard Page', () => {
                 albumId: testDailyListen.albums[0]?.album.albumId,
               },
             });
-
-            // And - the Song of the Day should show the track number format "1."
-            expect(modal.textContent).toContain('1.');
           });
 
           it('should allow changing the favorite track when one is already chosen', async () => {
             const dateParam = testDailyListen.date.split('T')[0];
 
-            // Given - start with First Track as the favorite
             const initialFavoriteSong = favouriteSong({
               spotifyId: 'track-1',
               name: 'First Track',
@@ -576,7 +516,6 @@ describe('Dashboard Page', () => {
             clearNuxtData('listens');
             listensCallCount = 0;
 
-            // Register the favorite song update endpoint
             registerEndpoint(`/api/listens/${dateParam}/favorite-song`, {
               method: 'PATCH',
               handler: async (event) => {
@@ -593,29 +532,23 @@ describe('Dashboard Page', () => {
               },
             });
 
-            // When
             await mountDashboard();
             const modal = await openDailyListenModal();
 
-            // Verify we start with First Track selected
             expect(modal.textContent).toContain('First Track');
             expect(modal.textContent).toContain('1.');
 
-            // Expand the track list and click the second track
             await expandTrackList(modal);
             const trackButton = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('Second Track'));
-            expect(trackButton).toBeDefined();
-            (trackButton as HTMLElement).click();
+            await fireEvent.click(trackButton as HTMLElement);
 
-            // Wait for the Song of the Day section to show "2."
             await waitFor(() => {
               const songOfTheDaySection = modal.querySelector('section');
               return songOfTheDaySection?.textContent?.includes('2.') ?? false;
             });
 
-            // Then - the PATCH endpoint should have been called with the new track
             expect(favoriteSongPatchCalls).toHaveLength(1);
             expect(favoriteSongPatchCalls[0]).toEqual({
               date: dateParam,
@@ -626,16 +559,11 @@ describe('Dashboard Page', () => {
                 albumId: testDailyListen.albums[0]?.album.albumId,
               },
             });
-
-            // And - First Track should no longer be shown in Song of the Day
-            const songOfTheDaySection = modal.querySelector('section');
-            expect(songOfTheDaySection?.textContent).not.toContain('1.');
           });
 
           it('should allow clearing the favorite track', async () => {
             const dateParam = testDailyListen.date.split('T')[0];
 
-            // Given - start with First Track as the favorite
             const initialFavoriteSong = favouriteSong({
               albumId: testDailyListen.albums[0]?.album.albumId,
             });
@@ -646,7 +574,6 @@ describe('Dashboard Page', () => {
             clearNuxtData('listens');
             listensCallCount = 0;
 
-            // Register the favorite song clear endpoint (returns null)
             registerEndpoint(`/api/listens/${dateParam}/favorite-song`, {
               method: 'PATCH',
               handler: async (event) => {
@@ -656,31 +583,26 @@ describe('Dashboard Page', () => {
               },
             });
 
-            // When
             await mountDashboard();
             const modal = await openDailyListenModal();
 
-            // Verify we start with First Track selected and Clear button visible
             expect(modal.textContent).toContain(initialFavoriteSong.name);
             const clearButton = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('Clear'));
             expect(clearButton).toBeDefined();
 
-            // Click the Clear button
-            (clearButton as HTMLElement).click();
+            await fireEvent.click(clearButton as HTMLElement);
 
-            // Wait for the placeholder text to appear
             await waitForText(modal, 'Select a track from an album below');
 
-            // Then - the PATCH endpoint should have been called with spotifyId: null
             expect(favoriteSongPatchCalls).toHaveLength(1);
             expect(favoriteSongPatchCalls[0]).toEqual({
               date: dateParam,
               body: { spotifyId: null },
             });
 
-            // And - Clear button should no longer be visible
+            // Clear button should no longer be visible
             const clearButtonAfter = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('Clear'));
@@ -693,112 +615,92 @@ describe('Dashboard Page', () => {
     describe('today', () => {
       describe('when there is no data for today', () => {
         beforeEach(() => {
-          // Set today (last item) to have no albums - this will render as FutureAlbumDay
           const todayIndex = mockListensData.length - 1;
           mockListensData[todayIndex]!.albums = [];
           mockListensData[todayIndex]!.favoriteSong = null;
         });
 
         it('should render today without data correctly', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - today with no albums shows FutureAlbumDay with add button
-          const addButton = wrapper.find('[data-testid="add-listen-button"]');
-          expect(addButton.exists()).toBe(true);
+          // Today with no albums shows FutureAlbumDay with add button
+          expect(screen.getByTestId('add-listen-button')).toBeDefined();
 
-          // And - find the future album day (today without data)
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const todayCard = futureAlbumDays[0]!;
+
+          // No month label since Jan 15 is not the 1st
+          const monthLabel = todayCard.querySelector(
+            '[data-testid="month-label"]',
           );
-          const todayCard = futureAlbumDays[0];
+          expect(monthLabel).toBeNull();
 
-          // And - no month label since Jan 15 is not the 1st
-          const monthLabel = todayCard?.find('[data-testid="month-label"]');
-          expect(monthLabel?.exists()).toBeFalsy();
-
-          // And - should show day number 15
-          const dayNumber = todayCard?.find('[data-testid="day-number"]');
-          expect(dayNumber?.text()).toBe('15');
+          // Should show day number 15
+          const dayNumber = todayCard.querySelector(
+            '[data-testid="day-number"]',
+          );
+          expect(dayNumber?.textContent).toBe('15');
         });
       });
 
       describe('when there is listening data for today', () => {
-        // Note: By default, mockListensData includes today with album data
-        // Today is rendered as PastAlbumDay when it has albums
-
         it('should render the formattedMonth name for the 1st day of the month', async () => {
-          // Given - TODAY is Jan 15, which is NOT the 1st, so no month label
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - today has album data so renders as PastAlbumDay
-          // The last PastAlbumDay is today (Jan 15) - no month label since not 1st
-          const pastAlbumDays = wrapper.findAll(
-            '[data-testid="past-album-day"]',
+          // Today (Jan 15) has album data so renders as PastAlbumDay - no month label
+          const pastAlbumDays = screen.getAllByTestId('past-album-day');
+          const todayCard = pastAlbumDays[pastAlbumDays.length - 1]!;
+          const monthLabel = todayCard.querySelector(
+            '[data-testid="month-label"]',
           );
-          const todayCard = pastAlbumDays[pastAlbumDays.length - 1];
-          const monthLabel = todayCard?.find('[data-testid="month-label"]');
-          expect(monthLabel?.exists()).toBeFalsy();
+          expect(monthLabel).toBeNull();
         });
 
         it('should render the day of the month', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - today has album data so renders as PastAlbumDay
-          const pastAlbumDays = wrapper.findAll(
-            '[data-testid="past-album-day"]',
+          const pastAlbumDays = screen.getAllByTestId('past-album-day');
+          const todayCard = pastAlbumDays[pastAlbumDays.length - 1]!;
+          const dayNumber = todayCard.querySelector(
+            '[data-testid="day-number"]',
           );
-          // The last PastAlbumDay is today (Jan 15)
-          const todayCard = pastAlbumDays[pastAlbumDays.length - 1];
-          const dayNumber = todayCard?.find('[data-testid="day-number"]');
 
-          // TODAY is Jan 15
-          expect(dayNumber?.text()).toBe('15');
+          expect(dayNumber?.textContent).toBe('15');
         });
       });
 
       describe('when there is a scheduled album for today', () => {
         beforeEach(() => {
-          // Set today (last item) to have no albums
           const todayIndex = mockListensData.length - 1;
           mockListensData[todayIndex]!.albums = [];
           mockListensData[todayIndex]!.favoriteSong = null;
 
-          // Schedule an album for today
           mockFutureListensData = [
             futureListenItem({ date: TODAY.toISOString() }),
           ];
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
-          // Given - TODAY is Jan 15, which is NOT the 1st, so no month label
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - today with scheduled album renders as FutureAlbumDay
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const todayCard = futureAlbumDays[0]!;
+          const monthLabel = todayCard.querySelector(
+            '[data-testid="month-label"]',
           );
-          const todayCard = futureAlbumDays[0];
-          const monthLabel = todayCard?.find('[data-testid="month-label"]');
-          expect(monthLabel?.exists()).toBeFalsy();
+          expect(monthLabel).toBeNull();
         });
 
         it('should render the day of the month', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - today with scheduled album renders as FutureAlbumDay
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const todayCard = futureAlbumDays[0]!;
+          const dayNumber = todayCard.querySelector(
+            '[data-testid="day-number"]',
           );
-          const todayCard = futureAlbumDays[0];
-          const dayNumber = todayCard?.find('[data-testid="day-number"]');
 
-          // TODAY is Jan 15
-          expect(dayNumber?.text()).toBe('15');
+          expect(dayNumber?.textContent).toBe('15');
         });
       });
     });
@@ -811,59 +713,52 @@ describe('Dashboard Page', () => {
         });
 
         it('should render scheduled future listens correctly', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - find future album days with scheduled albums
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
-          );
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
 
           // Find days with album images (scheduled albums)
           const daysWithImages = futureAlbumDays.filter((day) =>
-            day.find('[data-testid="album-image"]').exists(),
+            day.querySelector('[data-testid="album-image"]'),
           );
           expect(daysWithImages.length).toBeGreaterThan(0);
 
-          // And - verify image src matches one of the scheduled albums
-          const firstImage = daysWithImages[0]?.find(
+          // Verify image src matches one of the scheduled albums
+          const firstImage = daysWithImages[0]!.querySelector(
             '[data-testid="album-image"]',
           );
           const scheduledImageUrls = mockFutureListensData.map(
             (item) => item.album.imageUrl,
           );
-          expect(scheduledImageUrls).toContain(firstImage?.attributes('src'));
+          expect(scheduledImageUrls).toContain(firstImage?.getAttribute('src'));
 
-          // And - should render day number (16-21 range for Jan 15 + 1-6 days)
-          const dayNumber = daysWithImages[0]?.find(
+          // Should render day number (16-21 range)
+          const dayNumber = daysWithImages[0]!.querySelector(
             '[data-testid="day-number"]',
           );
-          const dayNum = parseInt(dayNumber?.text() ?? '0', 10);
+          const dayNum = parseInt(dayNumber?.textContent ?? '0', 10);
           expect(dayNum).toBeGreaterThanOrEqual(16);
           expect(dayNum).toBeLessThanOrEqual(21);
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
-          // Given - set TODAY to Jan 27 so Feb 1 is within the 6-day future window
+          // Set TODAY to Jan 27 so Feb 1 is within the 6-day future window
           const laterToday = new Date('2026-01-27T12:00:00.000Z');
           vi.setSystemTime(laterToday);
           mockListensData = getListensReponse({ n: 14, startDate: laterToday });
           const { items } = getFutureListensResponse({ startDate: laterToday });
           mockFutureListensData = items;
 
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - Feb 1st should show the month label "FEB"
-          const monthLabels = wrapper.findAll('[data-testid="month-label"]');
+          const monthLabels = screen.getAllByTestId('month-label');
           const hasFebruaryLabel = monthLabels.some(
-            (label) => label.text() === 'FEB',
+            (label) => label.textContent === 'FEB',
           );
           expect(hasFebruaryLabel).toBe(true);
         });
 
         describe('future listens modal', () => {
-          // Define a fixed test item with known values to avoid random data issues
           const testFutureListen: FutureListenItem = {
             id: 'test-modal-future-listen-id',
             date: new Date('2026-01-16T12:00:00.000Z').toISOString(),
@@ -875,19 +770,14 @@ describe('Dashboard Page', () => {
             },
           };
 
-          /**
-           * Opens the FutureListensModal by clicking a future listen that has an album.
-           */
           const openFutureListenModal = async (): Promise<Element> => {
-            const futureAlbumDays = wrapper!.findAll(
-              '[data-testid="future-album-day"]',
-            );
+            const futureAlbumDays = screen.getAllByTestId('future-album-day');
             const dayWithAlbum = futureAlbumDays.find((day) =>
-              day.find('[data-testid="album-image"]').exists(),
+              day.querySelector('[data-testid="album-image"]'),
             );
             expect(dayWithAlbum).toBeDefined();
 
-            await dayWithAlbum!.trigger('click');
+            await fireEvent.click(dayWithAlbum!);
 
             return waitForElement('[role="dialog"]');
           };
@@ -897,10 +787,8 @@ describe('Dashboard Page', () => {
             clearNuxtData('future-listens');
             listensCallCount = 0;
 
-            // Override mock data with our fixed test item
             mockFutureListensData = [testFutureListen];
 
-            // Register DELETE endpoint for the test item
             registerEndpoint(`/api/future-listens/${testFutureListen.id}`, {
               method: 'DELETE',
               handler: () => {
@@ -911,129 +799,107 @@ describe('Dashboard Page', () => {
           });
 
           it('should render the FutureListensModal correctly', async () => {
-            // When
             await mountDashboard();
             const modal = await openFutureListenModal();
 
-            // Then - modal should display album artwork
+            // Modal should display album artwork
             const albumImage = modal.querySelector(
               `img[src="${testFutureListen.album.imageUrl}"]`,
             );
             expect(albumImage).not.toBeNull();
 
-            // And - modal should display album name
+            // Modal should display album name
             expect(modal.textContent).toContain(testFutureListen.album.name);
 
-            // And - modal should display artist name
+            // Modal should display artist name
             const expectedArtistNames = testFutureListen.album.artists
               .map((a) => a.name)
               .join(', ');
             expect(modal.textContent).toContain(expectedArtistNames);
 
-            // And - modal should have a link to Spotify
-            const expectedSpotifyUrl = `https://open.spotify.com/album/${testFutureListen.album.spotifyId}`;
+            // Modal should have a link to Spotify
             const spotifyLink = modal.querySelector(
-              `a[href="${expectedSpotifyUrl}"]`,
+              `a[href="https://open.spotify.com/album/${testFutureListen.album.spotifyId}"]`,
             );
             expect(spotifyLink).not.toBeNull();
-            expect(spotifyLink?.textContent).toContain('Open in Spotify');
 
-            // And - modal should have remove from schedule button
+            // Modal should have remove from schedule button
             const removeButton = Array.from(
               modal.querySelectorAll('button'),
             ).find((btn) => btn.textContent?.includes('Remove from schedule'));
             expect(removeButton).not.toBeNull();
 
-            // When - clicking remove from schedule
-            (removeButton as HTMLElement).click();
+            // Click remove from schedule
+            await fireEvent.click(removeButton as HTMLElement);
 
-            // Wait for the DELETE API call to complete
             await waitFor(() =>
               deletedFutureListenIds.includes(testFutureListen.id),
             );
 
-            // Then - the DELETE API should have been called
             expect(deletedFutureListenIds).toContain(testFutureListen.id);
           });
         });
       });
 
       describe('when there are no scheduled albums', () => {
-        // Future days without scheduled albums show empty/placeholder state
         beforeEach(() => {
           mockFutureListensData = [];
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
-          // Given - set TODAY to Jan 27 so Feb 1 is within the 6-day future window
           const laterToday = new Date('2026-01-27T12:00:00.000Z');
           vi.setSystemTime(laterToday);
           mockListensData = getListensReponse({ n: 14, startDate: laterToday });
-          // mockFutureListensData stays empty from beforeEach
 
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - Feb 1st should show the month label "FEB"
-          const monthLabels = wrapper.findAll('[data-testid="month-label"]');
+          const monthLabels = screen.getAllByTestId('month-label');
           const hasFebruaryLabel = monthLabels.some(
-            (label) => label.text() === 'FEB',
+            (label) => label.textContent === 'FEB',
           );
           expect(hasFebruaryLabel).toBe(true);
         });
 
         it('should render empty future days correctly', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Then - future days without scheduled albums show empty state
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
-          );
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
           expect(futureAlbumDays.length).toBeGreaterThan(0);
 
           // At least some should have empty album cover (no image)
-          let hasEmptyState = false;
-          for (const day of futureAlbumDays) {
-            const albumImage = day.find('[data-testid="album-image"]');
-            const emptyState = day.find('[data-testid="empty-album-cover"]');
-            if (!albumImage.exists() && emptyState.exists()) {
-              hasEmptyState = true;
-              break;
-            }
-          }
+          const hasEmptyState = futureAlbumDays.some((day) => {
+            const albumImage = day.querySelector('[data-testid="album-image"]');
+            const emptyState = day.querySelector(
+              '[data-testid="empty-album-cover"]',
+            );
+            return !albumImage && emptyState;
+          });
           expect(hasEmptyState).toBe(true);
 
-          // And - should show day numbers (16, 17, 18, etc.)
-          const dayNumbers = futureAlbumDays.map((day) =>
-            day.find('[data-testid="day-number"]')?.text(),
+          // Should show day numbers (16, 17, 18, etc.)
+          const dayNumbers = futureAlbumDays.map(
+            (day) =>
+              day.querySelector('[data-testid="day-number"]')?.textContent,
           );
           expect(dayNumbers).toContain('16');
         });
 
         it('should not open the modal when the placeholder is clicked', async () => {
-          // When
-          const wrapper = await mountDashboard();
+          await mountDashboard();
 
-          // Find a future day without a scheduled album
-          const futureAlbumDays = wrapper.findAll(
-            '[data-testid="future-album-day"]',
-          );
+          const futureAlbumDays = screen.getAllByTestId('future-album-day');
 
           // Find one with empty state (no scheduled album)
-          for (const day of futureAlbumDays) {
-            const emptyState = day.find('[data-testid="empty-album-cover"]');
-            if (emptyState.exists()) {
-              // Click it
-              await day.trigger('click');
-              await flushPromises();
+          const emptyDay = futureAlbumDays.find((day) =>
+            day.querySelector('[data-testid="empty-album-cover"]'),
+          );
 
-              // Modal should not open - no UModal should be rendered
-              // Since the modal is lazy-loaded, we check that no modal content appears
-              const modal = wrapper.find('[role="dialog"]');
-              expect(modal.exists()).toBe(false);
-              break;
-            }
+          if (emptyDay) {
+            await fireEvent.click(emptyDay);
+            await flushPromises();
+
+            // Modal should not open
+            expect(screen.queryByRole('dialog')).toBeNull();
           }
         });
       });

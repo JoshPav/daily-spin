@@ -47,8 +47,7 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
       <div v-else-if="localPreferences" class="flex flex-col gap-6 flex-1 p-1">
         <PreferencesCard
           title="Features"
-          description="Control how DailySpin tracks and manages your listening
-                    activity"
+          description="Control how DailySpin tracks and manages your listening activity"
         >
           <template #headerRight>
             <UButton

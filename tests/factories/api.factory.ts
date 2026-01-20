@@ -14,7 +14,11 @@ import type {
   FutureListenAlbum,
   FutureListenItem,
   GetFutureListensResponse,
+  GetPreferencesResponse,
+  LinkedPlaylist,
   ListenMetadata,
+  PlaylistType,
+  UserPreferences,
 } from '~~/shared/schema';
 import { createFactory } from './factory';
 
@@ -167,3 +171,23 @@ export const futureListenItem = createFactory<FutureListenItem>(() => ({
   date: faker.date.future().toISOString(),
   album: futureListenAlbum(),
 }));
+
+// Preferences factories
+export const userPreferences = createFactory<UserPreferences>(() => ({
+  trackListeningHistory: true,
+  createTodaysAlbumPlaylist: false,
+  createSongOfDayPlaylist: false,
+}));
+
+export const linkedPlaylist = createFactory<LinkedPlaylist>(() => ({
+  type: 'album_of_the_day' as PlaylistType,
+  spotifyPlaylistId: uuid(),
+  spotifyUrl: `https://open.spotify.com/playlist/${uuid()}`,
+}));
+
+export const getPreferencesResponse = createFactory<GetPreferencesResponse>(
+  () => ({
+    preferences: userPreferences(),
+    linkedPlaylists: [],
+  }),
+);

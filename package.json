@@ -44,6 +44,7 @@
     "@faker-js/faker": "^10.2.0",
     "@iconify-json/lucide": "^1.2.84",
     "@nuxt/test-utils": "^3.23.0",
+    "@testing-library/vue": "^8.1.0",
     "@types/lodash.merge": "^4.6.9",
     "@types/pg": "^8.16.0",
     "@vitejs/plugin-vue": "^6.0.3",
