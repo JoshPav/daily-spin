@@ -17,7 +17,12 @@ export default defineNuxtConfig({
     },
   },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui', '@nuxt/test-utils/module'],
+  modules: [
+    '@nuxt/image',
+    '@nuxt/ui',
+    '@nuxt/test-utils/module',
+    '@nuxtjs/device',
+  ],
   components: {
     dirs: [{ path: '~/components', pathPrefix: false }],
   },

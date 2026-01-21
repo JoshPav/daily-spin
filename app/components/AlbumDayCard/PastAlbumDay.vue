@@ -8,9 +8,9 @@
   >
     <AlbumDayCard
       ref="cardRef"
-      :date="dayListens.date"
+      :date="date"
       :albums="albumCardInfo"
-      :pending="pending"
+      :pending="!listens"
       @click="handleClick"
     >
       <template #empty>
@@ -32,13 +32,9 @@ import { LazyDailyListensModal } from '#components';
 import type { DailyListens, FavoriteSong } from '#shared/schema';
 import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
-const {
-  dayListens,
-  pending = false,
-  onFavoriteSongUpdate,
-} = defineProps<{
-  dayListens: DailyListens;
-  pending?: boolean;
+const { date, listens, onFavoriteSongUpdate } = defineProps<{
+  date: string;
+  listens?: DailyListens;
   onFavoriteSongUpdate: (
     date: string,
     favoriteSong: FavoriteSong | null,
@@ -48,25 +44,26 @@ const {
 const overlay = useOverlay();
 const dailyListensModal = overlay.create(LazyDailyListensModal);
 
-const { date } = useDate(dayListens.date);
+const { date: dateRef } = useDate(date);
 
-const hasAlbums = computed(() => dayListens.albums.length > 0);
+const hasAlbums = computed(() => (listens?.albums.length ?? 0) > 0);
 const needsFavoriteSong = computed(
-  () => hasAlbums.value && !dayListens.favoriteSong,
+  () => hasAlbums.value && !listens?.favoriteSong,
 );
 
-const albumCardInfo = computed<AlbumCardInfo[]>(() =>
-  dayListens.albums.map((a) => ({
-    imageUrl: a.album.imageUrl,
-    artistName: a.album.artists[0]?.name ?? 'Unknown Artist',
-    albumName: a.album.albumName,
-  })),
+const albumCardInfo = computed<AlbumCardInfo[]>(
+  () =>
+    listens?.albums.map((a) => ({
+      imageUrl: a.album.imageUrl,
+      artistName: a.album.artists[0]?.name ?? 'Unknown Artist',
+      albumName: a.album.albumName,
+    })) ?? [],
 );
 
 const handleClick = () => {
-  if (!hasAlbums.value) return;
+  if (!listens || !hasAlbums.value) return;
   dailyListensModal.open({
-    dailyListens: dayListens,
+    dailyListens: listens,
     onFavoriteSongUpdate,
   });
 };
@@ -85,7 +82,7 @@ onMounted(() => {
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-              setCurrentMonth(date.value);
+              setCurrentMonth(dateRef.value);
             }
           });
         },

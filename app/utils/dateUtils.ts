@@ -27,3 +27,11 @@ export const formatDate = (date: Date): string => {
   const ordinal = getOrdinalSuffix(day);
   return format(date, `MMMM d'${ordinal}' yyyy`);
 };
+
+/** Converts a Date or ISO string to YYYY-MM-DD format for Map keys */
+export const toDateKey = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    return date.split('T')[0] ?? date;
+  }
+  return format(date, 'yyyy-MM-dd');
+};
