@@ -3,10 +3,11 @@ import {
   AlbumSchema,
   type ApiSchema,
   dateParam,
+  dateString,
   type EndpointContract,
   FavoriteSongSchema,
   ListenMetadataSchema,
-  optionalDateTimeQuery,
+  optionalDateQuery,
 } from './common.schema';
 
 // Shared object schemas
@@ -17,7 +18,7 @@ export const DailyAlbumListenSchema = z.object({
 });
 
 export const DailyListensSchema = z.object({
-  date: z.string(),
+  date: dateString,
   albums: z.array(DailyAlbumListenSchema),
   favoriteSong: FavoriteSongSchema.nullable(),
 });
@@ -25,8 +26,8 @@ export const DailyListensSchema = z.object({
 // GET /api/listens
 export const getListensSchema = {
   query: z.object({
-    startDate: optionalDateTimeQuery,
-    endDate: optionalDateTimeQuery,
+    startDate: optionalDateQuery,
+    endDate: optionalDateQuery,
   }),
   response: z.array(DailyListensSchema),
 } satisfies ApiSchema;
@@ -38,7 +39,7 @@ export const addListenSchema = {
   body: z.object({
     album: AlbumSchema,
     listenMetadata: ListenMetadataSchema,
-    date: z.string(),
+    date: dateString,
   }),
 } satisfies ApiSchema;
 

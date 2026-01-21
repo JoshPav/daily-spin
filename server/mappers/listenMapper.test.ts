@@ -17,7 +17,7 @@ describe('listenMapper', () => {
 
       const result = mapDailyListens(dailyListen);
 
-      expect(result.date).toBe('2024-06-15T00:00:00.000Z');
+      expect(result.date).toBe('2024-06-15');
       expect(result.albums).toEqual([]);
       expect(result.favoriteSong).toBeNull();
     });
@@ -55,7 +55,7 @@ describe('listenMapper', () => {
 
       const result = mapDailyListens(dailyListen);
 
-      expect(result.date).toBe('2024-06-15T00:00:00.000Z');
+      expect(result.date).toBe('2024-06-15');
       expect(result.albums).toHaveLength(1);
       expect(result.albums[0]).toEqual({
         id: albumListenData.id,
@@ -200,7 +200,7 @@ describe('listenMapper', () => {
       expect(result.albums[3].listenMetadata.listenTime).toBe('night');
     });
 
-    it('should convert date to ISO string format', () => {
+    it('should convert date to YYYY-MM-DD format', () => {
       const testDate = new Date('2024-12-25T00:00:00.000Z');
       const dailyListen = dailyListenWithAlbums({
         date: testDate,
@@ -209,7 +209,7 @@ describe('listenMapper', () => {
 
       const result = mapDailyListens(dailyListen);
 
-      expect(result.date).toBe('2024-12-25T00:00:00.000Z');
+      expect(result.date).toBe('2024-12-25');
     });
 
     it('should preserve album order in the result', () => {

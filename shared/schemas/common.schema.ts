@@ -18,14 +18,21 @@ export type EndpointContract<T extends ApiSchema> = {
 };
 
 // Common schema helpers
-/** ISO date string param that transforms to a Date object */
-export const dateParam = z.iso.date().transform((d) => new Date(d));
 
-/** Optional ISO datetime string that transforms to a Date object */
-export const optionalDateTimeQuery = z
-  .string()
+/** YYYY-MM-DD date string schema for API requests/responses */
+export const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+  message: 'Date must be in YYYY-MM-DD format',
+});
+
+/** YYYY-MM-DD date string param that transforms to a Date object at UTC midnight */
+export const dateParam = dateString.transform(
+  (d) => new Date(`${d}T00:00:00.000Z`),
+);
+
+/** Optional YYYY-MM-DD date query parameter that transforms to a Date object */
+export const optionalDateQuery = dateString
   .optional()
-  .transform((d) => (d ? new Date(d) : undefined));
+  .transform((d) => (d ? new Date(`${d}T00:00:00.000Z`) : undefined));
 
 // Enums
 export const ListenMethodSchema = z.enum(['spotify', 'vinyl', 'streamed']);

@@ -1,6 +1,7 @@
 import {
   isToday as dfnsIsToday,
   endOfDay,
+  format,
   isSameDay,
   isWithinInterval,
   startOfDay,
@@ -21,3 +22,6 @@ export const dateInRange = (
   date: Date,
   { start, end }: { start: Date; end: Date },
 ) => isWithinInterval(date, { start, end });
+
+/** Formats a Date to YYYY-MM-DD string for API responses */
+export const toDateString = (date: Date): string => format(date, 'yyyy-MM-dd');

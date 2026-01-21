@@ -38,8 +38,8 @@ export const useListens = (fetchAmounts: FetchAmounts): UseListensReturn => {
   ): Promise<DailyListens[]> => {
     return await $fetch<GetListensResponse>('/api/listens', {
       query: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: toDateKey(startDate),
+        endDate: toDateKey(endDate),
       },
     });
   };

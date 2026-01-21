@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   type ApiSchema,
   ArtistSchema,
+  dateString,
   type EndpointContract,
 } from './common.schema';
 
@@ -15,7 +16,7 @@ export const FutureListenAlbumSchema = z.object({
 
 export const FutureListenItemSchema = z.object({
   id: z.string(),
-  date: z.string(),
+  date: dateString,
   album: FutureListenAlbumSchema,
 });
 
@@ -37,7 +38,7 @@ export const addFutureListenSchema = {
     releaseDate: z.string().optional(),
     totalTracks: z.number().optional(),
     artists: z.array(ArtistSchema),
-    date: z.string(),
+    date: dateString,
   }),
   response: FutureListenItemSchema,
 } satisfies ApiSchema;
