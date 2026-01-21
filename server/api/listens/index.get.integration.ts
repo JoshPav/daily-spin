@@ -1,4 +1,5 @@
 import type { Account } from '@prisma/client';
+import { format } from 'date-fns';
 import {
   afterEach,
   beforeAll,
@@ -8,6 +9,10 @@ import {
   it,
   vi,
 } from 'vitest';
+
+/** Formats a Date to YYYY-MM-DD string */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
+
 import type { AlbumListenInput } from '~~/server/repositories/dailyListen.repository';
 import type { GetListensResponse } from '~~/shared/schema';
 import {
@@ -102,8 +107,8 @@ describe('GET /api/listens Integration Tests', () => {
     const result = await handler(
       createHandlerEvent(userId, {
         query: {
-          startDate: day1.toISOString(),
-          endDate: day2.toISOString(),
+          startDate: toDateString(day1),
+          endDate: toDateString(day2),
         },
       }),
     );
@@ -112,17 +117,17 @@ describe('GET /api/listens Integration Tests', () => {
     expect(result).toHaveLength(3);
     expect(result).toEqual([
       {
-        date: day1.toISOString(),
+        date: toDateString(day1),
         albums: [getExpectedAlbum(album1)],
         favoriteSong: null,
       },
       {
-        date: '2026-01-11T00:00:00.000Z',
+        date: '2026-01-11',
         albums: [],
         favoriteSong: null,
       },
       {
-        date: day2.toISOString(),
+        date: toDateString(day2),
         albums: [getExpectedAlbum(album2)],
         favoriteSong: null,
       },
@@ -146,8 +151,8 @@ describe('GET /api/listens Integration Tests', () => {
     const result = await handler(
       createHandlerEvent(userId, {
         query: {
-          startDate: day.toISOString(),
-          endDate: day.toISOString(),
+          startDate: toDateString(day),
+          endDate: toDateString(day),
         },
       }),
     );
@@ -156,7 +161,7 @@ describe('GET /api/listens Integration Tests', () => {
     expect(result).toHaveLength(1);
     expect(result[0].albums).toHaveLength(2);
     expect(result[0]).toEqual({
-      date: day.toISOString(),
+      date: toDateString(day),
       albums: [getExpectedAlbum(album1), getExpectedAlbum(album2)],
       favoriteSong: null,
     });
@@ -184,8 +189,8 @@ describe('GET /api/listens Integration Tests', () => {
       const result = await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: toDateString(startDate),
+            endDate: toDateString(endDate),
           },
         }),
       );
@@ -212,8 +217,8 @@ describe('GET /api/listens Integration Tests', () => {
       const result = await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: toDateString(startDate),
+            endDate: toDateString(endDate),
           },
         }),
       );
@@ -236,8 +241,8 @@ describe('GET /api/listens Integration Tests', () => {
       const result = await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startOfToday.toISOString(),
-            endDate: startOfToday.toISOString(),
+            startDate: toDateString(startOfToday),
+            endDate: toDateString(startOfToday),
           },
         }),
       );
@@ -259,8 +264,8 @@ describe('GET /api/listens Integration Tests', () => {
       const result = await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: toDateString(startDate),
+            endDate: toDateString(endDate),
           },
         }),
       );
@@ -284,8 +289,8 @@ describe('GET /api/listens Integration Tests', () => {
       const result = await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: toDateString(startDate),
+            endDate: toDateString(endDate),
           },
         }),
       );
@@ -332,8 +337,8 @@ describe('GET /api/listens Integration Tests', () => {
       await handler(
         createHandlerEvent(userId, {
           query: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: toDateString(startDate),
+            endDate: toDateString(endDate),
           },
         }),
       );
@@ -364,8 +369,8 @@ describe('GET /api/listens Integration Tests', () => {
     const result = await handler(
       createHandlerEvent(userId, {
         query: {
-          startDate: day.toISOString(),
-          endDate: day.toISOString(),
+          startDate: toDateString(day),
+          endDate: toDateString(day),
         },
       }),
     );
@@ -373,7 +378,7 @@ describe('GET /api/listens Integration Tests', () => {
     // Then
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
-      date: day.toISOString(),
+      date: toDateString(day),
       albums: [getExpectedAlbum(mainUserAlbum)],
       favoriteSong: null,
     });

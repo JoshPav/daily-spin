@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import {
   afterEach,
   beforeAll,
@@ -7,6 +8,10 @@ import {
   it,
   vi,
 } from 'vitest';
+
+/** Formats a Date to YYYY-MM-DD string */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
+
 import type { FutureListenItem } from '~~/shared/schema';
 import {
   createFutureListen,
@@ -50,12 +55,9 @@ describe('POST /api/future-listens Integration Tests', () => {
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
 
-    // Then
-    const expectedDate = new Date(body.date);
-    expectedDate.setUTCHours(0, 0, 0, 0);
-
+    // Then - body.date is already in YYYY-MM-DD format
     expect(result).toMatchObject({
-      date: expectedDate.toISOString(),
+      date: body.date,
       album: {
         spotifyId: body.spotifyId,
         name: body.name,
@@ -76,12 +78,9 @@ describe('POST /api/future-listens Integration Tests', () => {
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
 
-    // Then
-    const expectedDate = new Date(body.date);
-    expectedDate.setUTCHours(0, 0, 0, 0);
-
+    // Then - body.date is already in YYYY-MM-DD format
     expect(result).toMatchObject({
-      date: expectedDate.toISOString(),
+      date: body.date,
       album: {
         spotifyId: body.spotifyId,
         name: body.name,
@@ -138,7 +137,7 @@ describe('POST /api/future-listens Integration Tests', () => {
       spotifyId: 'test-spotify-id',
       name: 'Test Album',
       artists: [{ spotifyId: 'artist-id', name: 'Test Artist' }],
-      date: new Date('2026-01-20').toISOString(),
+      date: '2026-01-20',
     };
 
     // When
@@ -153,14 +152,14 @@ describe('POST /api/future-listens Integration Tests', () => {
     const sharedArtist = backlogArtist();
     const listen1 = addFutureListenBody({
       artists: [sharedArtist],
-      date: new Date('2026-01-20').toISOString(),
+      date: '2026-01-20',
     });
     await handler(createHandlerEvent(userId, { body: listen1 }));
 
     // When - add second future listen with same artist
     const listen2 = addFutureListenBody({
       artists: [sharedArtist],
-      date: new Date('2026-01-21').toISOString(),
+      date: '2026-01-21',
     });
     const result = await handler(createHandlerEvent(userId, { body: listen2 }));
 
@@ -181,7 +180,7 @@ describe('POST /api/future-listens Integration Tests', () => {
 
   it('should link to existing album without creating duplicate', async () => {
     // Given - first user adds a future listen with an album
-    const futureDate = new Date('2026-01-20').toISOString();
+    const futureDate = '2026-01-20';
     const body = addFutureListenBody({ date: futureDate });
     await handler(createHandlerEvent(userId, { body }));
 
@@ -190,7 +189,7 @@ describe('POST /api/future-listens Integration Tests', () => {
 
     // When - second user adds future listen for the same album
     const otherUserId = (await createUser()).id;
-    const otherFutureDate = new Date('2026-01-21').toISOString();
+    const otherFutureDate = '2026-01-21';
     const result = await handler(
       createHandlerEvent(otherUserId, {
         body: { ...body, date: otherFutureDate },
@@ -220,7 +219,7 @@ describe('POST /api/future-listens Integration Tests', () => {
 
   it('should upsert when adding same album for same date', async () => {
     // Given - create a future listen
-    const futureDate = new Date('2026-01-20').toISOString();
+    const futureDate = '2026-01-20';
     const body = addFutureListenBody({ date: futureDate });
     const firstResult = await handler(createHandlerEvent(userId, { body }));
 
@@ -237,14 +236,14 @@ describe('POST /api/future-listens Integration Tests', () => {
   it('should allow same album on different dates', async () => {
     // Given
     const body1 = addFutureListenBody({
-      date: new Date('2026-01-20').toISOString(),
+      date: '2026-01-20',
     });
     await handler(createHandlerEvent(userId, { body: body1 }));
 
     // When - add same album for different date
     const body2 = {
       ...body1,
-      date: new Date('2026-01-21').toISOString(),
+      date: '2026-01-21',
     };
     const result = await handler(createHandlerEvent(userId, { body: body2 }));
 
@@ -258,7 +257,7 @@ describe('POST /api/future-listens Integration Tests', () => {
 
   it('should replace album when adding different album for same date', async () => {
     // Given
-    const futureDate = new Date('2026-01-20').toISOString();
+    const futureDate = '2026-01-20';
     const body1 = addFutureListenBody({ date: futureDate });
     await handler(createHandlerEvent(userId, { body: body1 }));
 
@@ -295,7 +294,7 @@ describe('POST /api/future-listens Integration Tests', () => {
     // When - add different album for the same date (should replace)
     const body = addFutureListenBody({
       spotifyId: 'album-2',
-      date: futureDate.toISOString(),
+      date: toDateString(futureDate),
     });
     const result = await handler(createHandlerEvent(userId, { body }));
 
