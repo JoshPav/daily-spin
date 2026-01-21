@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type Ref, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
+import type { FetchAmounts } from './useListens';
 
 // Mock useState to return regular refs (simulating client-side behavior)
 const stateStore = new Map<string, Ref<unknown>>();
@@ -30,8 +31,12 @@ vi.mock('../auth/useAuth', () => ({
 }));
 
 // Import after mocks are set up
-import { toDateKey } from '~/utils/dateUtils';
 import { useListens } from './useListens';
+
+const defaultFetchAmounts: FetchAmounts = {
+  initial: 21,
+  fetchMore: 14,
+};
 
 const createDailyListen = (
   date: string,
@@ -57,13 +62,6 @@ const createAlbumListen = (id: string): DailyListens['albums'][0] => ({
   },
 });
 
-const createFavoriteSong = (albumId: string): DailyListens['favoriteSong'] => ({
-  spotifyId: 'track-1',
-  name: 'My Favorite Song',
-  trackNumber: 1,
-  albumId,
-});
-
 describe('useListens', () => {
   const mockFetch = vi.fn();
 
@@ -82,49 +80,28 @@ describe('useListens', () => {
     vi.useRealTimers();
   });
 
-  describe('toDateKey', () => {
-    it('should convert Date to YYYY-MM-DD format', () => {
-      const date = new Date('2026-01-15T14:30:00.000Z');
-      expect(toDateKey(date)).toBe('2026-01-15');
-    });
-
-    it('should extract date from ISO string', () => {
-      expect(toDateKey('2026-01-15T14:30:00.000Z')).toBe('2026-01-15');
-    });
-
-    it('should pass through YYYY-MM-DD string unchanged', () => {
-      expect(toDateKey('2026-01-15')).toBe('2026-01-15');
-    });
-  });
-
   describe('initial state', () => {
     it('should initialize with empty Map', () => {
       mockAuthLoading.value = true; // Prevent auto-fetch
-      const { listensByDate } = useListens();
+      const { listensByDate } = useListens(defaultFetchAmounts);
       expect(listensByDate.value.size).toBe(0);
     });
 
-    it('should initialize with pending true', () => {
+    it('should initialize with loading true', () => {
       mockAuthLoading.value = true;
-      const { pending } = useListens();
-      expect(pending.value).toBe(true);
-    });
-
-    it('should initialize with loadingMore false', () => {
-      mockAuthLoading.value = true;
-      const { loadingMore } = useListens();
-      expect(loadingMore.value).toBe(false);
+      const { loading } = useListens(defaultFetchAmounts);
+      expect(loading.value).toBe(true);
     });
 
     it('should initialize with hasMore true', () => {
       mockAuthLoading.value = true;
-      const { hasMore } = useListens();
+      const { hasMore } = useListens(defaultFetchAmounts);
       expect(hasMore.value).toBe(true);
     });
 
     it('should initialize with error null', () => {
       mockAuthLoading.value = true;
-      const { error } = useListens();
+      const { error } = useListens(defaultFetchAmounts);
       expect(error.value).toBeNull();
     });
   });
@@ -142,7 +119,7 @@ describe('useListens', () => {
       ];
       mockFetch.mockResolvedValueOnce(mockData);
 
-      const { listensByDate, pending } = useListens();
+      const { listensByDate, loading } = useListens(defaultFetchAmounts);
 
       // Simulate auth finishing loading
       mockAuthLoading.value = false;
@@ -157,21 +134,21 @@ describe('useListens', () => {
       expect(listensByDate.value.size).toBe(2);
       expect(listensByDate.value.get('2026-01-14')).toEqual(mockData[0]);
       expect(listensByDate.value.get('2026-01-15')).toEqual(mockData[1]);
-      expect(pending.value).toBe(false);
+      expect(loading.value).toBe(false);
     });
 
     it('should set error on fetch failure', async () => {
       mockAuthLoading.value = true;
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      const { error, pending } = useListens();
+      const { error, loading } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
 
       expect(error.value).toBeInstanceOf(Error);
       expect(error.value?.message).toBe('Network error');
-      expect(pending.value).toBe(false);
+      expect(loading.value).toBe(false);
     });
   });
 
@@ -192,7 +169,7 @@ describe('useListens', () => {
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(olderData);
 
-      const { listensByDate, fetchMore } = useListens();
+      const { listensByDate, fetchMore } = useListens(defaultFetchAmounts);
 
       // Wait for initial fetch
       mockAuthLoading.value = false;
@@ -222,7 +199,7 @@ describe('useListens', () => {
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(emptyBatch);
 
-      const { hasMore, fetchMore } = useListens();
+      const { hasMore, fetchMore } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -234,7 +211,7 @@ describe('useListens', () => {
       expect(hasMore.value).toBe(false);
     });
 
-    it('should not fetch if already loading more', async () => {
+    it('should not fetch if already loading', async () => {
       mockAuthLoading.value = true;
       mockFetch.mockResolvedValueOnce([
         createDailyListen('2026-01-14T00:00:00.000Z', [
@@ -246,7 +223,7 @@ describe('useListens', () => {
         () => new Promise((resolve) => setTimeout(() => resolve([]), 1000)),
       );
 
-      const { fetchMore } = useListens();
+      const { fetchMore } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -276,7 +253,7 @@ describe('useListens', () => {
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(emptyBatch);
 
-      const { hasMore, fetchMore } = useListens();
+      const { hasMore, fetchMore } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -300,7 +277,7 @@ describe('useListens', () => {
       ]);
       mockFetch.mockRejectedValueOnce(new Error('Fetch more failed'));
 
-      const { error, fetchMore, loadingMore } = useListens();
+      const { error, fetchMore, loading } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -308,7 +285,7 @@ describe('useListens', () => {
       await fetchMore();
 
       expect(error.value?.message).toBe('Fetch more failed');
-      expect(loadingMore.value).toBe(false);
+      expect(loading.value).toBe(false);
     });
   });
 
@@ -329,7 +306,7 @@ describe('useListens', () => {
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(refreshedData);
 
-      const { listensByDate, refresh } = useListens();
+      const { listensByDate, refresh } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -358,7 +335,7 @@ describe('useListens', () => {
         .mockResolvedValueOnce(emptyBatch)
         .mockResolvedValueOnce(initialData);
 
-      const { hasMore, fetchMore, refresh } = useListens();
+      const { hasMore, fetchMore, refresh } = useListens(defaultFetchAmounts);
 
       mockAuthLoading.value = false;
       await vi.runAllTimersAsync();
@@ -368,118 +345,6 @@ describe('useListens', () => {
 
       await refresh();
       expect(hasMore.value).toBe(true);
-    });
-  });
-
-  describe('updateFavoriteSongForDate', () => {
-    it('should update favorite song for matching date', async () => {
-      mockAuthLoading.value = true;
-      const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-      ];
-      mockFetch.mockResolvedValueOnce(initialData);
-
-      const { listensByDate, updateFavoriteSongForDate } = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      const favoriteSong = createFavoriteSong('album-1');
-
-      updateFavoriteSongForDate('2026-01-14T00:00:00.000Z', favoriteSong);
-
-      expect(listensByDate.value.get('2026-01-14')?.favoriteSong).toEqual(
-        favoriteSong,
-      );
-    });
-
-    it('should match date by prefix (ignoring time)', async () => {
-      mockAuthLoading.value = true;
-      const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-      ];
-      mockFetch.mockResolvedValueOnce(initialData);
-
-      const { listensByDate, updateFavoriteSongForDate } = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      const favoriteSong = createFavoriteSong('album-1');
-
-      // Use different time but same date
-      updateFavoriteSongForDate('2026-01-14T15:30:00.000Z', favoriteSong);
-
-      expect(listensByDate.value.get('2026-01-14')?.favoriteSong).toEqual(
-        favoriteSong,
-      );
-    });
-
-    it('should allow clearing favorite song', async () => {
-      mockAuthLoading.value = true;
-      const initialData: DailyListens[] = [
-        {
-          ...createDailyListen('2026-01-14T00:00:00.000Z', [
-            createAlbumListen('album-1'),
-          ]),
-          favoriteSong: createFavoriteSong('album-1'),
-        },
-      ];
-      mockFetch.mockResolvedValueOnce(initialData);
-
-      const { listensByDate, updateFavoriteSongForDate } = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      updateFavoriteSongForDate('2026-01-14', null);
-
-      expect(listensByDate.value.get('2026-01-14')?.favoriteSong).toBeNull();
-    });
-
-    it('should not throw if date not found', async () => {
-      mockAuthLoading.value = true;
-      mockFetch.mockResolvedValueOnce([
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-      ]);
-
-      const { updateFavoriteSongForDate } = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      expect(() => {
-        updateFavoriteSongForDate('2026-01-20', createFavoriteSong('album-1'));
-      }).not.toThrow();
-    });
-
-    it('should trigger reactivity when updating favorite song', async () => {
-      mockAuthLoading.value = true;
-      const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-      ];
-      mockFetch.mockResolvedValueOnce(initialData);
-
-      const { listensByDate, updateFavoriteSongForDate } = useListens();
-
-      mockAuthLoading.value = false;
-      await vi.runAllTimersAsync();
-
-      const originalMap = listensByDate.value;
-      const favoriteSong = createFavoriteSong('album-1');
-
-      updateFavoriteSongForDate('2026-01-14', favoriteSong);
-
-      // The Map reference should change to trigger reactivity
-      expect(listensByDate.value).not.toBe(originalMap);
     });
   });
 });

@@ -119,10 +119,17 @@ export const useDashboardData = () => {
       return { type: 'future', futureListen: futureData };
     }
 
-    // No data - determine type by date
-    if (dateKey <= todayKey) {
+    // Today with no albums - show as future to allow adding via the + button
+    if (dateKey === todayKey) {
+      return { type: 'future' };
+    }
+
+    // Past dates with no data
+    if (dateKey < todayKey) {
       return { type: 'past', listens: pastData };
     }
+
+    // Future dates
     return { type: 'future' };
   };
 

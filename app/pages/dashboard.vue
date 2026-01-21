@@ -114,6 +114,7 @@ onUnmounted(() => {
       </div>
 
       <div
+        v-else
         class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
       >
         <!-- Sticky month header -->
