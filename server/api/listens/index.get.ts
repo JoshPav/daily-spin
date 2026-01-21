@@ -15,7 +15,8 @@ export default createEventHandler(getListensSchema, async (event) => {
   // Default to last 2 weeks if no range specified
   const today = new Date();
   const startDate = query?.startDate ?? startOfDay(subDays(today, 14));
-  const endDate = query?.endDate ?? endOfDay(today);
+  // When endDate is provided as YYYY-MM-DD, include the entire day
+  const endDate = endOfDay(query.endDate || today);
 
   log.info('Fetching listening history', {
     startDate: startDate.toISOString(),

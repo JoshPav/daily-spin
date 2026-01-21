@@ -1,10 +1,11 @@
 import type { DailyListens } from '#shared/schema';
 import type { DailyListenWithAlbums } from '../repositories/dailyListen.repository';
+import { toDateString } from '../utils/datetime.utils';
 
 export const mapDailyListens = (
   dailyListens: DailyListenWithAlbums,
 ): DailyListens => ({
-  date: dailyListens.date.toISOString(),
+  date: toDateString(dailyListens.date),
   albums: dailyListens.albums.map(
     ({ id, album, listenOrder, listenMethod, listenTime }) => ({
       id,

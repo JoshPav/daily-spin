@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import {
   afterEach,
   beforeAll,
@@ -7,6 +8,10 @@ import {
   it,
   vi,
 } from 'vitest';
+
+/** Formats a Date to YYYY-MM-DD string */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
+
 import type {
   AddAlbumListenBody,
   ListenMethod,
@@ -103,12 +108,12 @@ describe('POST /api/listens Integration Tests', () => {
     // Given
     const body1: AddAlbumListenBody = addAlbumListenBody({
       album: album({ albumId: 'album-1', albumName: 'Album 1' }),
-      date: startOfDay.toISOString(),
+      date: toDateString(startOfDay),
     });
 
     const body2: AddAlbumListenBody = addAlbumListenBody({
       album: album({ albumId: 'album-2', albumName: 'Album 2' }),
-      date: startOfDay.toISOString(),
+      date: toDateString(startOfDay),
     });
 
     // When
@@ -148,11 +153,11 @@ describe('POST /api/listens Integration Tests', () => {
     const day2 = new Date('2026-01-02T00:00:00.000Z');
 
     const body1: AddAlbumListenBody = addAlbumListenBody({
-      date: day1.toISOString(),
+      date: toDateString(day1),
     });
 
     const body2: AddAlbumListenBody = addAlbumListenBody({
-      date: day2.toISOString(),
+      date: toDateString(day2),
     });
 
     // When

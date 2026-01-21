@@ -104,7 +104,7 @@ describe('useLogAlbum', () => {
       expect(mockFetch).toHaveBeenCalledWith('/api/listens', {
         method: 'POST',
         body: {
-          date: testDate.toISOString(),
+          date: '2024-01-15',
           album: {
             albumId: 'test-album-id',
             albumName: 'Test Album',

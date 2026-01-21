@@ -1,8 +1,12 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
-import { subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { readBody } from 'h3';
+
+/** Formats a Date to YYYY-MM-DD string for API mock data */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import type { DailyListens, FutureListenItem } from '~~/shared/schema';
@@ -219,9 +223,7 @@ describe('Dashboard Page', () => {
 
       it('should render the formattedMonth name for the 1st day of the month', async () => {
         // Given - set first listen to Jan 1st so it displays the month label
-        mockListensData[0]!.date = new Date(
-          '2026-01-01T12:00:00.000Z',
-        ).toISOString();
+        mockListensData[0]!.date = '2026-01-01';
 
         await mountDashboard();
 
@@ -261,9 +263,7 @@ describe('Dashboard Page', () => {
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
           // Given - first day (empty) is set to Jan 1st
-          mockListensData[0]!.date = new Date(
-            '2026-01-01T12:00:00.000Z',
-          ).toISOString();
+          mockListensData[0]!.date = '2026-01-01';
 
           await mountDashboard();
 
@@ -316,7 +316,7 @@ describe('Dashboard Page', () => {
       describe('daily listens modal', () => {
         // Define fixed test data to avoid random data issues
         const testDailyListen: DailyListens = {
-          date: new Date('2026-01-10T12:00:00.000Z').toISOString(),
+          date: '2026-01-10',
           albums: [
             {
               id: 'test-album-listen-id',
@@ -736,7 +736,7 @@ describe('Dashboard Page', () => {
           }));
 
           mockFutureListensData = [
-            futureListenItem({ date: TODAY.toISOString() }),
+            futureListenItem({ date: toDateString(TODAY) }),
           ];
         });
 
@@ -817,7 +817,7 @@ describe('Dashboard Page', () => {
         describe('future listens modal', () => {
           const testFutureListen: FutureListenItem = {
             id: 'test-modal-future-listen-id',
-            date: new Date('2026-01-16T12:00:00.000Z').toISOString(),
+            date: '2026-01-16',
             album: {
               spotifyId: 'test-modal-album-spotify-id',
               name: 'Test Modal Album',
@@ -1135,7 +1135,7 @@ describe('Dashboard Page', () => {
 
       // The multi-album day is yesterday (subDays 1)
       const multiAlbumDay = dailyListens({
-        date: subDays(TODAY, 1).toISOString(),
+        date: toDateString(subDays(TODAY, 1)),
         albums: [album1, album2],
         favoriteSong: null,
       });
@@ -1144,7 +1144,7 @@ describe('Dashboard Page', () => {
       mockListensData = [
         multiAlbumDay,
         dailyListens({
-          date: TODAY.toISOString(),
+          date: toDateString(TODAY),
           albums: [dailyAlbumListen()],
         }),
       ];

@@ -1,5 +1,6 @@
 import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
 import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { toDateString } from '~~/server/utils/datetime.utils';
 import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:FutureListen');
@@ -23,7 +24,7 @@ export class FutureListenService {
 
     return {
       id: item.id,
-      date: item.date.toISOString(),
+      date: toDateString(item.date),
       album: {
         spotifyId: item.album.spotifyId,
         name: item.album.name,

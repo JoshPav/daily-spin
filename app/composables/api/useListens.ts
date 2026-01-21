@@ -38,8 +38,8 @@ export const useListens = (fetchAmounts: FetchAmounts): UseListensReturn => {
   ): Promise<DailyListens[]> => {
     return await $fetch<GetListensResponse>('/api/listens', {
       query: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: toDateKey(startDate),
+        endDate: toDateKey(endDate),
       },
     });
   };
@@ -53,8 +53,7 @@ export const useListens = (fetchAmounts: FetchAmounts): UseListensReturn => {
   const mergeListensToMap = (listens: DailyListens[]): void => {
     const newMap = new Map(listensByDate.value);
     for (const day of listens) {
-      const key = toDateKey(day.date);
-      newMap.set(key, day);
+      newMap.set(day.date, day);
     }
     listensByDate.value = newMap;
   };

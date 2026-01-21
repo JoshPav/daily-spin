@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import {
   afterEach,
   beforeAll,
@@ -7,6 +8,10 @@ import {
   it,
   vi,
 } from 'vitest';
+
+/** Formats a Date to YYYY-MM-DD string */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
+
 import type { GetFutureListensResponse } from '~~/shared/schema';
 import { createFutureListen, createUser } from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
@@ -70,7 +75,7 @@ describe('GET /api/future-listens Integration Tests', () => {
     // Then
     expect(result.items).toHaveLength(2);
     expect(result.items[0]).toMatchObject({
-      date: date1.toISOString(),
+      date: toDateString(date1),
       album: {
         spotifyId: testAlbumItem.spotifyId,
         name: testAlbumItem.name,
@@ -78,7 +83,7 @@ describe('GET /api/future-listens Integration Tests', () => {
       },
     });
     expect(result.items[1]).toMatchObject({
-      date: date2.toISOString(),
+      date: toDateString(date2),
       album: {
         spotifyId: 'album-2',
         name: 'Second Album',
@@ -154,9 +159,9 @@ describe('GET /api/future-listens Integration Tests', () => {
 
     // Then
     expect(result.items).toHaveLength(3);
-    expect(result.items[0].date).toBe(date2.toISOString());
-    expect(result.items[1].date).toBe(date3.toISOString());
-    expect(result.items[2].date).toBe(date1.toISOString());
+    expect(result.items[0].date).toBe(toDateString(date2));
+    expect(result.items[1].date).toBe(toDateString(date3));
+    expect(result.items[2].date).toBe(toDateString(date1));
   });
 
   it('should include all album fields in response', async () => {
@@ -265,7 +270,7 @@ describe('GET /api/future-listens Integration Tests', () => {
 
     // Then
     expect(result.items).toHaveLength(2);
-    expect(result.items[0].date).toBe(date1.toISOString());
-    expect(result.items[1].date).toBe(date2.toISOString());
+    expect(result.items[0].date).toBe(toDateString(date1));
+    expect(result.items[1].date).toBe(toDateString(date2));
   });
 });

@@ -6,7 +6,7 @@ import {
   DailyListenRepository,
 } from '../repositories/dailyListen.repository';
 import { UserRepository } from '../repositories/user.repository';
-import { dateInRange, isToday } from '../utils/datetime.utils';
+import { dateInRange, isToday, toDateString } from '../utils/datetime.utils';
 import { createTaggedLogger } from '../utils/logger';
 import { BacklogService } from './backlog.service';
 import { FutureListenService } from './futureListen.service';
@@ -167,7 +167,7 @@ export class DailyListenService {
 
       // Create empty entry for missing day
       return {
-        date: day.toISOString(),
+        date: toDateString(day),
         albums: [],
         favoriteSong: null,
       };

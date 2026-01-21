@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { addDays, subDays } from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
@@ -28,6 +28,9 @@ const {
   music,
   date,
 } = faker;
+
+/** Formats a Date to YYYY-MM-DD string for API mock data */
+const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
 
 type EventHandler = ReturnType<typeof defineEventHandler>;
 
@@ -58,14 +61,14 @@ export const getListensReponse = ({
 
   // Create n days of listens, from oldest to newest (ending at startDate)
   for (let i = n - 1; i >= 0; i--) {
-    listens.push(dailyListens({ date: subDays(startDate, i).toISOString() }));
+    listens.push(dailyListens({ date: toDateString(subDays(startDate, i)) }));
   }
 
   return listens;
 };
 
 export const dailyListens = createFactory<DailyListens>(() => ({
-  date: faker.date.recent().toISOString(),
+  date: toDateString(faker.date.recent()),
   albums: [dailyAlbumListen()],
   favoriteSong: favouriteSong(),
 }));
@@ -105,7 +108,7 @@ export const dailyAlbumListen = createFactory<DailyAlbumListen>(() => ({
 export const addAlbumListenBody = createFactory<AddAlbumListenBody>(() => ({
   album: album(),
   listenMetadata: listenMetadata(),
-  date: date.recent().toISOString(),
+  date: toDateString(date.recent()),
 }));
 
 export const backlogArtist = createFactory<BacklogArtist>(() => ({
@@ -128,7 +131,7 @@ export const addFutureListenBody = createFactory<AddFutureListenBody>(() => ({
   releaseDate: date.past().toISOString(),
   totalTracks: faker.number.int({ min: 5, max: 20 }),
   artists: [backlogArtist()],
-  date: date.future().toISOString(),
+  date: toDateString(date.future()),
 }));
 
 export const backlogAlbum = (
@@ -159,7 +162,7 @@ export const getFutureListensResponse = ({
   // Create n days of listens, from oldest to newest (ending at startDate)
   for (let i = n - 1; i >= 0; i--) {
     listens.push(
-      futureListenItem({ date: addDays(startDate, i).toISOString() }),
+      futureListenItem({ date: toDateString(addDays(startDate, i)) }),
     );
   }
 
@@ -168,7 +171,7 @@ export const getFutureListensResponse = ({
 
 export const futureListenItem = createFactory<FutureListenItem>(() => ({
   id: uuid(),
-  date: faker.date.future().toISOString(),
+  date: toDateString(faker.date.future()),
   album: futureListenAlbum(),
 }));
 

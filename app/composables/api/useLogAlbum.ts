@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { ListenMethod, ListenOrder, ListenTime } from '#shared/schema';
 import { getTrackListenTime } from '#shared/utils/listenTime.utils';
+import { toDateKey } from '~/utils/dateUtils';
 import type { SearchResult } from './useSpotifyAlbumSearch';
 
 type UseLogAlbumProps = { date: Date; onSuccess?: () => void };
@@ -34,7 +35,7 @@ export const useLogAlbum = ({
       await $fetch('/api/listens', {
         method: 'POST',
         body: {
-          date: date.toISOString(),
+          date: toDateKey(date),
           album: {
             albumId: selectedAlbum.value.id,
             albumName: selectedAlbum.value.name,
