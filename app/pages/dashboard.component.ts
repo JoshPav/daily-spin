@@ -1012,9 +1012,8 @@ describe('Dashboard Page', () => {
       expect(document.body.textContent).toContain('/api/listens');
     });
 
-    it('should still render the date range with empty cards', async () => {
-      // With the new architecture, we render the date range even on error
-      // The error message is shown but cards are rendered as empty
+    it('should not render the sticky month header', async () => {
+      // When
       await mountDashboard();
 
       // Wait for error state to render
@@ -1022,14 +1021,29 @@ describe('Dashboard Page', () => {
         () => document.body.textContent?.includes('Error:') ?? false,
       );
 
-      // Date range is still rendered
+      // Then - sticky header should not be visible
+      const stickyHeader = screen.queryByTestId('sticky-month-header');
+      expect(stickyHeader).toBeNull();
+    });
+
+    it('should not render any album days', async () => {
+      // When
+      await mountDashboard();
+
+      // Wait for error state to render
+      await waitFor(
+        () => document.body.textContent?.includes('Error:') ?? false,
+      );
+
+      // Then - no past or future album days
       const pastDays = document.querySelectorAll(
         '[data-testid="past-album-day"]',
       );
       const futureDays = document.querySelectorAll(
         '[data-testid="future-album-day"]',
       );
-      expect(pastDays.length + futureDays.length).toBeGreaterThan(0);
+      expect(pastDays).toHaveLength(0);
+      expect(futureDays).toHaveLength(0);
     });
   });
 
