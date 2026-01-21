@@ -4,7 +4,7 @@
     class="flex flex-col bg-elevated"
     variant="ghost"
     size="xl"
-    button-class="justify-star hover:cursor-pointer"
+    button-class="justify-start hover:cursor-pointer"
   >
     <template #trigger>
       <div class="flex items-center gap-3 flex-1">
