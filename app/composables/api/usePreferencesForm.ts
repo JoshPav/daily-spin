@@ -14,8 +14,10 @@ export const usePreferencesForm = () => {
     },
   );
 
-  // Derive pending from status for loading states
-  const pending = computed(() => status.value === 'pending');
+  // Show loading when idle (before fetch starts) or pending (during fetch)
+  const pending = computed(
+    () => status.value === 'idle' || status.value === 'pending',
+  );
   const { updating, updatePreferences } = useUpdatePreferences({
     onSuccess: () => refresh(),
   });

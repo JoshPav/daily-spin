@@ -1,5 +1,5 @@
 <template>
-  <UCollapsible v-model:open="model" :class="containerClass">
+  <UCollapsible v-model:open="model" class="flex flex-col gap-2">
     <UButton
       block
       color="neutral"
@@ -37,7 +37,6 @@ withDefaults(
   {
     variant: 'subtle',
     size: 'lg',
-    containerClass: 'flex flex-col gap-2',
   },
 );
 </script>

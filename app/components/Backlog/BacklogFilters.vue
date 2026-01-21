@@ -6,8 +6,14 @@
       placeholder="Search albums or artists..."
       size="xl"
       class="flex-1"
+      :disabled="disabled"
     />
-    <DropdownSelect v-model="sortBy" :options="sortOptions" label="Sort by" />
+    <DropdownSelect
+      v-model="sortBy"
+      :options="sortOptions"
+      label="Sort by"
+      :disabled="disabled"
+    />
   </div>
 </template>
 
@@ -23,6 +29,7 @@ const sortBy = defineModel<SortOption>('sortBy', { required: true });
 
 const props = defineProps<{
   viewMode: ViewMode;
+  disabled?: boolean;
 }>();
 
 const allSortOptions = [

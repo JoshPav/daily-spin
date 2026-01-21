@@ -1,10 +1,10 @@
 <template>
   <CollapsibleSection
     v-model="open"
+    class="flex flex-col bg-elevated"
     variant="ghost"
     size="xl"
-    container-class="flex flex-col gap-3"
-    button-class="justify-start"
+    button-class="justify-star hover:cursor-pointer"
   >
     <template #trigger>
       <div class="flex items-center gap-3 flex-1">
@@ -22,15 +22,16 @@
     </template>
 
     <!-- Albums in this group -->
-    <div class="flex flex-col gap-3 pl-4">
-      <BacklogItem
-        v-for="album in albums"
-        :key="album.id"
-        :album="album"
-        :hide-artist="true"
-        :search-term="searchTerm"
-        @deleted="emit('deleted')"
-      />
+    <div class="flex flex-col px-4">
+      <template v-for="album in albums" :key="album.id">
+        <USeparator />
+        <BacklogItem
+          :album="album"
+          :hide-artist="true"
+          :search-term="searchTerm"
+          @deleted="emit('deleted')"
+        />
+      </template>
     </div>
   </CollapsibleSection>
 </template>
