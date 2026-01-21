@@ -75,7 +75,7 @@ const updateMockListenForDate = (
 let mockListensData: DailyListens[] = [];
 let mockListensDataBatch2: DailyListens[] = [];
 let mockListensDataBatch3: DailyListens[] = [];
-let mockFutureListensData: FutureListenItem[] = [];
+let mockFutureListensData: Record<string, FutureListenItem | null> = {};
 let listensCallCount = 0;
 let deletedFutureListenIds: string[] = [];
 let favoriteSongPatchCalls: { date: string; body: unknown }[] = [];
@@ -139,6 +139,13 @@ registerEndpoint('/api/listens', () => {
 // Register endpoint mock for /api/future-listens (GET)
 registerEndpoint('/api/future-listens', () => ({
   items: mockFutureListensData,
+  pagination: {
+    startDate: toDateString(new Date()),
+    endDate: toDateString(new Date()),
+    total: Object.values(mockFutureListensData).filter((v) => v !== null)
+      .length,
+    hasMore: false,
+  },
 }));
 
 // Note: registerEndpoint doesn't support dynamic :id params
@@ -152,7 +159,7 @@ describe('Dashboard Page', () => {
     mockListensData = [];
     mockListensDataBatch2 = [];
     mockListensDataBatch3 = [];
-    mockFutureListensData = [];
+    mockFutureListensData = {};
     listensCallCount = 0;
     deletedFutureListenIds = [];
     favoriteSongPatchCalls = [];
@@ -735,9 +742,8 @@ describe('Dashboard Page', () => {
             favoriteSong: null,
           }));
 
-          mockFutureListensData = [
-            futureListenItem({ date: toDateString(TODAY) }),
-          ];
+          const todayItem = futureListenItem({ date: toDateString(TODAY) });
+          mockFutureListensData = { [todayItem.date]: todayItem };
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
@@ -783,9 +789,9 @@ describe('Dashboard Page', () => {
           const firstImage = daysWithImages[0]!.querySelector(
             '[data-testid="album-image"]',
           );
-          const scheduledImageUrls = mockFutureListensData.map(
-            (item) => item.album.imageUrl,
-          );
+          const scheduledImageUrls = Object.values(mockFutureListensData)
+            .filter((item): item is FutureListenItem => item !== null)
+            .map((item) => item.album.imageUrl);
           expect(scheduledImageUrls).toContain(firstImage?.getAttribute('src'));
 
           // Should render day number (16-21 range)
@@ -843,7 +849,9 @@ describe('Dashboard Page', () => {
             clearNuxtData('future-listens');
             listensCallCount = 0;
 
-            mockFutureListensData = [testFutureListen];
+            mockFutureListensData = {
+              [testFutureListen.date]: testFutureListen,
+            };
 
             registerEndpoint(`/api/future-listens/${testFutureListen.id}`, {
               method: 'DELETE',
@@ -899,7 +907,7 @@ describe('Dashboard Page', () => {
 
       describe('when there are no scheduled albums', () => {
         beforeEach(() => {
-          mockFutureListensData = [];
+          mockFutureListensData = {};
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
@@ -965,7 +973,7 @@ describe('Dashboard Page', () => {
   describe('when the user has no listens', () => {
     beforeEach(() => {
       mockListensData = [];
-      mockFutureListensData = [];
+      mockFutureListensData = {};
     });
 
     it('should render empty day cards for the date range', async () => {

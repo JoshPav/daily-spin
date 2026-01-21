@@ -156,17 +156,27 @@ export const futureListenAlbum = createFactory<FutureListenAlbum>(() => ({
 export const getFutureListensResponse = ({
   n = 7,
   startDate = new Date(),
+  hasMore = false,
 }): GetFutureListensResponse => {
-  const listens: FutureListenItem[] = [];
+  const items: Record<string, FutureListenItem | null> = {};
 
-  // Create n days of listens, from oldest to newest (ending at startDate)
-  for (let i = n - 1; i >= 0; i--) {
-    listens.push(
-      futureListenItem({ date: toDateString(addDays(startDate, i)) }),
-    );
+  // Create n days of future listens as date-keyed object
+  for (let i = 0; i < n; i++) {
+    const dateKey = toDateString(addDays(startDate, i));
+    items[dateKey] = futureListenItem({ date: dateKey });
   }
 
-  return { items: listens };
+  const endDate = addDays(startDate, n - 1);
+
+  return {
+    items,
+    pagination: {
+      startDate: toDateString(startDate),
+      endDate: toDateString(endDate),
+      total: n,
+      hasMore,
+    },
+  };
 };
 
 export const futureListenItem = createFactory<FutureListenItem>(() => ({

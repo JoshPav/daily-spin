@@ -1,4 +1,9 @@
-import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
+import { addDays } from 'date-fns';
+import type {
+  AddFutureListenBody,
+  FutureListenItem,
+  FutureListensPagination,
+} from '#shared/schema';
 import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
 import { toDateString } from '~~/server/utils/datetime.utils';
 import { createTaggedLogger } from '~~/server/utils/logger';
@@ -45,6 +50,64 @@ export class FutureListenService {
     });
 
     return items.map((item) => this.mapToFutureListenItem(item));
+  }
+
+  /**
+   * Get future listens for a user within a date range with pagination
+   * Returns a date-keyed object with all dates in range (null for empty days)
+   */
+  async getFutureListensPaginated(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
+    items: Record<string, FutureListenItem | null>;
+    pagination: FutureListensPagination;
+  }> {
+    logger.debug('Fetching paginated future listens', {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+
+    const { items, total, hasMore } =
+      await this.futureListenRepo.getFutureListensPaginated(
+        userId,
+        startDate,
+        endDate,
+      );
+
+    // Map items to response types with date as key
+    const itemsByDate = new Map<string, FutureListenItem>();
+    for (const item of items) {
+      const mapped = this.mapToFutureListenItem(item);
+      itemsByDate.set(mapped.date, mapped);
+    }
+
+    // Build date-keyed object with all dates in range (null for empty days)
+    const result: Record<string, FutureListenItem | null> = {};
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      const dateKey = toDateString(currentDate);
+      result[dateKey] = itemsByDate.get(dateKey) ?? null;
+      currentDate = addDays(currentDate, 1);
+    }
+
+    logger.debug('Successfully fetched paginated future listens', {
+      userId,
+      total,
+      hasMore,
+    });
+
+    return {
+      items: result,
+      pagination: {
+        startDate: toDateString(startDate),
+        endDate: toDateString(endDate),
+        total,
+        hasMore,
+      },
+    };
   }
 
   async addFutureListen(

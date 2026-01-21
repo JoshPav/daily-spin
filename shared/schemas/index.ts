@@ -59,6 +59,8 @@ export {
   FutureListenAlbumSchema,
   type FutureListenItem,
   FutureListenItemSchema,
+  type FutureListensPagination,
+  FutureListensPaginationSchema,
   type GetFutureListens,
   type GetFutureListensResponse,
   getFutureListensSchema,

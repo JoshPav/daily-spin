@@ -1,13 +1,9 @@
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { type Ref, ref, watch } from 'vue';
 import type { DailyListens, GetListensResponse } from '#shared/schema';
+import type { FetchAmounts } from '~/constants/fetchConfig';
 import { toDateKey } from '~/utils/dateUtils';
 import { useAuth } from '../auth/useAuth';
-
-export type FetchAmounts = {
-  initial: number;
-  fetchMore: number;
-};
 
 export interface UseListensReturn {
   /** Map of date keys (YYYY-MM-DD) to DailyListens data */

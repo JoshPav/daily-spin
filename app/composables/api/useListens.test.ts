@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type Ref, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
-import type { FetchAmounts } from './useListens';
+import type { FetchAmounts } from '~/constants/fetchConfig';
 
 // Mock useState to return regular refs (simulating client-side behavior)
 const stateStore = new Map<string, Ref<unknown>>();

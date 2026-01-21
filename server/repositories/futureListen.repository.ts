@@ -50,6 +50,79 @@ export class FutureListenRepository {
   }
 
   /**
+   * Get future listens for a user within a date range with pagination metadata
+   */
+  async getFutureListensPaginated(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    logger.debug('Fetching paginated future listens', {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+
+    try {
+      // Fetch items within the date range
+      const items = await this.prismaClient.futureListen.findMany({
+        where: {
+          userId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { date: 'asc' },
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: {
+                  artist: true,
+                },
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Check if there are items beyond the endDate (for hasMore)
+      const hasMoreCount = await this.prismaClient.futureListen.count({
+        where: {
+          userId,
+          date: {
+            gt: endDate,
+          },
+        },
+      });
+
+      const total = items.length;
+      const hasMore = hasMoreCount > 0;
+
+      logger.debug('Successfully fetched paginated future listens', {
+        userId,
+        count: total,
+        hasMore,
+      });
+
+      return { items, total, hasMore };
+    } catch (error) {
+      logger.error('Failed to fetch paginated future listens', {
+        userId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Get a future listen by date for a user
    */
   async getFutureListenByDate(userId: string, date: Date) {
