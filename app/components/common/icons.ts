@@ -22,6 +22,7 @@ export const Icons = {
     ARROW_UP: 'lucide:calendar-arrow-up',
     DAYS: 'i-lucide-calendar-days',
     REMOVE: 'i-lucide-calendar-x',
+    TODAY: 'i-lucide-calendar-check',
   },
   CHECK_CIRCLE_SOLID: 'i-heroicons-check-circle-solid',
   CHEVRON: {
