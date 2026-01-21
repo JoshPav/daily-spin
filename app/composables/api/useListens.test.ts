@@ -110,12 +110,8 @@ describe('useListens', () => {
     it('should fetch initial data when auth finishes loading', async () => {
       mockAuthLoading.value = true;
       const mockData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
-        createDailyListen('2026-01-15T00:00:00.000Z', [
-          createAlbumListen('album-2'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
+        createDailyListen('2026-01-15', [createAlbumListen('album-2')]),
       ];
       mockFetch.mockResolvedValueOnce(mockData);
 
@@ -156,14 +152,10 @@ describe('useListens', () => {
     it('should fetch older data and merge into Map', async () => {
       mockAuthLoading.value = true;
       const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ];
       const olderData: DailyListens[] = [
-        createDailyListen('2025-12-30T00:00:00.000Z', [
-          createAlbumListen('album-2'),
-        ]),
+        createDailyListen('2025-12-30', [createAlbumListen('album-2')]),
       ];
       mockFetch
         .mockResolvedValueOnce(initialData)
@@ -186,14 +178,12 @@ describe('useListens', () => {
     it('should set hasMore to false when batch has no actual listens', async () => {
       mockAuthLoading.value = true;
       const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ];
       // Empty batch (days with no albums)
       const emptyBatch: DailyListens[] = [
-        createDailyListen('2025-12-30T00:00:00.000Z', []),
-        createDailyListen('2025-12-29T00:00:00.000Z', []),
+        createDailyListen('2025-12-30', []),
+        createDailyListen('2025-12-29', []),
       ];
       mockFetch
         .mockResolvedValueOnce(initialData)
@@ -214,9 +204,7 @@ describe('useListens', () => {
     it('should not fetch if already loading', async () => {
       mockAuthLoading.value = true;
       mockFetch.mockResolvedValueOnce([
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ]);
       // Make second fetch slow
       mockFetch.mockImplementationOnce(
@@ -242,13 +230,9 @@ describe('useListens', () => {
     it('should not fetch if hasMore is false', async () => {
       mockAuthLoading.value = true;
       const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ];
-      const emptyBatch: DailyListens[] = [
-        createDailyListen('2025-12-30T00:00:00.000Z', []),
-      ];
+      const emptyBatch: DailyListens[] = [createDailyListen('2025-12-30', [])];
       mockFetch
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(emptyBatch);
@@ -271,9 +255,7 @@ describe('useListens', () => {
     it('should handle fetchMore errors', async () => {
       mockAuthLoading.value = true;
       mockFetch.mockResolvedValueOnce([
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ]);
       mockFetch.mockRejectedValueOnce(new Error('Fetch more failed'));
 
@@ -293,14 +275,10 @@ describe('useListens', () => {
     it('should clear Map and refetch', async () => {
       mockAuthLoading.value = true;
       const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ];
       const refreshedData: DailyListens[] = [
-        createDailyListen('2026-01-15T00:00:00.000Z', [
-          createAlbumListen('album-2'),
-        ]),
+        createDailyListen('2026-01-15', [createAlbumListen('album-2')]),
       ];
       mockFetch
         .mockResolvedValueOnce(initialData)
@@ -323,13 +301,9 @@ describe('useListens', () => {
     it('should reset hasMore to true on refresh', async () => {
       mockAuthLoading.value = true;
       const initialData: DailyListens[] = [
-        createDailyListen('2026-01-14T00:00:00.000Z', [
-          createAlbumListen('album-1'),
-        ]),
+        createDailyListen('2026-01-14', [createAlbumListen('album-1')]),
       ];
-      const emptyBatch: DailyListens[] = [
-        createDailyListen('2025-12-30T00:00:00.000Z', []),
-      ];
+      const emptyBatch: DailyListens[] = [createDailyListen('2025-12-30', [])];
       mockFetch
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(emptyBatch)

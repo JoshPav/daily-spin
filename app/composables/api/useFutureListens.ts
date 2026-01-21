@@ -4,7 +4,6 @@ import type {
   FutureListenItem,
   GetFutureListensResponse,
 } from '#shared/schema';
-import { toDateKey } from '~/utils/dateUtils';
 import { useAuth } from '../auth/useAuth';
 
 export interface UseFutureListensReturn {
@@ -32,7 +31,7 @@ export const useFutureListens = (): UseFutureListensReturn => {
       const map = new Map<string, FutureListenItem>();
       if (data?.items) {
         for (const item of data.items) {
-          map.set(toDateKey(item.date), item);
+          map.set(item.date, item);
         }
       }
       futureListensByDate.value = map;

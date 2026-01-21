@@ -53,8 +53,7 @@ export const useListens = (fetchAmounts: FetchAmounts): UseListensReturn => {
   const mergeListensToMap = (listens: DailyListens[]): void => {
     const newMap = new Map(listensByDate.value);
     for (const day of listens) {
-      const key = toDateKey(day.date);
-      newMap.set(key, day);
+      newMap.set(day.date, day);
     }
     listensByDate.value = newMap;
   };
