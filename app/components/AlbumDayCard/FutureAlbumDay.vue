@@ -9,7 +9,7 @@
   >
     <template #badge>
       <div
-        v-if="futureAlbum"
+        v-if="futureListen"
         class="absolute top-2 right-2 flex items-center justify-center w-7 h-7 rounded-md bg-indigo-500/90 text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] z-10 pointer-events-none"
       >
         <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
@@ -42,11 +42,11 @@ import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
 const {
   date,
-  futureAlbum,
+  futureListen,
   pending = false,
 } = defineProps<{
   date: string;
-  futureAlbum?: FutureListenItem;
+  futureListen?: FutureListenItem;
   pending?: boolean;
 }>();
 
@@ -64,19 +64,19 @@ const openAddModal = () => {
 };
 
 const albumCardInfo = computed<AlbumCardInfo[]>(() => {
-  if (!futureAlbum) return [];
+  if (!futureListen) return [];
   return [
     {
-      imageUrl: futureAlbum.album.imageUrl,
-      artistName: futureAlbum.album.artists[0]?.name ?? 'Unknown Artist',
-      albumName: futureAlbum.album.name,
+      imageUrl: futureListen.album.imageUrl,
+      artistName: futureListen.album.artists[0]?.name ?? 'Unknown Artist',
+      albumName: futureListen.album.name,
     },
   ];
 });
 
 const handleClick = () => {
-  if (!futureAlbum) return;
-  futureListenModal.open({ futureListenItem: futureAlbum });
+  if (!futureListen) return;
+  futureListenModal.open({ futureListenItem: futureListen });
 };
 
 // Sticky month header tracking

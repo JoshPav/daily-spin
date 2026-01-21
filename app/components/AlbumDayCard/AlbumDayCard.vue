@@ -20,7 +20,7 @@
     <!-- Day number overlay -->
     <div
       data-testid="day-number"
-      class="absolute bottom-2 left-2 py-1.5 px-2.5 min-w-12 rounded-md bg-black/60 text-white text-2xl font-black leading-none z-4 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
+      class="absolute bottom-2 left-2 py-1.5 px-2.5 min-w-12 rounded-md bg-black/60 text-white text-2xl font-black leading-none z-5 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
     >
       {{ day }}
     </div>

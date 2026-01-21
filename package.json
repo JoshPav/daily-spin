@@ -24,6 +24,7 @@
     "@date-fns/tz": "^1.4.1",
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "^4.1.0",
+    "@nuxtjs/device": "4.0.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@spotify/web-api-ts-sdk": "^1.2.0",
