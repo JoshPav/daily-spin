@@ -35,10 +35,11 @@ const scrollAreaRef = useTemplateRef<HTMLDivElement>('scrollArea');
 const today = toDateKey(new Date());
 
 const isReady = computed(() => displayDates.value.length > 0);
-const { todayElement, getScrollableElement } = useScrollToToday({
-  isReady,
-  scrollAreaRef,
-});
+const { todayElement, getScrollableElement, scrollToToday, isTodayVisible } =
+  useScrollToToday({
+    isReady,
+    scrollAreaRef,
+  });
 
 // Track today's element for scroll-to-today functionality
 const setTodayRef = (dateKey: string) => (el: unknown) => {
@@ -94,59 +95,63 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    ref="scrollArea"
-    class="h-[calc(100vh-var(--ui-header-height))] overflow-y-auto [scrollbar-gutter:stable]"
-  >
-    <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
-      <!-- Loading more indicator (top) -->
-      <div v-if="loading" class="flex flex-col items-center gap-2 py-4">
-        <span class="text-sm text-[#b3b3b3]">Loading older albums...</span>
-        <UProgress animation="carousel" class="w-32" />
-      </div>
-
-      <!-- Error state -->
-      <div
-        v-if="error"
-        class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
-      >
-        Error: {{ error.message }}
-      </div>
-
-      <div
-        v-else
-        class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
-      >
-        <!-- Sticky month header -->
-        <StickyMonthHeader />
-
-        <div
-          v-if="!listensHistory.hasMore.value"
-          class="col-span-full text-center text-sm text-[#b3b3b3]"
-        >
-          You've reached the beginning of your listening history
+  <div class="relative">
+    <div
+      ref="scrollArea"
+      class="h-[calc(100vh-var(--ui-header-height))] overflow-y-auto [scrollbar-gutter:stable]"
+    >
+      <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
+        <!-- Loading more indicator (top) -->
+        <div v-if="loading" class="flex flex-col items-center gap-2 py-4">
+          <span class="text-sm text-[#b3b3b3]">Loading older albums...</span>
+          <UProgress animation="carousel" class="w-32" />
         </div>
 
-        <ClientOnly>
-          <template v-for="dateKey in displayDates" :key="dateKey">
-            <PastAlbumDay
-              v-if="getDataForDate(dateKey).type === 'past'"
-              :ref="setTodayRef(dateKey)"
-              :date="dateKey"
-              :listens="(getDataForDate(dateKey) as PastDayData).listens"
-              :on-favorite-song-update="updateFavoriteSongForDate"
-            />
-            <FutureAlbumDay
-              v-else
-              :ref="setTodayRef(dateKey)"
-              :date="dateKey"
-              :future-listen="(getDataForDate(dateKey) as FutureDayData).futureListen"
-              :pending="futureListensLoading"
-            />
-          </template>
-        </ClientOnly>
+        <!-- Error state -->
+        <div
+          v-if="error"
+          class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
+        >
+          Error: {{ error.message }}
+        </div>
+
+        <div
+          v-else
+          class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] auto-rows-min gap-4 md:gap-6 w-full pt-10 pr-2 pb-4 md:pb-8"
+        >
+          <!-- Sticky month header -->
+          <StickyMonthHeader />
+
+          <div
+            v-if="!listensHistory.hasMore.value"
+            class="col-span-full text-center text-sm text-[#b3b3b3]"
+          >
+            You've reached the beginning of your listening history
+          </div>
+
+          <ClientOnly>
+            <template v-for="dateKey in displayDates" :key="dateKey">
+              <PastAlbumDay
+                v-if="getDataForDate(dateKey).type === 'past'"
+                :ref="setTodayRef(dateKey)"
+                :date="dateKey"
+                :listens="(getDataForDate(dateKey) as PastDayData).listens"
+                :on-favorite-song-update="updateFavoriteSongForDate"
+              />
+              <FutureAlbumDay
+                v-else
+                :ref="setTodayRef(dateKey)"
+                :date="dateKey"
+                :future-listen="(getDataForDate(dateKey) as FutureDayData).futureListen"
+                :pending="futureListensLoading"
+              />
+            </template>
+          </ClientOnly>
+        </div>
       </div>
     </div>
+
+    <JumpToTodayButton :visible="!isTodayVisible" @click="scrollToToday" />
   </div>
 </template>
 
