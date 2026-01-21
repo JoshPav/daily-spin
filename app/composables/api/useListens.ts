@@ -1,61 +1,36 @@
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { type Ref, ref, watch } from 'vue';
-import type {
-  DailyListens,
-  FavoriteSong,
-  GetListensResponse,
-} from '#shared/schema';
+import type { DailyListens, GetListensResponse } from '#shared/schema';
+import { toDateKey } from '~/utils/dateUtils';
 import { useAuth } from '../auth/useAuth';
 
-// Fetch fewer days on mobile since fewer are visible
-const MOBILE_BREAKPOINT = 768;
-const INITIAL_DAYS = { mobile: 14, desktop: 21 };
-const FETCH_MORE_DAYS = { mobile: 7, desktop: 14 };
-
-const isMobile = () =>
-  import.meta.client && window.innerWidth < MOBILE_BREAKPOINT;
-
-const getInitialDays = () =>
-  isMobile() ? INITIAL_DAYS.mobile : INITIAL_DAYS.desktop;
-
-const getFetchMoreDays = () =>
-  isMobile() ? FETCH_MORE_DAYS.mobile : FETCH_MORE_DAYS.desktop;
+export type FetchAmounts = {
+  initial: number;
+  fetchMore: number;
+};
 
 export interface UseListensReturn {
-  data: Ref<DailyListens[]>;
-  pending: Ref<boolean>;
-  loadingMore: Ref<boolean>;
+  /** Map of date keys (YYYY-MM-DD) to DailyListens data */
+  listensByDate: Ref<Map<string, DailyListens>>;
+  /** True during any data fetch (initial or loading more) */
+  loading: Ref<boolean>;
+  /** True if there's more historical data to fetch */
   hasMore: Ref<boolean>;
+  /** Any error that occurred during fetching */
   error: Ref<Error | null>;
+  /** Fetch older historical data */
   fetchMore: () => Promise<void>;
+  /** Refresh all data from scratch */
   refresh: () => Promise<void>;
-  updateFavoriteSongForDate: (
-    date: string,
-    favoriteSong: FavoriteSong | null,
-  ) => void;
 }
 
-export const useListens = (): UseListensReturn => {
-  const listensData = ref<DailyListens[]>([]);
-  const listensPending = ref(true);
-  const listensLoadingMore = ref(false);
-  const listensHasMore = ref(true);
-  const listensError = ref<Error | null>(null);
+export const useListens = (fetchAmounts: FetchAmounts): UseListensReturn => {
+  const listensByDate = ref<Map<string, DailyListens>>(new Map());
+  const loading = ref(true);
+  const hasMore = ref(true);
+  const error = ref<Error | null>(null);
   const oldestLoadedDate = ref<Date | null>(null);
   const initialized = ref(false);
-
-  const updateFavoriteSongForDate = (
-    date: string,
-    favoriteSong: FavoriteSong | null,
-  ) => {
-    const datePrefix = date.split('T')[0] ?? date;
-    const dailyListen = listensData.value.find((dl) =>
-      dl.date.startsWith(datePrefix),
-    );
-    if (dailyListen) {
-      dailyListen.favoriteSong = favoriteSong;
-    }
-  };
 
   const fetchDateRange = async (
     startDate: Date,
@@ -74,69 +49,74 @@ export const useListens = (): UseListensReturn => {
     return listens.some((day) => day.albums.length > 0);
   };
 
+  /** Merge an array of DailyListens into the Map */
+  const mergeListensToMap = (listens: DailyListens[]): void => {
+    const newMap = new Map(listensByDate.value);
+    for (const day of listens) {
+      const key = toDateKey(day.date);
+      newMap.set(key, day);
+    }
+    listensByDate.value = newMap;
+  };
+
   const fetchInitial = async () => {
-    listensPending.value = true;
-    listensError.value = null;
+    error.value = null;
+    loading.value = true;
 
     try {
       const today = new Date();
       const endDate = endOfDay(today);
-      const startDate = startOfDay(subDays(today, getInitialDays()));
+      const startDate = startOfDay(subDays(today, fetchAmounts.initial));
 
       const result = await fetchDateRange(startDate, endDate);
 
-      listensData.value = result;
+      mergeListensToMap(result);
       oldestLoadedDate.value = startDate;
 
       // If no actual listens in initial fetch, there might still be older data
       // We'll determine hasMore when user tries to fetch more
-      listensHasMore.value = true;
+      hasMore.value = true;
     } catch (e) {
-      listensError.value =
+      error.value =
         e instanceof Error ? e : new Error('Failed to fetch listens');
     } finally {
-      listensPending.value = false;
+      loading.value = false;
     }
   };
 
   const fetchMore = async () => {
-    if (
-      listensLoadingMore.value ||
-      !listensHasMore.value ||
-      !oldestLoadedDate.value
-    ) {
+    if (loading.value || !hasMore.value || !oldestLoadedDate.value) {
       return;
     }
 
-    listensLoadingMore.value = true;
+    loading.value = true;
 
     try {
       // Fetch the next batch of older days
       const endDate = startOfDay(subDays(oldestLoadedDate.value, 1));
-      const startDate = startOfDay(subDays(endDate, getFetchMoreDays()));
+      const startDate = startOfDay(subDays(endDate, fetchAmounts.fetchMore));
 
       const result = await fetchDateRange(startDate, endDate);
 
-      // Prepend older data to the beginning
-      listensData.value = [...result, ...listensData.value];
+      mergeListensToMap(result);
       oldestLoadedDate.value = startDate;
 
       // Stop fetching if we got a batch with no actual listens
       if (!hasActualListens(result)) {
-        listensHasMore.value = false;
+        hasMore.value = false;
       }
     } catch (e) {
-      listensError.value =
+      error.value =
         e instanceof Error ? e : new Error('Failed to fetch more listens');
     } finally {
-      listensLoadingMore.value = false;
+      loading.value = false;
     }
   };
 
   const refresh = async () => {
-    listensData.value = [];
+    listensByDate.value = new Map();
     oldestLoadedDate.value = null;
-    listensHasMore.value = true;
+    hasMore.value = true;
     initialized.value = false;
     await fetchInitial();
   };
@@ -156,13 +136,11 @@ export const useListens = (): UseListensReturn => {
   );
 
   return {
-    data: listensData,
-    pending: listensPending,
-    loadingMore: listensLoadingMore,
-    hasMore: listensHasMore,
-    error: listensError,
+    listensByDate,
+    loading,
+    hasMore,
+    error,
     fetchMore,
     refresh,
-    updateFavoriteSongForDate,
   };
 };
