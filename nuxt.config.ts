@@ -39,6 +39,11 @@ export default defineNuxtConfig({
     dirs: ['composables/**'],
   },
   testUtils: {},
+  vite: {
+    build: {
+      sourcemap: false,
+    },
+  },
   nitro: {
     scheduledTasks: {
       // Every hour
