@@ -31,26 +31,20 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
       </h1>
 
       <div
-        v-if="pending"
-        class="text-center py-12 px-6 text-base font-medium text-muted"
-      >
-        Loading...
-      </div>
-
-      <div
-        v-else-if="error"
+        v-if="error"
         class="text-center py-12 px-6 text-base font-medium text-secondary-500"
       >
         Error: {{ error }}
       </div>
 
-      <div v-else-if="localPreferences" class="flex flex-col gap-6 flex-1 p-1">
+      <div v-else class="flex flex-col gap-6 flex-1 p-1">
         <PreferencesCard
           title="Features"
           description="Control how DailySpin tracks and manages your listening activity"
         >
           <template #headerRight>
             <UButton
+              class="hover:cursor-pointer"
               color="primary"
               :variant="!hasChanges ? 'outline' : 'solid'"
               :disabled="!hasChanges || updating"
@@ -89,8 +83,13 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
         </PreferencesCard>
 
         <PreferencesCard title="Linked Playlists">
+          <!-- Loading skeleton for playlists -->
+          <div v-if="pending" class="flex flex-col gap-3">
+            <PreferencePlaylistSkeleton />
+          </div>
+
           <div
-            v-if="linkedPlaylists.length === 0"
+            v-else-if="linkedPlaylists.length === 0"
             class="text-center py-8 text-muted"
           >
             <p class="text-base font-medium mb-2">No playlists linked yet</p>

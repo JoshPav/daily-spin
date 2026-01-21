@@ -5,12 +5,17 @@ import type {
 } from '#shared/schema';
 
 export const usePreferencesForm = () => {
-  const { data, pending, error, refresh } = useFetch<GetPreferencesResponse>(
+  const { data, status, error, refresh } = useFetch<GetPreferencesResponse>(
     '/api/preferences',
     {
       key: 'preferences',
+      lazy: true,
+      server: false,
     },
   );
+
+  // Derive pending from status for loading states
+  const pending = computed(() => status.value === 'pending');
   const { updating, updatePreferences } = useUpdatePreferences({
     onSuccess: () => refresh(),
   });
@@ -19,30 +24,37 @@ export const usePreferencesForm = () => {
     () => data.value?.linkedPlaylists ?? [],
   );
 
-  // Local state for toggle values - only initialized when data loads
-  const localPreferences = ref<UserPreferences | null>(null);
+  // Local state for toggle values - initialized with defaults, updated when data loads
+  const localPreferences = ref<UserPreferences>({
+    trackListeningHistory: false,
+    createTodaysAlbumPlaylist: false,
+    createSongOfDayPlaylist: false,
+  });
 
-  // Initialize local state when data loads
+  // Track if we've initialized from server data
+  const initialized = ref(false);
+
+  // Update local state when data loads
   watch(
     () => data.value?.preferences,
     (prefs) => {
-      if (prefs && !localPreferences.value) {
+      if (prefs && !initialized.value) {
         localPreferences.value = { ...prefs };
+        initialized.value = true;
       }
     },
     { immediate: true },
   );
 
-  // Check if individual preference has changed
+  // Check if individual preference has changed from server value
   const isChanged = (key: keyof UserPreferences) => {
-    const prefs = data.value?.preferences;
-    if (!prefs || !localPreferences.value) return false;
-    return localPreferences.value[key] !== prefs[key];
+    const serverPrefs = data.value?.preferences;
+    if (!serverPrefs) return false;
+    return localPreferences.value[key] !== serverPrefs[key];
   };
 
   // Check if there are any unsaved changes
   const hasChanges = computed(() => {
-    if (!localPreferences.value) return false;
     return (
       isChanged('trackListeningHistory') ||
       isChanged('createTodaysAlbumPlaylist') ||
@@ -51,7 +63,6 @@ export const usePreferencesForm = () => {
   });
 
   const save = async () => {
-    if (!localPreferences.value) return;
     await updatePreferences(localPreferences.value);
   };
 
