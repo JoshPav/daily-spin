@@ -1,7 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+const testFiles = [
+  '**/*.test.ts',
+  '**/*.integration.ts',
+  '**/*.component.ts',
+  '**/*.spec.ts',
+];
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  ignore: testFiles,
   devServer: {
     host: '127.0.0.1',
     port: 3000,
@@ -30,6 +39,11 @@ export default defineNuxtConfig({
     dirs: ['composables/**'],
   },
   testUtils: {},
+  vite: {
+    build: {
+      sourcemap: false,
+    },
+  },
   nitro: {
     scheduledTasks: {
       // Every hour
@@ -42,11 +56,6 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true,
     },
-    ignore: [
-      '**/*.test.ts',
-      '**/*.integration.ts',
-      '**/*.component.ts',
-      '**/*.spec.ts',
-    ],
+    ignore: testFiles,
   },
 });

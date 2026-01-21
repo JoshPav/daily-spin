@@ -62,30 +62,32 @@ const viewModeOptions = [
       </div>
 
       <div
-        v-if="pending"
-        class="text-center py-12 px-6 text-base font-medium text-muted"
-      >
-        Loading...
-      </div>
-
-      <div
-        v-else-if="error"
+        v-if="error"
         class="text-center py-12 px-6 text-base font-medium text-secondary-500"
       >
         Error: {{ error }}
       </div>
 
-      <BacklogEmpty v-else-if="albums.length === 0" :on-added="handleAdded" />
+      <BacklogEmpty
+        v-else-if="!pending && albums.length === 0"
+        :on-added="handleAdded"
+      />
 
       <div v-else class="flex flex-col gap-4 overflow-hidden flex-1">
         <BacklogFilters
           v-model:search-term="searchTerm"
           v-model:sort-by="sortBy"
           :view-mode="viewMode"
+          :disabled="pending"
         />
 
+        <!-- Loading skeleton -->
+        <div v-if="pending" class="flex flex-col gap-3 overflow-y-auto flex-1">
+          <BacklogArtistGroupSkeleton v-for="i in 8" :key="i" />
+        </div>
+
         <div
-          v-if="filteredAlbums.length === 0"
+          v-else-if="filteredAlbums.length === 0"
           class="text-center py-12 text-base font-medium text-muted"
         >
           No albums found matching your search
