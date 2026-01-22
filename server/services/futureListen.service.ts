@@ -18,8 +18,8 @@ export class FutureListenService {
    */
   private mapToFutureListenItem(
     item: Awaited<
-      ReturnType<FutureListenRepository['getFutureListens']>
-    >[number],
+      ReturnType<FutureListenRepository['getFutureListensInRange']>
+    >['items'][number],
   ): FutureListenItem {
     const artists = item.album.artists.map((aa) => ({
       spotifyId: aa.artist.spotifyId,
