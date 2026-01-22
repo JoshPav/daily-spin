@@ -1,3 +1,4 @@
+import { startOfDay } from 'date-fns';
 import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 import type { CreateAlbum } from './backlog.repository';
@@ -13,9 +14,14 @@ export class FutureListenRepository {
   async getFutureListens(userId: string) {
     logger.debug('Fetching future listens', { userId });
 
+    const today = startOfDay(new Date());
+
     try {
       const result = await this.prismaClient.futureListen.findMany({
-        where: { userId },
+        where: {
+          userId,
+          date: { gte: today },
+        },
         orderBy: { date: 'asc' },
         include: {
           album: {
@@ -64,8 +70,7 @@ export class FutureListenRepository {
     });
 
     try {
-      // Fetch items within the date range
-      const items = await this.prismaClient.futureListen.findMany({
+      const itemsPromise = this.prismaClient.futureListen.findMany({
         where: {
           userId,
           date: {
@@ -90,8 +95,7 @@ export class FutureListenRepository {
         },
       });
 
-      // Check if there are items beyond the endDate (for hasMore)
-      const hasMoreCount = await this.prismaClient.futureListen.count({
+      const hasMoreCountPromise = this.prismaClient.futureListen.count({
         where: {
           userId,
           date: {
@@ -99,6 +103,12 @@ export class FutureListenRepository {
           },
         },
       });
+
+      // Fetch items and hasMore count in parallel
+      const [items, hasMoreCount] = await Promise.all([
+        itemsPromise,
+        hasMoreCountPromise,
+      ]);
 
       const total = items.length;
       const hasMore = hasMoreCount > 0;

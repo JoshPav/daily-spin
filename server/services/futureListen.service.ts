@@ -39,19 +39,6 @@ export class FutureListenService {
     };
   }
 
-  async getFutureListens(userId: string): Promise<FutureListenItem[]> {
-    logger.debug('Fetching future listens', { userId });
-
-    const items = await this.futureListenRepo.getFutureListens(userId);
-
-    logger.debug('Fetched future listens', {
-      userId,
-      count: items.length,
-    });
-
-    return items.map((item) => this.mapToFutureListenItem(item));
-  }
-
   /**
    * Get future listens for a user within a date range with pagination
    * Returns a date-keyed object with all dates in range (null for empty days)
