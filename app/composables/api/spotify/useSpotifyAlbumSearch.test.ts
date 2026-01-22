@@ -14,12 +14,16 @@ const mockSearchResponse = {
         name: 'Test Album 1',
         artists: [{ name: 'Artist 1' }],
         images: [{ url: 'https://example.com/image1.jpg' }],
+        album_type: 'album',
+        total_tracks: 10,
       },
       {
         id: 'album2',
         name: 'Test Album 2',
         artists: [{ name: 'Artist 2' }],
         images: [{ url: 'https://example.com/image2.jpg' }],
+        album_type: 'album',
+        total_tracks: 12,
       },
     ],
   },
@@ -120,7 +124,7 @@ describe('useSpotifyAlbumSearch', () => {
         'test album',
         ['album'],
         undefined,
-        5,
+        20,
       );
     });
 
@@ -255,7 +259,7 @@ describe('useSpotifyAlbumSearch', () => {
         'second',
         ['album'],
         undefined,
-        5,
+        20,
       );
     });
   });

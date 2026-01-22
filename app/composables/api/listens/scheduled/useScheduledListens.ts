@@ -5,9 +5,9 @@ import type {
   GetScheduledListensResponse,
   ScheduledListenItem,
 } from '#shared/schema';
+import { useAuth } from '~/composables/auth/useAuth';
 import type { FetchAmounts } from '~/constants/fetchConfig';
 import { toDateKey } from '~/utils/dateUtils';
-import { useAuth } from '../auth/useAuth';
 
 export interface UseScheduledListensReturn {
   scheduledListensByDate: Ref<Map<string, ScheduledListenItem>>;

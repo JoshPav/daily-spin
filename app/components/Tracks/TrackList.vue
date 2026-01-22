@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AlbumTrack } from '~/composables/api/useAlbumTracks';
+import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
 
 defineProps<{
   tracks: AlbumTrack[];

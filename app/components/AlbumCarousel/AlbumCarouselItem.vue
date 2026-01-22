@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import type { ComponentPublicInstance } from 'vue';
 import type { DailyAlbumListen, FavoriteSong } from '#shared/schema';
-import type { AlbumTrack } from '~/composables/api/useAlbumTracks';
+import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
 import {
   LISTEN_METHOD_CONFIG,
   LISTEN_ORDER_CONFIG,

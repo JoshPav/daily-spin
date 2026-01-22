@@ -4,8 +4,8 @@ import {
   simplifiedAlbum,
   simplifiedArtist,
 } from '~~/tests/factories/spotify.factory';
+import type { SearchResult } from '../spotify/useSpotifyAlbumSearch';
 import { useAddToBacklog } from './useAddToBacklog';
-import type { SearchResult } from './useSpotifyAlbumSearch';
 
 const mockFetch = vi.fn();
 const mockArtistsGet = vi.fn();

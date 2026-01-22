@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { FavoriteSong } from '#shared/schema';
+import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type {
   PastDayData,
   ScheduledDayData,
-} from '~/composables/api/useDashboardData';
-import { useScrollToToday } from '~/composables/components/useScrollToToday';
+} from '~/composables/pages/dashboard/useDashboardData';
 import { toDateKey } from '~/utils/dateUtils';
 
 const {

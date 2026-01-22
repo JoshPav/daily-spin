@@ -22,7 +22,7 @@ import { Icons } from '~/components/common/icons';
 import type {
   SortOption,
   ViewMode,
-} from '~/composables/components/useBacklogFilters';
+} from '~/composables/pages/backlog/useBacklogFilters';
 
 const searchTerm = defineModel<string>('searchTerm', { required: true });
 const sortBy = defineModel<SortOption>('sortBy', { required: true });

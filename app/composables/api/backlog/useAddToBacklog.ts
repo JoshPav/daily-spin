@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import type { AddBacklogItemsResponse } from '#shared/schema';
-import type { SearchResult } from './useSpotifyAlbumSearch';
+import type { SearchResult } from '../spotify/useSpotifyAlbumSearch';
 
 type UseAddToBacklogProps = {
   onSuccess?: (response: AddBacklogItemsResponse) => void;
@@ -126,3 +126,5 @@ export const useAddToBacklog = ({
     addToBacklog,
   };
 };
+
+export type BacklogActions = ReturnType<typeof useAddToBacklog>;
