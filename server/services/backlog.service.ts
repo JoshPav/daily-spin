@@ -208,14 +208,30 @@ export class BacklogService {
 
     // Get next N days starting from tomorrow (UTC)
     const dates = this.getNextNDates(daysToSchedule);
+    const startDate = dates[0];
+    const endDate = dates[dates.length - 1];
 
-    // Get existing future listens
-    const existingSchedule =
-      await this.futureListenRepo.getFutureListens(userId);
+    if (!startDate || !endDate) {
+      logger.debug('No dates to schedule', { userId, daysToSchedule });
+      return { scheduled: [], skipped: 0 };
+    }
+
+    // Get all future scheduled listens from tomorrow onwards
+    // This gives us both dates within the window AND all scheduled album IDs
+    const { items: allFutureSchedules } =
+      await this.futureListenRepo.getFutureListensInRange(userId, startDate);
+
+    // Extract dates within the scheduling window (for skipping already-scheduled dates)
     const scheduledDates = new Set(
-      existingSchedule.map((fl) => fl.date.toISOString().split('T')[0]),
+      allFutureSchedules
+        .filter((fl) => fl.date <= endDate)
+        .map((fl) => fl.date.toISOString().split('T')[0]),
     );
-    const scheduledAlbumIds = new Set(existingSchedule.map((fl) => fl.albumId));
+
+    // Extract all scheduled album IDs to prevent duplicates
+    const scheduledAlbumIds = new Set(
+      allFutureSchedules.map((fl) => fl.albumId),
+    );
 
     // Filter available dates (skip those with existing schedules)
     const availableDates = dates.filter(

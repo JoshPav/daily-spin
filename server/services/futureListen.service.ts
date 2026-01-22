@@ -1,4 +1,9 @@
-import type { AddFutureListenBody, FutureListenItem } from '#shared/schema';
+import { addDays } from 'date-fns';
+import type {
+  AddFutureListenBody,
+  FutureListenItem,
+  FutureListensPagination,
+} from '#shared/schema';
 import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
 import { toDateString } from '~~/server/utils/datetime.utils';
 import { createTaggedLogger } from '~~/server/utils/logger';
@@ -13,8 +18,8 @@ export class FutureListenService {
    */
   private mapToFutureListenItem(
     item: Awaited<
-      ReturnType<FutureListenRepository['getFutureListens']>
-    >[number],
+      ReturnType<FutureListenRepository['getFutureListensInRange']>
+    >['items'][number],
   ): FutureListenItem {
     const artists = item.album.artists.map((aa) => ({
       spotifyId: aa.artist.spotifyId,
@@ -34,17 +39,62 @@ export class FutureListenService {
     };
   }
 
-  async getFutureListens(userId: string): Promise<FutureListenItem[]> {
-    logger.debug('Fetching future listens', { userId });
-
-    const items = await this.futureListenRepo.getFutureListens(userId);
-
-    logger.debug('Fetched future listens', {
+  /**
+   * Get future listens for a user within a date range with pagination
+   * Returns a date-keyed object with all dates in range (null for empty days)
+   */
+  async getFutureListensPaginated(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
+    items: Record<string, FutureListenItem | null>;
+    pagination: FutureListensPagination;
+  }> {
+    logger.debug('Fetching paginated future listens', {
       userId,
-      count: items.length,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     });
 
-    return items.map((item) => this.mapToFutureListenItem(item));
+    const { items, total, hasMore } =
+      await this.futureListenRepo.getFutureListensInRange(
+        userId,
+        startDate,
+        endDate,
+      );
+
+    // Map items to response types with date as key
+    const itemsByDate = new Map<string, FutureListenItem>();
+    for (const item of items) {
+      const mapped = this.mapToFutureListenItem(item);
+      itemsByDate.set(mapped.date, mapped);
+    }
+
+    // Build date-keyed object with all dates in range (null for empty days)
+    const result: Record<string, FutureListenItem | null> = {};
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      const dateKey = toDateString(currentDate);
+      result[dateKey] = itemsByDate.get(dateKey) ?? null;
+      currentDate = addDays(currentDate, 1);
+    }
+
+    logger.debug('Successfully fetched paginated future listens', {
+      userId,
+      total,
+      hasMore,
+    });
+
+    return {
+      items: result,
+      pagination: {
+        startDate: toDateString(startDate),
+        endDate: toDateString(endDate),
+        total,
+        hasMore,
+      },
+    };
   }
 
   async addFutureListen(

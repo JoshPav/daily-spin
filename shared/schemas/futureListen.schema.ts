@@ -4,6 +4,7 @@ import {
   ArtistSchema,
   dateString,
   type EndpointContract,
+  optionalDateQuery,
 } from './common.schema';
 
 // Shared object schemas
@@ -20,10 +21,23 @@ export const FutureListenItemSchema = z.object({
   album: FutureListenAlbumSchema,
 });
 
+// Pagination schema for future listens
+export const FutureListensPaginationSchema = z.object({
+  startDate: dateString,
+  endDate: dateString,
+  total: z.number(),
+  hasMore: z.boolean(),
+});
+
 // GET /api/future-listens
 export const getFutureListensSchema = {
+  query: z.object({
+    startDate: optionalDateQuery,
+    endDate: optionalDateQuery,
+  }),
   response: z.object({
-    items: z.array(FutureListenItemSchema),
+    items: z.record(dateString, FutureListenItemSchema.nullable()),
+    pagination: FutureListensPaginationSchema,
   }),
 } satisfies ApiSchema;
 
@@ -59,6 +73,9 @@ export type DeleteFutureListen = EndpointContract<
 // Inferred types for shared schemas
 export type FutureListenAlbum = z.infer<typeof FutureListenAlbumSchema>;
 export type FutureListenItem = z.infer<typeof FutureListenItemSchema>;
+export type FutureListensPagination = z.infer<
+  typeof FutureListensPaginationSchema
+>;
 
 // Convenience type aliases (for backward compatibility)
 export type GetFutureListensResponse = GetFutureListens['response'];

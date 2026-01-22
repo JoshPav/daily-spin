@@ -8,14 +8,29 @@ export class FutureListenRepository {
   constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   /**
-   * Get all future listens for a user with related album and artist data
+   * Get future listens for a user within a date range with pagination metadata
+   * If endDate is omitted, returns all future listens from startDate onwards
    */
-  async getFutureListens(userId: string) {
-    logger.debug('Fetching future listens', { userId });
+  async getFutureListensInRange(
+    userId: string,
+    startDate: Date,
+    endDate?: Date,
+  ) {
+    logger.debug('Fetching paginated future listens', {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate?.toISOString(),
+    });
 
     try {
-      const result = await this.prismaClient.futureListen.findMany({
-        where: { userId },
+      const itemsPromise = this.prismaClient.futureListen.findMany({
+        where: {
+          userId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
         orderBy: { date: 'asc' },
         include: {
           album: {
@@ -33,15 +48,39 @@ export class FutureListenRepository {
         },
       });
 
-      logger.debug('Successfully fetched future listens', {
+      // Only check hasMore if we have an endDate (pagination)
+      const hasMoreCountPromise = endDate
+        ? this.prismaClient.futureListen.count({
+            where: {
+              userId,
+              date: {
+                gt: endDate,
+              },
+            },
+          })
+        : Promise.resolve(0);
+
+      // Fetch items and hasMore count in parallel
+      const [items, hasMoreCount] = await Promise.all([
+        itemsPromise,
+        hasMoreCountPromise,
+      ]);
+
+      const total = items.length;
+      const hasMore = hasMoreCount > 0;
+
+      logger.debug('Successfully fetched paginated future listens', {
         userId,
-        count: result.length,
+        count: total,
+        hasMore,
       });
 
-      return result;
+      return { items, total, hasMore };
     } catch (error) {
-      logger.error('Failed to fetch future listens', {
+      logger.error('Failed to fetch paginated future listens', {
         userId,
+        startDate: startDate.toISOString(),
+        endDate: endDate?.toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });

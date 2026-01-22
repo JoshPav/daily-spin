@@ -1,8 +1,9 @@
 import { addDays, startOfDay, subDays } from 'date-fns';
 import { computed, ref, triggerRef } from 'vue';
 import type { DailyListens, FutureListenItem } from '#shared/schema';
+import type { FetchAmounts } from '~/constants/fetchConfig';
 import { toDateKey } from '~/utils/dateUtils';
-import { type FetchAmounts, useListens } from './useListens';
+import { useListens } from './useListens';
 
 type DeviceType = 'mobile' | 'desktop';
 
@@ -61,8 +62,12 @@ export const useDashboardData = () => {
     error,
     fetchMore: fetchMoreListens,
   } = useListens(config.value.past);
-  const { futureListensByDate, loading: futureListensLoading } =
-    useFutureListens();
+  const {
+    futureListensByDate,
+    loading: futureListensLoading,
+    hasMore: futureHasMore,
+    fetchMore: fetchMoreFuture,
+  } = useFutureListens(config.value.future);
 
   // Track how many times we've fetched more to expand displayDates
   const pastFetchCount = ref(0);
@@ -167,6 +172,10 @@ export const useDashboardData = () => {
     listensHistory: {
       hasMore,
       fetchMore,
+    },
+    futureListens: {
+      hasMore: futureHasMore,
+      fetchMore: fetchMoreFuture,
     },
   };
 };

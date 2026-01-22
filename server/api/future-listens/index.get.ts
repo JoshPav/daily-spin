@@ -1,3 +1,4 @@
+import { addDays, startOfDay } from 'date-fns';
 import { FutureListenService } from '~~/server/services/futureListen.service';
 import {
   createContextLogger,
@@ -5,18 +6,35 @@ import {
 } from '~~/server/utils/handler';
 import { getFutureListensSchema } from '~~/shared/schemas/futureListen.schema';
 
+const DEFAULT_DAYS_AHEAD = 7;
+
 export default createEventHandler(getFutureListensSchema, async (event) => {
   const log = createContextLogger(event, 'API:future-listens.get');
   const { userId } = event.context;
+  const { startDate, endDate } = event.validatedQuery;
+
   const service = new FutureListenService();
 
-  log.info('Fetching future listens');
+  // Apply defaults: today to today + 7 days
+  const today = startOfDay(new Date());
+  const effectiveStartDate = startDate ?? today;
+  const effectiveEndDate = endDate ?? addDays(today, DEFAULT_DAYS_AHEAD);
 
-  const items = await service.getFutureListens(userId);
-
-  log.info('Successfully fetched future listens', {
-    itemCount: items.length,
+  log.info('Fetching future listens', {
+    startDate: effectiveStartDate.toISOString(),
+    endDate: effectiveEndDate.toISOString(),
   });
 
-  return { items };
+  const result = await service.getFutureListensPaginated(
+    userId,
+    effectiveStartDate,
+    effectiveEndDate,
+  );
+
+  log.info('Successfully fetched future listens', {
+    total: result.pagination.total,
+    hasMore: result.pagination.hasMore,
+  });
+
+  return result;
 });

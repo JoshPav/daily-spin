@@ -30,6 +30,7 @@ export type {
   FavoriteSong,
   FutureListenAlbum,
   FutureListenItem,
+  FutureListensPagination,
   GetBacklog,
   GetBacklogResponse,
   GetFutureListens,
