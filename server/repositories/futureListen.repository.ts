@@ -9,16 +9,17 @@ export class FutureListenRepository {
 
   /**
    * Get future listens for a user within a date range with pagination metadata
+   * If endDate is omitted, returns all future listens from startDate onwards
    */
   async getFutureListensInRange(
     userId: string,
     startDate: Date,
-    endDate: Date,
+    endDate?: Date,
   ) {
     logger.debug('Fetching paginated future listens', {
       userId,
       startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      endDate: endDate?.toISOString(),
     });
 
     try {
@@ -47,14 +48,17 @@ export class FutureListenRepository {
         },
       });
 
-      const hasMoreCountPromise = this.prismaClient.futureListen.count({
-        where: {
-          userId,
-          date: {
-            gt: endDate,
-          },
-        },
-      });
+      // Only check hasMore if we have an endDate (pagination)
+      const hasMoreCountPromise = endDate
+        ? this.prismaClient.futureListen.count({
+            where: {
+              userId,
+              date: {
+                gt: endDate,
+              },
+            },
+          })
+        : Promise.resolve(0);
 
       // Fetch items and hasMore count in parallel
       const [items, hasMoreCount] = await Promise.all([
@@ -76,7 +80,7 @@ export class FutureListenRepository {
       logger.error('Failed to fetch paginated future listens', {
         userId,
         startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        endDate: endDate?.toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
