@@ -35,6 +35,7 @@ export class ScheduledListenService {
         name: item.album.name,
         imageUrl: item.album.imageUrl,
         artists,
+        releaseDate: item.album.releaseDate,
       },
     };
   }

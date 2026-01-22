@@ -52,6 +52,7 @@ const album = computed<AlbumDetailsAlbum>(() => ({
   name: scheduledListenItem.album.name,
   imageUrl: scheduledListenItem.album.imageUrl,
   artists: scheduledListenItem.album.artists,
+  releaseDate: scheduledListenItem.album.releaseDate,
 }));
 
 const handleRemove = async () => {

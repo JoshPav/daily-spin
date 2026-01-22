@@ -70,6 +70,7 @@ const album = computed<AlbumDetailsAlbum>(() => ({
   name: props.albumListen.album.albumName,
   imageUrl: props.albumListen.album.imageUrl,
   artists: props.albumListen.album.artists,
+  releaseDate: props.albumListen.album.releaseDate,
 }));
 
 // Only highlight track if the favorite song is from this album

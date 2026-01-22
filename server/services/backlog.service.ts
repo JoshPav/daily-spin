@@ -42,6 +42,7 @@ export class BacklogService {
       imageUrl: item.album.imageUrl,
       artists,
       addedAt: item.createdAt.toISOString(),
+      releaseDate: item.album.releaseDate,
     };
   }
 

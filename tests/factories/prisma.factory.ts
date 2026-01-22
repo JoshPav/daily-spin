@@ -48,6 +48,7 @@ export const albumListenInput = createFactory<{
     spotifyId: string;
     name: string;
     imageUrl?: string;
+    releaseDate?: string;
     artists: { spotifyId: string; name: string; imageUrl?: string }[];
   };
   listenOrder?: ListenOrder;
@@ -58,6 +59,7 @@ export const albumListenInput = createFactory<{
     spotifyId: uuid(),
     name: album(),
     imageUrl: imageUrl(),
+    releaseDate: past().toISOString().split('T')[0],
     artists: [
       {
         spotifyId: uuid(),
@@ -117,7 +119,7 @@ export const albumModel = createFactory<
   spotifyId: uuid(),
   name: album(),
   imageUrl: imageUrl(),
-  releaseDate: null,
+  releaseDate: past().toISOString().split('T')[0],
   totalTracks: null,
   createdAt: recent(),
   updatedAt: recent(),

@@ -13,6 +13,7 @@ export const ScheduledListenAlbumSchema = z.object({
   name: z.string(),
   imageUrl: z.string().nullable(),
   artists: z.array(ArtistSchema),
+  releaseDate: z.string().nullable(),
 });
 
 export const ScheduledListenItemSchema = z.object({

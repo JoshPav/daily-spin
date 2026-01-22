@@ -30,8 +30,8 @@
         <p class="mb-2 md:mb-3 text-base font-semibold text-muted">
           {{ artistNames }}
         </p>
-        <p class="text-sm text-muted">
-          {{ album.releaseDate || 'Release date' }}
+        <p v-if="album.releaseDate" class="text-sm text-muted">
+          {{ formatReleaseDate(album.releaseDate) }}
         </p>
       </div>
     </section>
@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatReleaseDate } from '#shared/utils/albumUtils';
 import { Icons } from '~/components/common/icons';
 import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
 

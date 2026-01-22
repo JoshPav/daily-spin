@@ -40,6 +40,7 @@ export const useLogAlbum = ({
             albumId: selectedAlbum.value.id,
             albumName: selectedAlbum.value.name,
             imageUrl: selectedAlbum.value.images[0]?.url || '',
+            releaseDate: selectedAlbum.value.release_date,
             artists: selectedAlbum.value.artists.map((a) => ({
               spotifyId: a.id,
               name: a.name,

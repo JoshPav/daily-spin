@@ -56,7 +56,7 @@ export class DailyListenService {
   }
 
   private mapAddAlbumBody({
-    album: { albumId, albumName, imageUrl, artists },
+    album: { albumId, albumName, imageUrl, artists, releaseDate },
     listenMetadata: {
       listenOrder = 'ordered',
       listenMethod = 'spotify',
@@ -68,6 +68,7 @@ export class DailyListenService {
         spotifyId: albumId,
         name: albumName,
         imageUrl,
+        releaseDate,
         artists: artists
           ? artists.map((artist) => ({
               spotifyId: artist.spotifyId,

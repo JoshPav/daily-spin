@@ -831,6 +831,7 @@ describe('Dashboard Page', () => {
               name: 'Test Modal Album',
               imageUrl: 'https://example.com/album.jpg',
               artists: [{ name: 'Test Modal Artist', spotifyId: 'artist-id' }],
+              releaseDate: '2024-05-15',
             },
           };
 
