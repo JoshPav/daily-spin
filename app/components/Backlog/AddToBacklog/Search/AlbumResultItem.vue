@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
+import { getArtistNames } from '#shared/utils/albumUtils';
 import { Icons } from '~/components/common/icons';
 
 const props = withDefaults(
