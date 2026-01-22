@@ -1,4 +1,3 @@
-import { startOfDay } from 'date-fns';
 import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 import type { CreateAlbum } from './backlog.repository';
@@ -9,56 +8,9 @@ export class FutureListenRepository {
   constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   /**
-   * Get all future listens for a user with related album and artist data
-   */
-  async getFutureListens(userId: string) {
-    logger.debug('Fetching future listens', { userId });
-
-    const today = startOfDay(new Date());
-
-    try {
-      const result = await this.prismaClient.futureListen.findMany({
-        where: {
-          userId,
-          date: { gte: today },
-        },
-        orderBy: { date: 'asc' },
-        include: {
-          album: {
-            include: {
-              artists: {
-                include: {
-                  artist: true,
-                },
-                orderBy: {
-                  order: 'asc',
-                },
-              },
-            },
-          },
-        },
-      });
-
-      logger.debug('Successfully fetched future listens', {
-        userId,
-        count: result.length,
-      });
-
-      return result;
-    } catch (error) {
-      logger.error('Failed to fetch future listens', {
-        userId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Get future listens for a user within a date range with pagination metadata
    */
-  async getFutureListensPaginated(
+  async getFutureListensInRange(
     userId: string,
     startDate: Date,
     endDate: Date,

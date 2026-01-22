@@ -209,9 +209,15 @@ export class BacklogService {
     // Get next N days starting from tomorrow (UTC)
     const dates = this.getNextNDates(daysToSchedule);
 
-    // Get existing future listens
-    const existingSchedule =
-      await this.futureListenRepo.getFutureListens(userId);
+    // Get existing future listens within the scheduling window
+    const startDate = dates[0];
+    const endDate = dates[dates.length - 1];
+    const { items: existingSchedule } =
+      await this.futureListenRepo.getFutureListensInRange(
+        userId,
+        startDate,
+        endDate,
+      );
     const scheduledDates = new Set(
       existingSchedule.map((fl) => fl.date.toISOString().split('T')[0]),
     );

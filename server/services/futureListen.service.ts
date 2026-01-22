@@ -58,7 +58,7 @@ export class FutureListenService {
     });
 
     const { items, total, hasMore } =
-      await this.futureListenRepo.getFutureListensPaginated(
+      await this.futureListenRepo.getFutureListensInRange(
         userId,
         startDate,
         endDate,
