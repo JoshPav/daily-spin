@@ -12,7 +12,7 @@ model User {
   updatedAt                 DateTime         @updatedAt
   dailyListens              DailyListen[]
   backlogItems              BacklogItem[]
-  futureListens             FutureListen[]
+  scheduledListens          ScheduledListen[]
   userPlaylists             UserPlaylist[]
   name                      String
   email                     String
@@ -119,7 +119,7 @@ model Album {
   artists                AlbumArtist[]
   backlogItems           BacklogItem[]
   listens                AlbumListen[]
-  futureListens          FutureListen[]
+  scheduledListens       ScheduledListen[]
   favoriteSongDailyLists DailyListen[]
 
   @@index([spotifyId])
@@ -159,7 +159,7 @@ model BacklogItem {
   @@map("backlog_item")
 }
 
-model FutureListen {
+model ScheduledListen {
   id        String   @id @default(cuid())
   userId    String
   albumId   String
@@ -174,7 +174,7 @@ model FutureListen {
   @@index([userId])
   @@index([albumId])
   @@index([date])
-  @@map("future_listen")
+  @@map("scheduled_listen")
 }
 
 model UserPlaylist {

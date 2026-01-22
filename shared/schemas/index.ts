@@ -43,28 +43,6 @@ export {
   type PlaylistType,
   PlaylistTypeSchema,
 } from './common.schema';
-// Future listens schemas and types
-export {
-  // Endpoint contract types
-  type AddFutureListen,
-  // Inferred types
-  type AddFutureListenBody,
-  type AddFutureListenResponse,
-  // Endpoint schemas
-  addFutureListenSchema,
-  type DeleteFutureListen,
-  deleteFutureListenSchema,
-  type FutureListenAlbum,
-  // Shared object schemas
-  FutureListenAlbumSchema,
-  type FutureListenItem,
-  FutureListenItemSchema,
-  type FutureListensPagination,
-  FutureListensPaginationSchema,
-  type GetFutureListens,
-  type GetFutureListensResponse,
-  getFutureListensSchema,
-} from './futureListen.schema';
 // Listens schemas and types
 export {
   // Inferred types
@@ -87,7 +65,6 @@ export {
   type UpdateFavoriteSongResponse,
   updateFavoriteSongSchema,
 } from './listens.schema';
-
 // Preferences schemas and types
 export {
   // Endpoint contract types
@@ -106,3 +83,25 @@ export {
   UserPreferencesSchema,
   updatePreferencesSchema,
 } from './preferences.schema';
+// Scheduled listens schemas and types
+export {
+  // Endpoint contract types
+  type AddScheduledListen,
+  // Inferred types
+  type AddScheduledListenBody,
+  type AddScheduledListenResponse,
+  // Endpoint schemas
+  addScheduledListenSchema,
+  type DeleteScheduledListen,
+  deleteScheduledListenSchema,
+  type GetScheduledListens,
+  type GetScheduledListensResponse,
+  getScheduledListensSchema,
+  type ScheduledListenAlbum,
+  // Shared object schemas
+  ScheduledListenAlbumSchema,
+  type ScheduledListenItem,
+  ScheduledListenItemSchema,
+  type ScheduledListensPagination,
+  ScheduledListensPaginationSchema,
+} from './scheduledListen.schema';

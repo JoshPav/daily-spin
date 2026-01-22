@@ -12,27 +12,27 @@ import {
 /** Formats a Date to YYYY-MM-DD string */
 const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
 
-import type { FutureListenItem } from '~~/shared/schema';
+import type { ScheduledListenItem } from '~~/shared/schema';
 import {
-  createFutureListen,
+  createScheduledListen,
   createUser,
   getAlbumBySpotifyId,
   getArtistBySpotifyId,
-  getFutureListensForUser,
+  getScheduledListensForUser,
 } from '~~/tests/db/utils';
 import {
-  addFutureListenBody,
+  addScheduledListenBody,
   backlogArtist,
   createHandlerEvent,
 } from '~~/tests/factories/api.factory';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 
-describe('POST /api/future-listens Integration Tests', () => {
+describe('POST /api/listens/scheduled Integration Tests', () => {
   let userId: string;
 
   const today = new Date('2026-01-15T12:00:00.000Z');
 
-  let handler: EventHandler<FutureListenItem>;
+  let handler: EventHandler<ScheduledListenItem>;
 
   beforeAll(async () => {
     vi.setSystemTime(today);
@@ -48,9 +48,9 @@ describe('POST /api/future-listens Integration Tests', () => {
     vi.clearAllMocks();
   });
 
-  it('should create a future listen successfully', async () => {
+  it('should create a scheduled listen successfully', async () => {
     // Given
-    const body = addFutureListenBody();
+    const body = addScheduledListenBody();
 
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
@@ -66,14 +66,14 @@ describe('POST /api/future-listens Integration Tests', () => {
     });
     expect(result.id).toBeDefined();
 
-    const savedItems = await getFutureListensForUser(userId);
+    const savedItems = await getScheduledListensForUser(userId);
     expect(savedItems).toHaveLength(1);
   });
 
   it('should return the created item with correct fields', async () => {
     // Given
     const artist = backlogArtist();
-    const body = addFutureListenBody({ artists: [artist] });
+    const body = addScheduledListenBody({ artists: [artist] });
 
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
@@ -96,17 +96,17 @@ describe('POST /api/future-listens Integration Tests', () => {
     expect(result.id).toBeDefined();
   });
 
-  it('should only create future listens for the authenticated user', async () => {
+  it('should only create scheduled listens for the authenticated user', async () => {
     // Given
     const otherUserId = (await createUser()).id;
-    const body = addFutureListenBody();
+    const body = addScheduledListenBody();
 
     // When
     await handler(createHandlerEvent(userId, { body }));
 
     // Then
-    const userItems = await getFutureListensForUser(userId);
-    const otherUserItems = await getFutureListensForUser(otherUserId);
+    const userItems = await getScheduledListensForUser(userId);
+    const otherUserItems = await getScheduledListensForUser(otherUserId);
 
     expect(userItems).toHaveLength(1);
     expect(otherUserItems).toHaveLength(0);
@@ -116,7 +116,7 @@ describe('POST /api/future-listens Integration Tests', () => {
     // Given
     const artist1 = backlogArtist();
     const artist2 = backlogArtist();
-    const body = addFutureListenBody({ artists: [artist1, artist2] });
+    const body = addScheduledListenBody({ artists: [artist1, artist2] });
 
     // When
     const result = await handler(createHandlerEvent(userId, { body }));
@@ -148,25 +148,25 @@ describe('POST /api/future-listens Integration Tests', () => {
   });
 
   it('should reuse existing artist when adding album with same artist', async () => {
-    // Given - create first future listen with an artist
+    // Given - create first scheduled listen with an artist
     const sharedArtist = backlogArtist();
-    const listen1 = addFutureListenBody({
+    const listen1 = addScheduledListenBody({
       artists: [sharedArtist],
       date: '2026-01-20',
     });
     await handler(createHandlerEvent(userId, { body: listen1 }));
 
-    // When - add second future listen with same artist
-    const listen2 = addFutureListenBody({
+    // When - add second scheduled listen with same artist
+    const listen2 = addScheduledListenBody({
       artists: [sharedArtist],
       date: '2026-01-21',
     });
     const result = await handler(createHandlerEvent(userId, { body: listen2 }));
 
-    // Then - both future listens added, but artist should be reused (not duplicated)
+    // Then - both scheduled listens added, but artist should be reused (not duplicated)
     expect(result).toBeDefined();
 
-    const savedItems = await getFutureListensForUser(userId);
+    const savedItems = await getScheduledListensForUser(userId);
     expect(savedItems).toHaveLength(2);
 
     // Verify both albums reference the same artist
@@ -179,15 +179,15 @@ describe('POST /api/future-listens Integration Tests', () => {
   });
 
   it('should link to existing album without creating duplicate', async () => {
-    // Given - first user adds a future listen with an album
+    // Given - first user adds a scheduled listen with an album
     const futureDate = '2026-01-20';
-    const body = addFutureListenBody({ date: futureDate });
+    const body = addScheduledListenBody({ date: futureDate });
     await handler(createHandlerEvent(userId, { body }));
 
     const albumBeforeSecondAdd = await getAlbumBySpotifyId(body.spotifyId);
     expect(albumBeforeSecondAdd).not.toBeNull();
 
-    // When - second user adds future listen for the same album
+    // When - second user adds scheduled listen for the same album
     const otherUserId = (await createUser()).id;
     const otherFutureDate = '2026-01-21';
     const result = await handler(
@@ -205,37 +205,37 @@ describe('POST /api/future-listens Integration Tests', () => {
     // Should be the same album record (same id)
     expect(albumAfterSecondAdd?.id).toBe(albumBeforeSecondAdd?.id);
 
-    // Both users should have future listens
-    const user1Items = await getFutureListensForUser(userId);
-    const user2Items = await getFutureListensForUser(otherUserId);
+    // Both users should have scheduled listens
+    const user1Items = await getScheduledListensForUser(userId);
+    const user2Items = await getScheduledListensForUser(otherUserId);
 
     expect(user1Items).toHaveLength(1);
     expect(user2Items).toHaveLength(1);
 
-    // Both future listens should reference the same album
+    // Both scheduled listens should reference the same album
     expect(user1Items[0].albumId).toBe(albumBeforeSecondAdd?.id);
     expect(user2Items[0].albumId).toBe(albumBeforeSecondAdd?.id);
   });
 
   it('should upsert when adding same album for same date', async () => {
-    // Given - create a future listen
+    // Given - create a scheduled listen
     const futureDate = '2026-01-20';
-    const body = addFutureListenBody({ date: futureDate });
+    const body = addScheduledListenBody({ date: futureDate });
     const firstResult = await handler(createHandlerEvent(userId, { body }));
 
     // When - add same album for same date (should upsert)
     const secondResult = await handler(createHandlerEvent(userId, { body }));
 
-    // Then - should return the same future listen, not create a duplicate
+    // Then - should return the same scheduled listen, not create a duplicate
     expect(secondResult.id).toBe(firstResult.id);
 
-    const savedItems = await getFutureListensForUser(userId);
+    const savedItems = await getScheduledListensForUser(userId);
     expect(savedItems).toHaveLength(1);
   });
 
   it('should allow same album on different dates', async () => {
     // Given
-    const body1 = addFutureListenBody({
+    const body1 = addScheduledListenBody({
       date: '2026-01-20',
     });
     await handler(createHandlerEvent(userId, { body: body1 }));
@@ -247,10 +247,10 @@ describe('POST /api/future-listens Integration Tests', () => {
     };
     const result = await handler(createHandlerEvent(userId, { body: body2 }));
 
-    // Then - should create separate future listens
+    // Then - should create separate scheduled listens
     expect(result).toBeDefined();
 
-    const savedItems = await getFutureListensForUser(userId);
+    const savedItems = await getScheduledListensForUser(userId);
     expect(savedItems).toHaveLength(2);
     expect(savedItems[0].albumId).toBe(savedItems[1].albumId);
   });
@@ -258,26 +258,26 @@ describe('POST /api/future-listens Integration Tests', () => {
   it('should replace album when adding different album for same date', async () => {
     // Given
     const futureDate = '2026-01-20';
-    const body1 = addFutureListenBody({ date: futureDate });
+    const body1 = addScheduledListenBody({ date: futureDate });
     await handler(createHandlerEvent(userId, { body: body1 }));
 
     // When - add different album for same date (should replace)
-    const body2 = addFutureListenBody({ date: futureDate });
+    const body2 = addScheduledListenBody({ date: futureDate });
     const result = await handler(createHandlerEvent(userId, { body: body2 }));
 
     // Then - should have replaced the album for that date
     expect(result).toBeDefined();
     expect(result.album.spotifyId).toBe(body2.spotifyId);
 
-    const savedItems = await getFutureListensForUser(userId);
+    const savedItems = await getScheduledListensForUser(userId);
     expect(savedItems).toHaveLength(1);
     expect(savedItems[0].album.spotifyId).toBe(body2.spotifyId);
   });
 
-  it('should update existing future listen when upserting', async () => {
-    // Given - create a future listen for a date
+  it('should update existing scheduled listen when upserting', async () => {
+    // Given - create a scheduled listen for a date
     const futureDate = new Date('2026-01-20');
-    await createFutureListen({
+    await createScheduledListen({
       userId,
       item: {
         spotifyId: 'album-1',
@@ -287,12 +287,12 @@ describe('POST /api/future-listens Integration Tests', () => {
       },
     });
 
-    const itemsBefore = await getFutureListensForUser(userId);
+    const itemsBefore = await getScheduledListensForUser(userId);
     expect(itemsBefore).toHaveLength(1);
     expect(itemsBefore[0].album.spotifyId).toBe('album-1');
 
     // When - add different album for the same date (should replace)
-    const body = addFutureListenBody({
+    const body = addScheduledListenBody({
       spotifyId: 'album-2',
       date: toDateString(futureDate),
     });
@@ -301,7 +301,7 @@ describe('POST /api/future-listens Integration Tests', () => {
     // Then - should have replaced the album for that date
     expect(result.album.spotifyId).toBe('album-2');
 
-    const itemsAfter = await getFutureListensForUser(userId);
+    const itemsAfter = await getScheduledListensForUser(userId);
     expect(itemsAfter).toHaveLength(1);
     expect(itemsAfter[0].album.spotifyId).toBe('album-2');
   });

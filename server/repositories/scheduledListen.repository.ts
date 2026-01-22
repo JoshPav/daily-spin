@@ -2,28 +2,28 @@ import prisma, { type ExtendedPrismaClient } from '../clients/prisma';
 import { createTaggedLogger } from '../utils/logger';
 import type { CreateAlbum } from './backlog.repository';
 
-const logger = createTaggedLogger('Repository:FutureListen');
+const logger = createTaggedLogger('Repository:ScheduledListen');
 
-export class FutureListenRepository {
+export class ScheduledListenRepository {
   constructor(private prismaClient: ExtendedPrismaClient = prisma) {}
 
   /**
-   * Get future listens for a user within a date range with pagination metadata
-   * If endDate is omitted, returns all future listens from startDate onwards
+   * Get scheduled listens for a user within a date range with pagination metadata
+   * If endDate is omitted, returns all scheduled listens from startDate onwards
    */
-  async getFutureListensInRange(
+  async getScheduledListensInRange(
     userId: string,
     startDate: Date,
     endDate?: Date,
   ) {
-    logger.debug('Fetching paginated future listens', {
+    logger.debug('Fetching paginated scheduled listens', {
       userId,
       startDate: startDate.toISOString(),
       endDate: endDate?.toISOString(),
     });
 
     try {
-      const itemsPromise = this.prismaClient.futureListen.findMany({
+      const itemsPromise = this.prismaClient.scheduledListen.findMany({
         where: {
           userId,
           date: {
@@ -50,7 +50,7 @@ export class FutureListenRepository {
 
       // Only check hasMore if we have an endDate (pagination)
       const hasMoreCountPromise = endDate
-        ? this.prismaClient.futureListen.count({
+        ? this.prismaClient.scheduledListen.count({
             where: {
               userId,
               date: {
@@ -69,7 +69,7 @@ export class FutureListenRepository {
       const total = items.length;
       const hasMore = hasMoreCount > 0;
 
-      logger.debug('Successfully fetched paginated future listens', {
+      logger.debug('Successfully fetched paginated scheduled listens', {
         userId,
         count: total,
         hasMore,
@@ -77,7 +77,7 @@ export class FutureListenRepository {
 
       return { items, total, hasMore };
     } catch (error) {
-      logger.error('Failed to fetch paginated future listens', {
+      logger.error('Failed to fetch paginated scheduled listens', {
         userId,
         startDate: startDate.toISOString(),
         endDate: endDate?.toISOString(),
@@ -89,16 +89,16 @@ export class FutureListenRepository {
   }
 
   /**
-   * Get a future listen by date for a user
+   * Get a scheduled listen by date for a user
    */
-  async getFutureListenByDate(userId: string, date: Date) {
-    logger.debug('Fetching future listen by date', {
+  async getScheduledListenByDate(userId: string, date: Date) {
+    logger.debug('Fetching scheduled listen by date', {
       userId,
       date: date.toISOString(),
     });
 
     try {
-      const result = await this.prismaClient.futureListen.findUnique({
+      const result = await this.prismaClient.scheduledListen.findUnique({
         where: {
           userId_date: {
             userId,
@@ -121,7 +121,7 @@ export class FutureListenRepository {
         },
       });
 
-      logger.debug('Successfully fetched future listen by date', {
+      logger.debug('Successfully fetched scheduled listen by date', {
         userId,
         date: date.toISOString(),
         found: !!result,
@@ -129,7 +129,7 @@ export class FutureListenRepository {
 
       return result;
     } catch (error) {
-      logger.error('Failed to fetch future listen by date', {
+      logger.error('Failed to fetch scheduled listen by date', {
         userId,
         date: date.toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -257,17 +257,17 @@ export class FutureListenRepository {
   }
 
   /**
-   * Create or update a future listen for a user on a specific date
+   * Create or update a scheduled listen for a user on a specific date
    */
-  async upsertFutureListen(userId: string, albumId: string, date: Date) {
-    logger.debug('Upserting future listen', {
+  async upsertScheduledListen(userId: string, albumId: string, date: Date) {
+    logger.debug('Upserting scheduled listen', {
       userId,
       albumId,
       date: date.toISOString(),
     });
 
     try {
-      const result = await this.prismaClient.futureListen.upsert({
+      const result = await this.prismaClient.scheduledListen.upsert({
         where: {
           userId_date: {
             userId,
@@ -298,16 +298,16 @@ export class FutureListenRepository {
         },
       });
 
-      logger.debug('Successfully upserted future listen', {
+      logger.debug('Successfully upserted scheduled listen', {
         userId,
-        futureListenId: result.id,
+        scheduledListenId: result.id,
         albumId,
         date: date.toISOString(),
       });
 
       return result;
     } catch (error) {
-      logger.error('Failed to upsert future listen', {
+      logger.error('Failed to upsert scheduled listen', {
         userId,
         albumId,
         date: date.toISOString(),
@@ -319,29 +319,29 @@ export class FutureListenRepository {
   }
 
   /**
-   * Delete a future listen by ID
+   * Delete a scheduled listen by ID
    */
-  async deleteFutureListen(id: string, userId: string) {
-    logger.debug('Deleting future listen by ID', {
+  async deleteScheduledListen(id: string, userId: string) {
+    logger.debug('Deleting scheduled listen by ID', {
       userId,
-      futureListenId: id,
+      scheduledListenId: id,
     });
 
     try {
-      const result = await this.prismaClient.futureListen.delete({
+      const result = await this.prismaClient.scheduledListen.delete({
         where: { id, userId },
       });
 
-      logger.debug('Successfully deleted future listen', {
+      logger.debug('Successfully deleted scheduled listen', {
         userId,
-        futureListenId: id,
+        scheduledListenId: id,
       });
 
       return result;
     } catch (error) {
-      logger.error('Failed to delete future listen by ID', {
+      logger.error('Failed to delete scheduled listen by ID', {
         userId,
-        futureListenId: id,
+        scheduledListenId: id,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -350,16 +350,16 @@ export class FutureListenRepository {
   }
 
   /**
-   * Delete a future listen by date
+   * Delete a scheduled listen by date
    */
-  async deleteFutureListenByDate(userId: string, date: Date) {
-    logger.debug('Deleting future listen by date', {
+  async deleteScheduledListenByDate(userId: string, date: Date) {
+    logger.debug('Deleting scheduled listen by date', {
       userId,
       date: date.toISOString(),
     });
 
     try {
-      const result = await this.prismaClient.futureListen.delete({
+      const result = await this.prismaClient.scheduledListen.delete({
         where: {
           userId_date: {
             userId,
@@ -368,14 +368,14 @@ export class FutureListenRepository {
         },
       });
 
-      logger.debug('Successfully deleted future listen by date', {
+      logger.debug('Successfully deleted scheduled listen by date', {
         userId,
         date: date.toISOString(),
       });
 
       return result;
     } catch (error) {
-      logger.error('Failed to delete future listen by date', {
+      logger.error('Failed to delete scheduled listen by date', {
         userId,
         date: date.toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -386,13 +386,13 @@ export class FutureListenRepository {
   }
 
   /**
-   * Delete future listen by album Spotify ID
+   * Delete scheduled listen by album Spotify ID
    */
-  async deleteFutureListenByAlbumSpotifyId(
+  async deleteScheduledListenByAlbumSpotifyId(
     userId: string,
     albumSpotifyId: string,
   ) {
-    logger.debug('Deleting future listen by album Spotify ID', {
+    logger.debug('Deleting scheduled listen by album Spotify ID', {
       userId,
       albumSpotifyId,
     });
@@ -411,23 +411,26 @@ export class FutureListenRepository {
         return { count: 0 };
       }
 
-      // Delete the future listen
-      const result = await this.prismaClient.futureListen.deleteMany({
+      // Delete the scheduled listen
+      const result = await this.prismaClient.scheduledListen.deleteMany({
         where: {
           userId,
           albumId: album.id,
         },
       });
 
-      logger.debug('Successfully deleted future listen by album Spotify ID', {
-        userId,
-        albumSpotifyId,
-        deletedCount: result.count,
-      });
+      logger.debug(
+        'Successfully deleted scheduled listen by album Spotify ID',
+        {
+          userId,
+          albumSpotifyId,
+          deletedCount: result.count,
+        },
+      );
 
       return result;
     } catch (error) {
-      logger.error('Failed to delete future listen by album Spotify ID', {
+      logger.error('Failed to delete scheduled listen by album Spotify ID', {
         userId,
         albumSpotifyId,
         error: error instanceof Error ? error.message : 'Unknown error',

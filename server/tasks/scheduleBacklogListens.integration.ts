@@ -9,10 +9,10 @@ import {
 } from 'vitest';
 import {
   createBacklogItem,
-  createFutureListen,
+  createScheduledListen,
   createUser,
   getBacklogItemsForUser,
-  getFutureListensForUser,
+  getScheduledListensForUser,
 } from '~~/tests/db/utils';
 import { scheduleBacklogListens as scheduleEvent } from './scheduleBacklogListens';
 
@@ -34,7 +34,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
     vi.clearAllMocks();
   });
 
-  describe('scheduleBacklogToFutureListens', () => {
+  describe('scheduleBacklogToScheduledListens', () => {
     it('should return no users when no users have feature enabled', async () => {
       // Given - User from beforeEach has feature disabled
       const _newUser = await createUser({ trackListeningHistory: false });
@@ -65,16 +65,16 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       // When
       await scheduleEvent();
 
-      // Then - 7 future listens created for next 7 days
-      const futureListens = await getFutureListensForUser(userId);
-      expect(futureListens).toHaveLength(7);
+      // Then - 7 scheduled listens created for next 7 days
+      const scheduledListens = await getScheduledListensForUser(userId);
+      expect(scheduledListens).toHaveLength(7);
 
       // Verify dates are consecutive starting from tomorrow
       const tomorrow = new Date(Date.UTC(2026, 0, 16)); // Jan 16
       for (let i = 0; i < 7; i++) {
         const expectedDate = new Date(tomorrow);
         expectedDate.setUTCDate(expectedDate.getUTCDate() + i);
-        expect(futureListens[i].date).toEqual(expectedDate);
+        expect(scheduledListens[i].date).toEqual(expectedDate);
       }
     });
 
@@ -95,7 +95,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       const day2 = new Date(Date.UTC(2026, 0, 17));
       const day5 = new Date(Date.UTC(2026, 0, 20));
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'existing-album-1',
@@ -107,7 +107,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
         },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'existing-album-2',
@@ -123,21 +123,21 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       await scheduleEvent();
 
       // Then - Only fills days 1, 3, 4, 6, 7 (5 new schedules)
-      const futureListens = await getFutureListensForUser(userId);
-      expect(futureListens).toHaveLength(7); // 2 existing + 5 new
+      const scheduledListens = await getScheduledListensForUser(userId);
+      expect(scheduledListens).toHaveLength(7); // 2 existing + 5 new
 
       // Verify the existing schedules are still there
-      const existingDay2 = futureListens.find(
+      const existingDay2 = scheduledListens.find(
         (fl) => fl.date.getTime() === day2.getTime(),
       );
-      const existingDay5 = futureListens.find(
+      const existingDay5 = scheduledListens.find(
         (fl) => fl.date.getTime() === day5.getTime(),
       );
       expect(existingDay2?.album.spotifyId).toBe('existing-album-1');
       expect(existingDay5?.album.spotifyId).toBe('existing-album-2');
     });
 
-    it('should not schedule albums already in future listens', async () => {
+    it('should not schedule albums already in scheduled listens', async () => {
       // Given - User has 5 backlog items
       const backlogAlbums = [];
       for (let i = 0; i < 5; i++) {
@@ -156,7 +156,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       const futureDate1 = new Date(Date.UTC(2026, 0, 25)); // Jan 25
       const futureDate2 = new Date(Date.UTC(2026, 0, 30)); // Jan 30
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'album-0',
@@ -166,7 +166,7 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
         },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'album-1',
@@ -180,16 +180,16 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       await scheduleEvent();
 
       // Then - Only uses the 3 unscheduled albums
-      const futureListens = await getFutureListensForUser(userId);
-      expect(futureListens).toHaveLength(5); // 2 existing + 3 new
+      const scheduledListens = await getScheduledListensForUser(userId);
+      expect(scheduledListens).toHaveLength(5); // 2 existing + 3 new
 
       // Verify no duplicates
-      const albumIds = futureListens.map((fl) => fl.album.spotifyId);
+      const albumIds = scheduledListens.map((fl) => fl.album.spotifyId);
       const uniqueAlbumIds = new Set(albumIds);
       expect(uniqueAlbumIds.size).toBe(5);
 
       // Verify the new schedules don't include album-0 or album-1
-      const newSchedules = futureListens.filter(
+      const newSchedules = scheduledListens.filter(
         (fl) =>
           fl.date.getTime() >= new Date(Date.UTC(2026, 0, 16)).getTime() &&
           fl.date.getTime() <= new Date(Date.UTC(2026, 0, 22)).getTime(),
@@ -216,8 +216,8 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       await scheduleEvent();
 
       // Then - Only 3 schedules created
-      const futureListens = await getFutureListensForUser(userId);
-      expect(futureListens).toHaveLength(3);
+      const scheduledListens = await getScheduledListensForUser(userId);
+      expect(scheduledListens).toHaveLength(3);
     });
 
     it(
@@ -287,10 +287,10 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
 
         for (let run = 0; run < 10; run++) {
           // Clear existing schedules
-          const existingSchedules = await getFutureListensForUser(userId);
+          const existingSchedules = await getScheduledListensForUser(userId);
           for (const schedule of existingSchedules) {
             await import('~~/tests/db/setup').then(({ getTestPrisma }) =>
-              getTestPrisma().futureListen.delete({
+              getTestPrisma().scheduledListen.delete({
                 where: { id: schedule.id },
               }),
             );
@@ -300,8 +300,8 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
           await scheduleEvent();
 
           // Count selections
-          const futureListens = await getFutureListensForUser(userId);
-          for (const fl of futureListens) {
+          const scheduledListens = await getScheduledListensForUser(userId);
+          for (const fl of scheduledListens) {
             if (veryOldAlbums.includes(fl.album.spotifyId)) {
               veryOldCount++;
             }
@@ -355,8 +355,8 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
       await scheduleEvent();
 
       // Then - Both users have schedules
-      const user1Schedules = await getFutureListensForUser(userId);
-      const user2Schedules = await getFutureListensForUser(user2.id);
+      const user1Schedules = await getScheduledListensForUser(userId);
+      const user2Schedules = await getScheduledListensForUser(user2.id);
 
       expect(user1Schedules).toHaveLength(7);
       expect(user2Schedules).toHaveLength(7);
@@ -430,8 +430,8 @@ describe('scheduleBacklogListens Task Integration Tests', () => {
         'Processed 1 user(s): 1 successful, scheduled 0 album(s), 0 failed',
       );
 
-      const futureListens = await getFutureListensForUser(userId);
-      expect(futureListens).toHaveLength(0);
+      const scheduledListens = await getScheduledListensForUser(userId);
+      expect(scheduledListens).toHaveLength(0);
     });
   });
 });

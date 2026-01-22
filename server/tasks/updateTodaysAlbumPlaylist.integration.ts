@@ -10,7 +10,7 @@ import {
 } from 'vitest';
 import { getTestPrisma } from '~~/tests/db/setup';
 import {
-  createFutureListen,
+  createScheduledListen,
   createUser,
   createUserPlaylist,
   getUserPlaylistByType,
@@ -113,7 +113,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
       it('should create playlist and populate it for user with no existing playlist', async () => {
         // Given
         const album = simplifiedAlbum({ id: 'album-123', name: 'Test Album' });
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album.id,
@@ -177,7 +177,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
       it('should update existing playlist instead of creating new one', async () => {
         // Given
         const album = simplifiedAlbum({ id: 'album-456', name: 'New Album' });
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album.id,
@@ -221,7 +221,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
       it('should create new playlist when user deleted their existing one', async () => {
         // Given
         const album = simplifiedAlbum({ id: 'album-789', name: 'Test Album' });
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album.id,
@@ -280,7 +280,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
       it('should skip user when album has no tracks', async () => {
         // Given
         const album = simplifiedAlbum({ id: 'empty-album' });
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album.id,
@@ -323,7 +323,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
         const album1 = simplifiedAlbum({ id: 'album-1', name: 'Album One' });
         const album2 = simplifiedAlbum({ id: 'album-2', name: 'Album Two' });
 
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album1.id,
@@ -334,7 +334,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
             date: startOfToday,
           },
         });
-        await createFutureListen({
+        await createScheduledListen({
           userId: user2.id,
           item: {
             spotifyId: album2.id,
@@ -372,7 +372,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
         const album1 = simplifiedAlbum({ id: 'album-1', name: 'Album One' });
         const album2 = simplifiedAlbum({ id: 'album-2', name: 'Album Two' });
 
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: album1.id,
@@ -383,7 +383,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
             date: startOfToday,
           },
         });
-        await createFutureListen({
+        await createScheduledListen({
           userId: user2.id,
           item: {
             spotifyId: album2.id,
@@ -424,7 +424,7 @@ describe('updateTodaysAlbumPlaylist Task Integration Tests', () => {
     describe('playlist naming', () => {
       it('should create playlist with album name and artist', async () => {
         // Given
-        await createFutureListen({
+        await createScheduledListen({
           userId,
           item: {
             spotifyId: 'album-name-test',

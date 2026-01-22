@@ -1,6 +1,6 @@
 <template>
   <AlbumDayCard
-    data-testid="future-album-day"
+    data-testid="scheduled-album-day"
     ref="cardRef"
     :date="date"
     :albums="albumCardInfo"
@@ -9,7 +9,7 @@
   >
     <template #badge>
       <div
-        v-if="futureListen"
+        v-if="scheduledListen"
         class="absolute top-2 right-2 flex items-center justify-center w-7 h-7 rounded-md bg-indigo-500/90 text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] z-10 pointer-events-none"
       >
         <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
@@ -36,22 +36,22 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { LazyFutureListenModal, LazyLogAlbumModal } from '#components';
-import type { FutureListenItem } from '#shared/schema';
+import { LazyLogAlbumModal, LazyScheduledListenModal } from '#components';
+import type { ScheduledListenItem } from '#shared/schema';
 import type { AlbumCardInfo } from './AlbumDayCard.vue';
 
 const {
   date,
-  futureListen,
+  scheduledListen,
   pending = false,
 } = defineProps<{
   date: string;
-  futureListen?: FutureListenItem;
+  scheduledListen?: ScheduledListenItem;
   pending?: boolean;
 }>();
 
 const overlay = useOverlay();
-const futureListenModal = overlay.create(LazyFutureListenModal);
+const scheduledListenModal = overlay.create(LazyScheduledListenModal);
 const addAlbumModal = overlay.create(LazyLogAlbumModal);
 
 const {
@@ -64,19 +64,19 @@ const openAddModal = () => {
 };
 
 const albumCardInfo = computed<AlbumCardInfo[]>(() => {
-  if (!futureListen) return [];
+  if (!scheduledListen) return [];
   return [
     {
-      imageUrl: futureListen.album.imageUrl,
-      artistName: futureListen.album.artists[0]?.name ?? 'Unknown Artist',
-      albumName: futureListen.album.name,
+      imageUrl: scheduledListen.album.imageUrl,
+      artistName: scheduledListen.album.artists[0]?.name ?? 'Unknown Artist',
+      albumName: scheduledListen.album.name,
     },
   ];
 });
 
 const handleClick = () => {
-  if (!futureListen) return;
-  futureListenModal.open({ futureListenItem: futureListen });
+  if (!scheduledListen) return;
+  scheduledListenModal.open({ scheduledListenItem: scheduledListen });
 };
 
 // Sticky month header tracking
