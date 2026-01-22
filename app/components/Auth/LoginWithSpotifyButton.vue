@@ -53,6 +53,3 @@ const onClick = async () => {
   }
 };
 </script>
-
-<style>
-</style>

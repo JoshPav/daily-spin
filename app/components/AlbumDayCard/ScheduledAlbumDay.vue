@@ -23,7 +23,7 @@
         <button
           v-if="isToday"
           data-testid="add-listen-button"
-          class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-[#1ed760] hover:scale-110 active:scale-105"
+          class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-(--color-primary-vibrant) hover:scale-110 active:scale-105"
           @click.stop="openAddModal"
         >
           <PlusCircleIcon class="w-9 h-9" />

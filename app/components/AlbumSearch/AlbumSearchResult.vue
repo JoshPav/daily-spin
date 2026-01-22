@@ -1,26 +1,23 @@
 <template>
   <div
     :key="album.id"
-    class="flex cursor-pointer gap-4 rounded-lg p-3 transition-all hover:translate-x-1"
-    :class="selected ? 'bg-green-500' : 'bg-elevated hover:bg-muted'"
+    class="flex gap-4 p-3 rounded-lg cursor-pointer transition-all duration-200 ease-out hover:translate-x-1"
+    :class="selected ? 'bg-primary!' : 'bg-elevated hover:bg-muted'"
     @click="onClick"
   >
     <img
       v-if="album.images?.[0]?.url"
       :src="album.images[0].url"
       :alt="album.name"
-      class="h-16 w-16 shrink-0 rounded object-cover"
+      class="w-16 h-16 shrink-0 rounded object-cover"
     >
-    <div class="flex flex-1 flex-col justify-center gap-1">
-      <div
-        class="font-montserrat text-base font-bold"
-        :class="selected ? 'text-black' : 'text-white'"
-      >
+    <div class="flex-1 flex flex-col justify-center gap-1">
+      <div class="text-base font-bold" :class="selected ? 'text-inverted' : ''">
         {{ album.name }}
       </div>
       <div
-        class="font-montserrat text-sm font-medium"
-        :class="selected ? 'text-neutral-900' : 'text-neutral-400'"
+        class="text-sm font-medium"
+        :class="selected ? 'text-inverted' : 'text-muted'"
       >
         {{ getArtistNames(album.artists) }}
       </div>

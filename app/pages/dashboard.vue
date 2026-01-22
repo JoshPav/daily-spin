@@ -103,14 +103,14 @@ onUnmounted(() => {
       <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
         <!-- Loading more indicator (top) -->
         <div v-if="loading" class="flex flex-col items-center gap-2 py-4">
-          <span class="text-sm text-[#b3b3b3]">Loading older albums...</span>
+          <span class="text-sm text-muted">Loading older albums...</span>
           <UProgress animation="carousel" class="w-32" />
         </div>
 
         <!-- Error state -->
         <div
           v-if="error"
-          class="text-center py-12 px-6 text-base font-medium text-[#f15e6c]"
+          class="text-center py-12 px-6 text-base font-medium text-secondary-500"
         >
           Error: {{ error.message }}
         </div>
@@ -124,7 +124,7 @@ onUnmounted(() => {
 
           <div
             v-if="!listensHistory.hasMore.value"
-            class="col-span-full text-center text-sm text-[#b3b3b3]"
+            class="col-span-full text-center text-sm text-muted"
           >
             You've reached the beginning of your listening history
           </div>
