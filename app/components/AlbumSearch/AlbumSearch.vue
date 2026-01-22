@@ -5,7 +5,7 @@
         v-model="searchInput"
         type="text"
         placeholder="Search for an album..."
-        class="w-full rounded-lg border-2 border-neutral-600 bg-elevated px-4 py-3 font-montserrat text-base text-white transition-colors placeholder:text-neutral-400 focus:border-green-500 focus:outline-none"
+        class="w-full py-3 px-4 bg-elevated border-2 border-(--ui-border) rounded-lg text-base transition-[border-color] duration-200 ease-out focus:outline-none focus:border-primary placeholder:text-muted"
         @input="handleSearchInput"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -14,14 +14,14 @@
 
     <div
       v-if="loading && isFocused"
-      class="flex max-h-[400px] flex-col gap-3 overflow-y-auto overflow-x-hidden"
+      class="flex flex-col gap-3 max-h-[400px] overflow-y-auto overflow-x-hidden"
     >
-      <div v-for="i in 3" :key="i" class="skeleton h-20 rounded-lg" />
+      <USkeleton v-for="i in 3" :key="i" class="h-20 rounded-lg" />
     </div>
 
     <div
       v-else-if="searchResults.length > 0 && isFocused"
-      class="flex max-h-[400px] flex-col gap-3 overflow-y-auto overflow-x-hidden"
+      class="flex flex-col gap-3 max-h-[400px] overflow-y-auto overflow-x-hidden"
     >
       <AlbumSearchResult
         v-for="album in searchResults"
@@ -70,20 +70,3 @@ const selectAlbum = (album: SearchResult) => {
   emit('update:modelValue', album);
 };
 </script>
-
-<style scoped>
-.skeleton {
-  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 37%, #2a2a2a 63%);
-  background-size: 400% 100%;
-  animation: skeleton-shimmer 2.5s ease infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-</style>

@@ -30,11 +30,11 @@ const resultsGap = computed(() => (props.compact ? 'gap-2' : 'gap-3'));
   <div class="min-h-0 flex-1 overflow-y-auto">
     <!-- Loading state -->
     <div v-if="loading" class="flex flex-col" :class="resultsGap">
-      <div
+      <USkeleton
         v-for="i in skeletonCount"
         :key="i"
         :class="skeletonHeight"
-        class="animate-[skeleton-shimmer_2.5s_ease_infinite] rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[400%_100%]"
+        class="rounded-lg"
       />
     </div>
 
@@ -58,14 +58,3 @@ const resultsGap = computed(() => (props.compact ? 'gap-2' : 'gap-3'));
     <div v-else class="py-8 text-center text-muted">{{ emptyText }}</div>
   </div>
 </template>
-
-<style scoped>
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-</style>

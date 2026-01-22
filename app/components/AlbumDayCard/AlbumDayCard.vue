@@ -1,7 +1,7 @@
 <template>
   <div
     ref="cardEl"
-    class="album-day-card relative w-full aspect-square rounded-lg bg-[#121212] transition-[transform,box-shadow] duration-150 ease-out"
+    class="album-day-card relative w-full aspect-square rounded-lg bg-default transition-[transform,box-shadow] duration-150 ease-out"
     :class="{
       'today': isToday,
       'opacity-30': isFuture,
@@ -38,10 +38,7 @@
     <slot name="badge" />
 
     <!-- Loading state -->
-    <div
-      v-if="pending"
-      class="skeleton absolute inset-0 rounded-lg overflow-hidden"
-    />
+    <USkeleton v-if="pending" class="absolute inset-0 rounded-lg" />
 
     <!-- Empty state -->
     <template v-else-if="images.length === 0">
@@ -138,22 +135,6 @@ defineExpose({
 </script>
 
 <style>
-/* Skeleton loading animation */
-.skeleton {
-  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 37%, #2a2a2a 63%);
-  background-size: 400% 100%;
-  animation: skeleton-shimmer 2.5s ease infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-
 /* Stacked albums effect - transforms */
 .stacked-album {
   transition:

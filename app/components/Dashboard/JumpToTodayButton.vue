@@ -11,7 +11,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Transition name="jump-to-today">
+  <Transition
+    enter-active-class="transition-all duration-200 ease-out"
+    leave-active-class="transition-all duration-200 ease-out"
+    enter-from-class="opacity-0 translate-y-4"
+    leave-to-class="opacity-0 translate-y-4"
+  >
     <UButton
       v-if="visible"
       :icon="Icons.CALENDAR.TODAY"
@@ -26,18 +31,3 @@ const emit = defineEmits<{
     </UButton>
   </Transition>
 </template>
-
-<style scoped>
-.jump-to-today-enter-active,
-.jump-to-today-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.jump-to-today-enter-from,
-.jump-to-today-leave-to {
-  opacity: 0;
-  transform: translateY(16px);
-}
-</style>

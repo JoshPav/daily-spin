@@ -20,6 +20,3 @@
 <script lang="ts" setup>
 defineProps<{ title: string; description?: string }>();
 </script>
-
-<style>
-</style>
