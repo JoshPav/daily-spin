@@ -81,6 +81,7 @@ describe('GET /api/listens Integration Tests', () => {
         albumId: albumInput.album.spotifyId,
         albumName: albumInput.album.name,
         imageUrl: albumInput.album.imageUrl ?? '',
+        releaseDate: albumInput.album.releaseDate ?? null,
         artists: albumInput.album.artists.map(({ spotifyId, name }) => ({
           name,
           spotifyId,

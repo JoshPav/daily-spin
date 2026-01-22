@@ -66,6 +66,7 @@ describe('GET /api/backlog Integration Tests', () => {
       spotifyId: albumInput.spotifyId,
       name: albumInput.name,
       imageUrl: albumInput.imageUrl,
+      releaseDate: null,
       artists: [
         { spotifyId: 'artist-1', name: 'Artist One', imageUrl: undefined },
         { spotifyId: 'artist-2', name: 'Artist Two', imageUrl: undefined },
