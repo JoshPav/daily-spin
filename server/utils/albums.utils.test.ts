@@ -1,6 +1,7 @@
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import { describe, expect, it } from 'vitest';
-import { getAlbumArtwork } from './albums.utils';
+import { simplifiedAlbum } from '~~/tests/factories/spotify.factory';
+import { filterRealAlbums, getAlbumArtwork, isRealAlbum } from './albums.utils';
 
 describe('albums.utils', () => {
   describe('getAlbumArtwork', () => {
@@ -71,6 +72,108 @@ describe('albums.utils', () => {
       ];
 
       expect(getAlbumArtwork(images)).toBe('https://example.com/first-300.jpg');
+    });
+  });
+
+  describe('isRealAlbum', () => {
+    it('should return true for album with 8+ tracks', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 10 });
+
+      expect(isRealAlbum(album)).toBe(true);
+    });
+
+    it('should return true for album with exactly 5 tracks (minimum)', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 5 });
+
+      expect(isRealAlbum(album)).toBe(true);
+    });
+
+    it('should return false for album with less than 5 tracks', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 4 });
+
+      expect(isRealAlbum(album)).toBe(false);
+    });
+
+    it('should return false for singles', () => {
+      const album = simplifiedAlbum({ album_type: 'single', total_tracks: 10 });
+
+      expect(isRealAlbum(album)).toBe(false);
+    });
+
+    it('should return false for compilations', () => {
+      const album = simplifiedAlbum({
+        album_type: 'compilation',
+        total_tracks: 20,
+      });
+
+      expect(isRealAlbum(album)).toBe(false);
+    });
+
+    it('should return true for album with 6 tracks', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 6 });
+
+      expect(isRealAlbum(album)).toBe(true);
+    });
+
+    it('should return true for album with 7 tracks (max EP threshold)', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 7 });
+
+      expect(isRealAlbum(album)).toBe(true);
+    });
+  });
+
+  describe('filterRealAlbums', () => {
+    it('should filter out singles and keep albums', () => {
+      const albums = [
+        simplifiedAlbum({ album_type: 'album', total_tracks: 10 }),
+        simplifiedAlbum({ album_type: 'single', total_tracks: 3 }),
+        simplifiedAlbum({ album_type: 'album', total_tracks: 8 }),
+      ];
+
+      const result = filterRealAlbums(albums);
+
+      expect(result).toHaveLength(2);
+      expect(result.every((a) => a.album_type === 'album')).toBe(true);
+    });
+
+    it('should filter out albums with too few tracks', () => {
+      const albums = [
+        simplifiedAlbum({ album_type: 'album', total_tracks: 10 }),
+        simplifiedAlbum({ album_type: 'album', total_tracks: 3 }),
+        simplifiedAlbum({ album_type: 'album', total_tracks: 5 }),
+      ];
+
+      const result = filterRealAlbums(albums);
+
+      expect(result).toHaveLength(2);
+      expect(result.every((a) => a.total_tracks >= 5)).toBe(true);
+    });
+
+    it('should filter out compilations', () => {
+      const albums = [
+        simplifiedAlbum({ album_type: 'album', total_tracks: 10 }),
+        simplifiedAlbum({ album_type: 'compilation', total_tracks: 20 }),
+      ];
+
+      const result = filterRealAlbums(albums);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.album_type).toBe('album');
+    });
+
+    it('should return empty array when no albums qualify', () => {
+      const albums = [
+        simplifiedAlbum({ album_type: 'single', total_tracks: 2 }),
+        simplifiedAlbum({ album_type: 'compilation', total_tracks: 30 }),
+      ];
+
+      const result = filterRealAlbums(albums);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return empty array for empty input', () => {
+      expect(filterRealAlbums([])).toHaveLength(0);
     });
   });
 });

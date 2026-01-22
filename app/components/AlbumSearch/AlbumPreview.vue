@@ -9,7 +9,7 @@
     <div class="preview-info">
       <div class="preview-album-name">{{ album.name }}</div>
       <div class="preview-artist-names">
-        {{ getAlbumArtists(album.artists) }}
+        {{ getArtistNames(album.artists) }}
       </div>
     </div>
   </div>

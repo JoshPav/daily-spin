@@ -13,7 +13,7 @@
     >
     <div class="album-info">
       <div class="album-name">{{ album.name }}</div>
-      <div class="artist-names">{{ getAlbumArtists(album.artists) }}</div>
+      <div class="artist-names">{{ getArtistNames(album.artists) }}</div>
     </div>
   </div>
 </template>
