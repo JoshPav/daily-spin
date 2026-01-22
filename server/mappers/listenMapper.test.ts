@@ -28,6 +28,7 @@ describe('listenMapper', () => {
         spotifyId: 'album-123',
         name: 'Test Album',
         imageUrl: 'https://example.com/image.jpg',
+        releaseDate: '2024-03-15',
         artists: [
           {
             id: 'aa-1',
@@ -69,6 +70,7 @@ describe('listenMapper', () => {
             },
           ],
           imageUrl: 'https://example.com/image.jpg',
+          releaseDate: '2024-03-15',
         },
         listenMetadata: {
           listenOrder: 'ordered',
@@ -270,6 +272,7 @@ describe('listenMapper', () => {
         'albumName',
         'artists',
         'imageUrl',
+        'releaseDate',
       ]);
 
       // Metadata should only have the expected fields (no favoriteSong - it's on DailyListens now)

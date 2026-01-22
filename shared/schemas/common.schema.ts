@@ -55,6 +55,7 @@ export const AlbumSchema = z.object({
   albumName: z.string(),
   imageUrl: z.string(),
   artists: z.array(ArtistSchema),
+  releaseDate: z.string().optional(),
 });
 
 export const ListenMetadataSchema = z.object({

@@ -16,6 +16,7 @@ export type CreateAlbum = {
   spotifyId: string;
   name: string;
   imageUrl?: string;
+  releaseDate?: string;
   artists: CreateArtist[];
 };
 
@@ -373,6 +374,7 @@ export class DailyListenRepository {
           spotifyId: album.spotifyId,
           name: album.name,
           imageUrl: album.imageUrl,
+          releaseDate: album.releaseDate,
           artists: {
             create: artists.map((artist, index) => ({
               artistId: artist.id,

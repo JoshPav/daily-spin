@@ -90,6 +90,7 @@ export const album = createFactory<Album>(() => ({
   albumName: music.songName(),
   artists: [artist()],
   imageUrl: url(),
+  releaseDate: toDateString(date.past()),
 }));
 
 export const listenMetadata = createFactory<ListenMetadata>(() => ({
@@ -145,6 +146,7 @@ export const backlogAlbum = (
   imageUrl: faker.image.url(),
   artists: [artist()],
   addedAt: faker.date.recent().toISOString(),
+  releaseDate: toDateString(faker.date.past()),
   ...overrides,
 });
 
@@ -153,6 +155,7 @@ export const scheduledListenAlbum = createFactory<ScheduledListenAlbum>(() => ({
   name: music.songName(),
   imageUrl: url(),
   artists: [artist()],
+  releaseDate: toDateString(date.past()),
 }));
 
 export const getScheduledListensResponse = ({

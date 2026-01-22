@@ -185,18 +185,18 @@ defineExpose({
   transform: translate(18px, 18px) rotate(2deg);
 }
 
-/* Album image: grayscale by default */
+/* Album image: partial desaturation by default */
 .album-day-card .stacked-album.stack-0 {
-  filter: grayscale(100%) brightness(0.75) contrast(0.95);
+  filter: grayscale(60%) brightness(0.85) contrast(0.95);
 }
 .album-day-card .stacked-album.stack-1 {
-  filter: grayscale(100%) brightness(0.65) contrast(0.95);
+  filter: grayscale(60%) brightness(0.75) contrast(0.95);
 }
 .album-day-card .stacked-album.stack-2 {
-  filter: grayscale(100%) brightness(0.55) contrast(0.95);
+  filter: grayscale(60%) brightness(0.65) contrast(0.95);
 }
 .album-day-card .stacked-album.stack-3 {
-  filter: grayscale(100%) brightness(0.45) contrast(0.95);
+  filter: grayscale(60%) brightness(0.55) contrast(0.95);
 }
 
 /* Restore colour on hover */
@@ -211,6 +211,11 @@ defineExpose({
 }
 .album-day-card:hover .stacked-album.stack-3 {
   filter: grayscale(0%) brightness(0.6) contrast(1);
+}
+
+/* Today's card glow */
+.album-day-card.today {
+  box-shadow: 0 0 24px rgba(29, 185, 84, 0.4);
 }
 
 /* Restore colour for today */

@@ -1,55 +1,14 @@
 <template>
   <div class="flex flex-col gap-2 w-full">
-    <section class="flex-1 min-w-0 flex flex-col md:flex-row md:gap-6">
-      <div
-        class="shrink-0 w-full aspect-square md:w-75 md:h-75 md:aspect-auto rounded-lg overflow-hidden bg-default shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
-      >
-        <NuxtImg
-          v-if="albumListen.album.imageUrl"
-          :src="albumListen.album.imageUrl"
-          :alt="`${albumListen.album.albumName} cover`"
-          class="w-full h-full object-cover"
-        />
-      </div>
+    <AlbumDetails
+      ref="albumDetailsRef"
+      :album="album"
+      :selected-track-id="selectedTrackId"
+      :disabled="disabled"
+      @track-select="handleTrackSelect"
+    />
 
-      <div class="mt-4 md:mt-0 md:flex md:flex-col md:justify-center">
-        <div class="flex items-center gap-3 md:mb-2 justify-between">
-          <h2
-            class="text-2xl md:text-[32px] font-black text-default leading-tight"
-          >
-            {{ albumListen.album.albumName }}
-          </h2>
-          <OpenInSpotifyButton
-            :spotify-id="albumListen.album.albumId"
-            type="album"
-            size="md"
-          />
-        </div>
-        <p class="mb-2 md:mb-3 text-base font-semibold text-muted">
-          {{ albumListen.album.artists[0]?.name }}
-        </p>
-      </div>
-    </section>
-
-    <!-- Track List -->
-    <section>
-      <CollapsibleSection v-model="expanded" :icon="Icons.MUSIC.SONG_LIST">
-        <template #trigger>
-          <span class="flex-1 text-left">View tracks</span>
-        </template>
-
-        <TrackList
-          :tracks="tracks"
-          :selected-track-id="selectedTrackId"
-          :disabled="disabled"
-          :loading="loading"
-          :error="error"
-          @select="handleTrackSelect"
-        />
-      </CollapsibleSection>
-    </section>
-
-    <USeparator ref="trackListDivider" class="my-1 md:my-4" />
+    <USeparator class="my-1 md:my-4" />
 
     <!-- Listen Details -->
     <section>
@@ -79,15 +38,14 @@
 </template>
 
 <script setup lang="ts">
-import type { ComponentPublicInstance } from 'vue';
 import type { DailyAlbumListen, FavoriteSong } from '#shared/schema';
+import type { AlbumDetailsAlbum } from '~/components/AlbumDetails/AlbumDetails.vue';
 import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
 import {
   LISTEN_METHOD_CONFIG,
   LISTEN_ORDER_CONFIG,
   LISTEN_TIME_CONFIG,
 } from '~/constants/listenMetadata';
-import { Icons } from '../common/icons';
 
 const props = defineProps<{
   albumListen: DailyAlbumListen;
@@ -99,26 +57,21 @@ const emit = defineEmits<{
   selectTrack: [track: AlbumTrack, albumId: string];
 }>();
 
+const albumDetailsRef = ref<InstanceType<typeof AlbumDetails> | null>(null);
+
 const listenTime = computed(() => props.albumListen.listenMetadata.listenTime);
 const listenMethod = computed(
   () => props.albumListen.listenMetadata.listenMethod,
 );
 
-// Expose methods for parent to control expansion
-const expand = () => {
-  expanded.value = true;
-};
-
-const collapse = () => {
-  expanded.value = false;
-};
-
-defineExpose({ expand, collapse });
-
-// Track list expansion
-const expanded = ref(false);
-const trackListDivider = ref<ComponentPublicInstance | null>(null);
-const { tracks, loading, error, fetchTracks } = useAlbumTracks();
+// Map DailyAlbumListen to AlbumDetailsAlbum
+const album = computed<AlbumDetailsAlbum>(() => ({
+  spotifyId: props.albumListen.album.albumId,
+  name: props.albumListen.album.albumName,
+  imageUrl: props.albumListen.album.imageUrl,
+  artists: props.albumListen.album.artists,
+  releaseDate: props.albumListen.album.releaseDate,
+}));
 
 // Only highlight track if the favorite song is from this album
 const selectedTrackId = computed(() =>
@@ -127,24 +80,20 @@ const selectedTrackId = computed(() =>
     : undefined,
 );
 
-// Fetch tracks when expanded for the first time and scroll into view
-watch(expanded, async (isExpanded) => {
-  if (isExpanded) {
-    if (tracks.value.length === 0) {
-      fetchTracks(props.albumListen.album.albumId);
-    }
-    // Wait for content to render and animation to complete
-    await nextTick();
-    setTimeout(() => {
-      const dividerEl = trackListDivider.value?.$el as HTMLElement | undefined;
-      dividerEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
-  }
-});
+// Expose methods for parent to control expansion
+const expand = () => {
+  albumDetailsRef.value?.expand();
+};
+
+const collapse = () => {
+  albumDetailsRef.value?.collapse();
+};
+
+defineExpose({ expand, collapse });
 
 const handleTrackSelect = (track: AlbumTrack) => {
   emit('selectTrack', track, props.albumListen.album.albumId);
   // Collapse after selection
-  expanded.value = false;
+  albumDetailsRef.value?.collapse();
 };
 </script>

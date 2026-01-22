@@ -1,24 +1,27 @@
 <template>
-  <div class="album-search">
-    <div class="search-section">
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-col gap-2">
       <input
         v-model="searchInput"
         type="text"
         placeholder="Search for an album..."
-        class="search-input"
+        class="w-full rounded-lg border-2 border-neutral-600 bg-elevated px-4 py-3 font-montserrat text-base text-white transition-colors placeholder:text-neutral-400 focus:border-green-500 focus:outline-none"
         @input="handleSearchInput"
         @focus="handleFocus"
         @blur="handleBlur"
       >
     </div>
 
-    <div v-if="loading && isFocused" class="search-results">
-      <div v-for="i in 3" :key="i" class="album-card skeleton"></div>
+    <div
+      v-if="loading && isFocused"
+      class="flex max-h-[400px] flex-col gap-3 overflow-y-auto overflow-x-hidden"
+    >
+      <div v-for="i in 3" :key="i" class="skeleton h-20 rounded-lg" />
     </div>
 
     <div
       v-else-if="searchResults.length > 0 && isFocused"
-      class="search-results"
+      class="flex max-h-[400px] flex-col gap-3 overflow-y-auto overflow-x-hidden"
     >
       <AlbumSearchResult
         v-for="album in searchResults"
@@ -69,45 +72,18 @@ const selectAlbum = (album: SearchResult) => {
 </script>
 
 <style scoped>
-.album-search {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.skeleton {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 37%, #2a2a2a 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 2.5s ease infinite;
 }
 
-.search-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 12px 16px;
-  background-color: #282828;
-  border: 2px solid #404040;
-  border-radius: 8px;
-  color: #ffffff;
-  font-family: "Montserrat", sans-serif;
-  font-size: 16px;
-  transition: border-color 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #1db954;
-}
-
-.search-input::placeholder {
-  color: #b3b3b3;
-}
-
-.search-results {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  overflow-x: hidden;
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 </style>

@@ -17,6 +17,7 @@ export const mapDailyListens = (
           name,
         })),
         imageUrl: album.imageUrl ?? '',
+        releaseDate: album.releaseDate ?? undefined,
       },
       listenMetadata: {
         listenOrder,

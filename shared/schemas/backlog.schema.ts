@@ -15,6 +15,7 @@ export const BacklogAlbumSchema = z.object({
   imageUrl: z.string().nullable(),
   artists: z.array(BacklogArtistSchema),
   addedAt: z.string(),
+  releaseDate: z.string().nullable(),
 });
 
 export const BacklogSuggestionSchema = z.object({
