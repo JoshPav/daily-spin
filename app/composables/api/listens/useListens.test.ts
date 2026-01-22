@@ -1,16 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, type Ref, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { DailyListens } from '#shared/schema';
 import type { FetchAmounts } from '~/constants/fetchConfig';
-
-// Mock useState to return regular refs (simulating client-side behavior)
-const stateStore = new Map<string, Ref<unknown>>();
-vi.stubGlobal('useState', <T>(key: string, init: () => T) => {
-  if (!stateStore.has(key)) {
-    stateStore.set(key, ref(init()));
-  }
-  return stateStore.get(key) as Ref<T>;
-});
 
 // Stub Vue's watch function globally (auto-imported by Nuxt)
 vi.stubGlobal('watch', watch);
@@ -22,7 +13,7 @@ vi.stubGlobal('useDevice', () => ({
 
 // Mock useAuth
 const mockAuthLoading = ref(false);
-vi.mock('../auth/useAuth', () => ({
+vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     loading: mockAuthLoading,
     loggedIn: computed(() => true),
@@ -67,8 +58,6 @@ describe('useListens', () => {
 
   beforeEach(() => {
     vi.stubGlobal('$fetch', mockFetch);
-    // Clear state between tests
-    stateStore.clear();
     // Reset auth loading state
     mockAuthLoading.value = false;
     vi.useFakeTimers();

@@ -2,10 +2,13 @@
 import type { NavigationMenuItem } from '@nuxt/ui';
 import { signOut } from '~/lib/auth-client';
 import { Route } from '~/pages/routes';
-import { Icons } from './common/icons';
+import { Icons } from '../common/icons';
 
 const { loggedIn, user, loading } = useAuth();
 const route = useRoute();
+
+// Quick add modal
+const quickAddOpen = ref(false);
 
 const navItems = computed<NavigationMenuItem[][]>(() => [
   [
@@ -24,6 +27,11 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
   ],
 ]);
 
+const handleAdded = async () => {
+  await refreshNuxtData('backlog');
+  navigateTo(Route.BACKLOG);
+};
+
 const bodyItems = computed<NavigationMenuItem[][]>(() => [
   [
     {
@@ -33,6 +41,16 @@ const bodyItems = computed<NavigationMenuItem[][]>(() => [
         src: user.value?.image,
         alt: user.value?.initial,
         size: 'md',
+      },
+    },
+  ],
+  [
+    {
+      slot: 'add-to-backlog' as const,
+      label: 'Add to Backlog',
+      icon: Icons.PLUS,
+      onSelect: () => {
+        quickAddOpen.value = true;
       },
     },
   ],
@@ -98,9 +116,23 @@ const to = computed(() =>
         :ui="{
           link: 'text-xl px-4 py-3',
           label: 'text-xl px-4 py-3',
-          linkLeadingIcon: 'size-6'
+          linkLeadingIcon: 'size-6',
         }"
-      />
+      >
+        <template #add-to-backlog="{ item }">
+          <UButton
+            color="primary"
+            size="xl"
+            :icon="item.icon"
+            block
+            @click="item.onSelect"
+          >
+            {{ item.label }}
+          </UButton>
+        </template>
+      </UNavigationMenu>
     </template>
   </UHeader>
+
+  <AddToBacklogModal v-model="quickAddOpen" @added="handleAdded" />
 </template>

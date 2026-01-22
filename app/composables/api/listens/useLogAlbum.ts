@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import type { ListenMethod, ListenOrder, ListenTime } from '#shared/schema';
 import { getTrackListenTime } from '#shared/utils/listenTime.utils';
 import { toDateKey } from '~/utils/dateUtils';
-import type { SearchResult } from './useSpotifyAlbumSearch';
+import type { SearchResult } from '../spotify/useSpotifyAlbumSearch';
 
 type UseLogAlbumProps = { date: Date; onSuccess?: () => void };
 

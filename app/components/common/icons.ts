@@ -16,6 +16,7 @@ const SpotifyIcon = h(
 );
 
 export const Icons = {
+  BACK: 'i-lucide-arrow-left',
   BACKLOG_EMPTY: 'i-heroicons-queue-list',
   CALENDAR: {
     ARROW_DOWN: 'lucide:calendar-arrow-down',
@@ -30,6 +31,7 @@ export const Icons = {
     UP: 'i-lucide-chevron-up',
   },
   EXTERNAL_LINK: 'i-lucide-external-link',
+  FILTER: 'i-lucide-filter',
   IMPORT: 'i-lucide-import',
   INTERRUPTED: 'i-lucide-circle-slash',
   LOG_OUT: 'i-lucide-log-out',
@@ -49,11 +51,13 @@ export const Icons = {
   PLUS_CIRCLE: 'i-heroicons-plus-circle',
   PLUS: 'i-lucide-plus',
   SETTINGS: 'i-lucide-settings',
+  SPARKLES: 'i-lucide-sparkles',
   SPOTIFY: SpotifyIcon,
   SUN: 'i-lucide-sun',
   SUNRISE: 'i-lucide-sunrise',
   SUNSET: 'i-lucide-sunset',
   TRASH: 'i-heroicons-trash',
+  EP: 'i-lucide-disc',
   USER_DOWN: 'tabler:user-down',
   USER_UP: 'tabler:user-up',
   WARNING: 'i-lucide-triangle-alert',

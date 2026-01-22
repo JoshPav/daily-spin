@@ -1,24 +1,10 @@
 <script setup lang="ts">
-import { LazyAddToBacklogModal } from '#components';
 import { Icons } from '~/components/common/icons';
 
 const { data, pending, error, refresh } = useBacklog();
 
-const handleAdded = () => {
-  refresh();
-};
-
 const handleDeleted = () => {
   refresh();
-};
-
-const overlay = useOverlay();
-const modal = overlay.create(LazyAddToBacklogModal);
-
-const openAddModal = () => {
-  modal.open({
-    onAdded: handleAdded,
-  });
 };
 
 const albums = computed(() => data.value?.albums ?? []);
@@ -55,7 +41,7 @@ const viewModeOptions = [
             label="Select view"
             icon-only
           />
-          <UButton color="primary" :icon="Icons.PLUS" @click="openAddModal">
+          <UButton color="primary" :icon="Icons.PLUS" to="/backlog/add">
             Add Album
           </UButton>
         </div>
@@ -68,10 +54,7 @@ const viewModeOptions = [
         Error: {{ error }}
       </div>
 
-      <BacklogEmpty
-        v-else-if="!pending && albums.length === 0"
-        :on-added="handleAdded"
-      />
+      <BacklogEmpty v-else-if="!pending && albums.length === 0" />
 
       <div v-else class="flex flex-col gap-4 overflow-hidden flex-1">
         <BacklogFilters

@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchResult } from '~/composables/api/useSpotifyAlbumSearch';
+import type { SearchResult } from '~/composables/api/spotify/useSpotifyAlbumSearch';
 
 const props = defineProps<{
   modelValue: SearchResult | undefined;

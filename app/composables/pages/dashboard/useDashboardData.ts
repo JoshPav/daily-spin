@@ -3,8 +3,8 @@ import { computed, ref, triggerRef } from 'vue';
 import type { DailyListens, ScheduledListenItem } from '#shared/schema';
 import type { FetchAmounts } from '~/constants/fetchConfig';
 import { toDateKey } from '~/utils/dateUtils';
-import { useListens } from './useListens';
-import { useScheduledListens } from './useScheduledListens';
+import { useScheduledListens } from '../../api/listens/scheduled/useScheduledListens';
+import { useListens } from '../../api/listens/useListens';
 
 type DeviceType = 'mobile' | 'desktop';
 

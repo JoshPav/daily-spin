@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AlbumTrack } from '~/composables/api/useAlbumTracks';
+import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
 import { formatDate } from '~/utils/dateUtils';
 import type { DailyListens, FavoriteSong } from '~~/shared/schema';
 
