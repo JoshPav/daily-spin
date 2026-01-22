@@ -3,7 +3,7 @@ import { addDays, format, subDays } from 'date-fns';
 import type {
   AddAlbumListenBody,
   AddBacklogItemBody,
-  AddFutureListenBody,
+  AddScheduledListenBody,
   Album,
   Artist,
   BacklogAlbum,
@@ -11,13 +11,13 @@ import type {
   DailyAlbumListen,
   DailyListens,
   FavoriteSong,
-  FutureListenAlbum,
-  FutureListenItem,
-  GetFutureListensResponse,
   GetPreferencesResponse,
+  GetScheduledListensResponse,
   LinkedPlaylist,
   ListenMetadata,
   PlaylistType,
+  ScheduledListenAlbum,
+  ScheduledListenItem,
   UserPreferences,
 } from '~~/shared/schema';
 import { createFactory } from './factory';
@@ -124,15 +124,17 @@ export const addBacklogItemBody = createFactory<AddBacklogItemBody>(() => ({
   artists: [backlogArtist()],
 }));
 
-export const addFutureListenBody = createFactory<AddFutureListenBody>(() => ({
-  spotifyId: uuid(),
-  name: music.songName(),
-  imageUrl: url(),
-  releaseDate: date.past().toISOString(),
-  totalTracks: faker.number.int({ min: 5, max: 20 }),
-  artists: [backlogArtist()],
-  date: toDateString(date.future()),
-}));
+export const addScheduledListenBody = createFactory<AddScheduledListenBody>(
+  () => ({
+    spotifyId: uuid(),
+    name: music.songName(),
+    imageUrl: url(),
+    releaseDate: date.past().toISOString(),
+    totalTracks: faker.number.int({ min: 5, max: 20 }),
+    artists: [backlogArtist()],
+    date: toDateString(date.future()),
+  }),
+);
 
 export const backlogAlbum = (
   overrides: Partial<BacklogAlbum>,
@@ -146,24 +148,24 @@ export const backlogAlbum = (
   ...overrides,
 });
 
-export const futureListenAlbum = createFactory<FutureListenAlbum>(() => ({
+export const scheduledListenAlbum = createFactory<ScheduledListenAlbum>(() => ({
   spotifyId: uuid(),
   name: music.songName(),
   imageUrl: url(),
   artists: [artist()],
 }));
 
-export const getFutureListensResponse = ({
+export const getScheduledListensResponse = ({
   n = 7,
   startDate = new Date(),
   hasMore = false,
-}): GetFutureListensResponse => {
-  const items: Record<string, FutureListenItem | null> = {};
+}): GetScheduledListensResponse => {
+  const items: Record<string, ScheduledListenItem | null> = {};
 
-  // Create n days of future listens as date-keyed object
+  // Create n days of scheduled listens as date-keyed object
   for (let i = 0; i < n; i++) {
     const dateKey = toDateString(addDays(startDate, i));
-    items[dateKey] = futureListenItem({ date: dateKey });
+    items[dateKey] = scheduledListenItem({ date: dateKey });
   }
 
   const endDate = addDays(startDate, n - 1);
@@ -179,10 +181,10 @@ export const getFutureListensResponse = ({
   };
 };
 
-export const futureListenItem = createFactory<FutureListenItem>(() => ({
+export const scheduledListenItem = createFactory<ScheduledListenItem>(() => ({
   id: uuid(),
   date: toDateString(faker.date.future()),
-  album: futureListenAlbum(),
+  album: scheduledListenAlbum(),
 }));
 
 // Preferences factories

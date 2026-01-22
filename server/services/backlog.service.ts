@@ -1,6 +1,6 @@
 import type { AddBacklogItemBody, BacklogAlbum } from '#shared/schema';
 import { BacklogRepository } from '~~/server/repositories/backlog.repository';
-import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { ScheduledListenRepository } from '~~/server/repositories/scheduledListen.repository';
 import { createTaggedLogger } from '~~/server/utils/logger';
 
 const logger = createTaggedLogger('Service:Backlog');
@@ -20,7 +20,7 @@ export type BacklogScheduleResult = {
 export class BacklogService {
   constructor(
     private backlogRepo = new BacklogRepository(),
-    private futureListenRepo = new FutureListenRepository(),
+    private scheduledListenRepo = new ScheduledListenRepository(),
   ) {}
 
   /**
@@ -193,15 +193,15 @@ export class BacklogService {
   }
 
   /**
-   * Automatically schedule backlog albums to future listens
+   * Automatically schedule backlog albums to scheduled listens
    * Uses weighted random selection favoring older items
    * Skips dates that already have schedules and albums already scheduled
    */
-  async scheduleBacklogToFutureListens(
+  async scheduleBacklogToScheduledListens(
     userId: string,
     daysToSchedule = 7,
   ): Promise<BacklogScheduleResult> {
-    logger.info('Scheduling backlog albums to future listens', {
+    logger.info('Scheduling backlog albums to scheduled listens', {
       userId,
       daysToSchedule,
     });
@@ -216,21 +216,24 @@ export class BacklogService {
       return { scheduled: [], skipped: 0 };
     }
 
-    // Get all future scheduled listens from tomorrow onwards
+    // Get all scheduled listens from tomorrow onwards
     // This gives us both dates within the window AND all scheduled album IDs
-    const { items: allFutureSchedules } =
-      await this.futureListenRepo.getFutureListensInRange(userId, startDate);
+    const { items: allScheduledListens } =
+      await this.scheduledListenRepo.getScheduledListensInRange(
+        userId,
+        startDate,
+      );
 
     // Extract dates within the scheduling window (for skipping already-scheduled dates)
     const scheduledDates = new Set(
-      allFutureSchedules
-        .filter((fl) => fl.date <= endDate)
-        .map((fl) => fl.date.toISOString().split('T')[0]),
+      allScheduledListens
+        .filter((sl) => sl.date <= endDate)
+        .map((sl) => sl.date.toISOString().split('T')[0]),
     );
 
     // Extract all scheduled album IDs to prevent duplicates
     const scheduledAlbumIds = new Set(
-      allFutureSchedules.map((fl) => fl.albumId),
+      allScheduledListens.map((sl) => sl.albumId),
     );
 
     // Filter available dates (skip those with existing schedules)
@@ -270,7 +273,7 @@ export class BacklogService {
       if (!selected) break;
 
       try {
-        await this.futureListenRepo.upsertFutureListen(
+        await this.scheduledListenRepo.upsertScheduledListen(
           userId,
           selected.albumId,
           date,
@@ -282,7 +285,7 @@ export class BacklogService {
         });
         usedAlbumIds.add(selected.albumId);
       } catch (error) {
-        logger.error('Failed to schedule album to future listen', {
+        logger.error('Failed to schedule album to scheduled listen', {
           userId,
           albumId: selected.albumId,
           date: date.toISOString(),

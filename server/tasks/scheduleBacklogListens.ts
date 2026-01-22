@@ -36,7 +36,7 @@ export const scheduleBacklogListens = async () => {
     for (const user of users) {
       const userStartTime = Date.now();
       try {
-        const result = await backlogService.scheduleBacklogToFutureListens(
+        const result = await backlogService.scheduleBacklogToScheduledListens(
           user.id,
           7,
         );
@@ -101,7 +101,7 @@ export const scheduleBacklogListens = async () => {
 export default defineTask({
   meta: {
     name: 'scheduleBacklogListens',
-    description: 'Automatically schedule backlog albums to future listens',
+    description: 'Automatically schedule backlog albums to scheduled listens',
   },
   run: scheduleBacklogListens,
 });

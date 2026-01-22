@@ -1,6 +1,6 @@
 import type { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { startOfDay } from 'date-fns';
-import { FutureListenRepository } from '~~/server/repositories/futureListen.repository';
+import { ScheduledListenRepository } from '~~/server/repositories/scheduledListen.repository';
 import type { UserWithAuthTokens } from '~~/server/services/user.service';
 import { createTaggedLogger } from '~~/server/utils/logger';
 import { PlaylistService } from './playlist.service';
@@ -8,7 +8,7 @@ import { PlaylistService } from './playlist.service';
 const logger = createTaggedLogger('Service:TodaysAlbumPlaylist');
 
 export class TodaysAlbumPlaylistService extends PlaylistService {
-  constructor(private futureListenRepo = new FutureListenRepository()) {
+  constructor(private scheduledListenRepo = new ScheduledListenRepository()) {
     super(logger);
   }
 
@@ -23,12 +23,10 @@ export class TodaysAlbumPlaylistService extends PlaylistService {
     // Get today's scheduled album
     const today = startOfDay(new Date());
 
-    const futureListen = await this.futureListenRepo.getFutureListenByDate(
-      userId,
-      today,
-    );
+    const scheduledListen =
+      await this.scheduledListenRepo.getScheduledListenByDate(userId, today);
 
-    if (!futureListen) {
+    if (!scheduledListen) {
       logger.debug('No album scheduled for today', {
         userId,
         date: today.toISOString(),
@@ -38,7 +36,7 @@ export class TodaysAlbumPlaylistService extends PlaylistService {
 
     const { spotifyClient, spotifyUserId } = await this.getSpotifyContext(user);
 
-    const { album } = futureListen;
+    const { album } = scheduledListen;
     const artists = album.artists.map((a) => ({ name: a.artist.name }));
 
     logger.info('Found scheduled album', {

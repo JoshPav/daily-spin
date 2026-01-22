@@ -9,12 +9,12 @@ import {
 } from 'vitest';
 import {
   createDailyListens,
-  createFutureListen,
+  createScheduledListen,
   createUser,
   getAlbumBySpotifyId,
   getAllListensForUser,
   getArtistBySpotifyId,
-  getFutureListensForUser,
+  getScheduledListensForUser,
 } from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import { albumListenInput } from '~~/tests/factories/prisma.factory';
@@ -27,7 +27,7 @@ const testAlbumItem = {
   artists: [{ spotifyId: 'artist-1', name: 'Test Artist' }],
 };
 
-describe('DELETE /api/future-listens/[id] Integration Tests', () => {
+describe('DELETE /api/listens/scheduled/[id] Integration Tests', () => {
   let userId: string;
   let handler: EventHandler;
 
@@ -43,9 +43,9 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     vi.clearAllMocks();
   });
 
-  it('should delete an existing future listen successfully', async () => {
+  it('should delete an existing scheduled listen successfully', async () => {
     // Given
-    const item = await createFutureListen({
+    const item = await createScheduledListen({
       userId,
       item: { ...testAlbumItem, date: new Date('2026-01-20') },
     });
@@ -58,11 +58,11 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     // Then
     expect(result).toBeUndefined();
 
-    const remainingItems = await getFutureListensForUser(userId);
+    const remainingItems = await getScheduledListensForUser(userId);
     expect(remainingItems).toHaveLength(0);
   });
 
-  it('should return 404 when future listen does not exist', async () => {
+  it('should return 404 when scheduled listen does not exist', async () => {
     // Given
     const nonExistentId = 'non-existent-id';
 
@@ -71,14 +71,14 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
       handler(createHandlerEvent(userId, { params: { id: nonExistentId } })),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: 'Future listen not found',
+      message: 'Scheduled listen not found',
     });
   });
 
-  it('should return 404 when future listen belongs to different user', async () => {
+  it('should return 404 when scheduled listen belongs to different user', async () => {
     // Given
     const otherUser = await createUser();
-    const item = await createFutureListen({
+    const item = await createScheduledListen({
       userId: otherUser.id,
       item: { ...testAlbumItem, date: new Date('2026-01-20') },
     });
@@ -88,11 +88,11 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
       handler(createHandlerEvent(userId, { params: { id: item.id } })),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: 'Future listen not found',
+      message: 'Scheduled listen not found',
     });
 
     // Verify item still exists for original user
-    const otherUserItems = await getFutureListensForUser(otherUser.id);
+    const otherUserItems = await getScheduledListensForUser(otherUser.id);
     expect(otherUserItems).toHaveLength(1);
   });
 
@@ -108,7 +108,7 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
   it('should not affect daily listens for the same album', async () => {
     // Given
     const sharedSpotifyId = 'shared-album-id';
-    const futureListenItem = await createFutureListen({
+    const scheduledListenItem = await createScheduledListen({
       userId,
       item: {
         ...testAlbumItem,
@@ -126,12 +126,12 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
 
     // When
     await handler(
-      createHandlerEvent(userId, { params: { id: futureListenItem.id } }),
+      createHandlerEvent(userId, { params: { id: scheduledListenItem.id } }),
     );
 
     // Then
-    const remainingFutureListens = await getFutureListensForUser(userId);
-    expect(remainingFutureListens).toHaveLength(0);
+    const remainingScheduledListens = await getScheduledListensForUser(userId);
+    expect(remainingScheduledListens).toHaveLength(0);
 
     const dailyListens = await getAllListensForUser(userId);
     expect(dailyListens).toHaveLength(1);
@@ -140,7 +140,7 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
 
   it('should not delete the related album and artists', async () => {
     // Given
-    const item = await createFutureListen({
+    const item = await createScheduledListen({
       userId,
       item: { ...testAlbumItem, date: new Date('2026-01-20') },
     });
@@ -149,7 +149,7 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     await handler(createHandlerEvent(userId, { params: { id: item.id } }));
 
     // Then
-    const remainingItems = await getFutureListensForUser(userId);
+    const remainingItems = await getScheduledListensForUser(userId);
     expect(remainingItems).toHaveLength(0);
 
     // Album should still exist
@@ -165,13 +165,13 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     expect(artist?.name).toBe(testAlbumItem.artists[0].name);
   });
 
-  it('should only delete the specified future listen, not others', async () => {
+  it('should only delete the specified scheduled listen, not others', async () => {
     // Given
-    const item1 = await createFutureListen({
+    const item1 = await createScheduledListen({
       userId,
       item: { ...testAlbumItem, date: new Date('2026-01-20') },
     });
-    const item2 = await createFutureListen({
+    const item2 = await createScheduledListen({
       userId,
       item: {
         spotifyId: 'album-2',
@@ -185,21 +185,21 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     await handler(createHandlerEvent(userId, { params: { id: item1.id } }));
 
     // Then
-    const remainingItems = await getFutureListensForUser(userId);
+    const remainingItems = await getScheduledListensForUser(userId);
     expect(remainingItems).toHaveLength(1);
     expect(remainingItems[0].id).toBe(item2.id);
   });
 
-  it('should handle deleting when multiple users have future listens for same album', async () => {
+  it('should handle deleting when multiple users have scheduled listens for same album', async () => {
     // Given
     const otherUserId = (await createUser()).id;
 
-    const item1 = await createFutureListen({
+    const item1 = await createScheduledListen({
       userId,
       item: { ...testAlbumItem, date: new Date('2026-01-20') },
     });
 
-    const item2 = await createFutureListen({
+    const item2 = await createScheduledListen({
       userId: otherUserId,
       item: { ...testAlbumItem, date: new Date('2026-01-21') },
     });
@@ -208,8 +208,8 @@ describe('DELETE /api/future-listens/[id] Integration Tests', () => {
     await handler(createHandlerEvent(userId, { params: { id: item1.id } }));
 
     // Then
-    const user1Items = await getFutureListensForUser(userId);
-    const user2Items = await getFutureListensForUser(otherUserId);
+    const user1Items = await getScheduledListensForUser(userId);
+    const user2Items = await getScheduledListensForUser(otherUserId);
 
     expect(user1Items).toHaveLength(0);
     expect(user2Items).toHaveLength(1);

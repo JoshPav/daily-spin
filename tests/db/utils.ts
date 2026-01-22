@@ -155,7 +155,7 @@ export const getArtistBySpotifyId = (spotifyId: string) =>
     where: { spotifyId },
   });
 
-export type CreateFutureListenInput = {
+export type CreateScheduledListenInput = {
   spotifyId: string;
   name: string;
   imageUrl?: string;
@@ -165,12 +165,12 @@ export type CreateFutureListenInput = {
   date: Date;
 };
 
-export const createFutureListen = async ({
+export const createScheduledListen = async ({
   userId,
   item,
 }: {
   userId: string;
-  item: CreateFutureListenInput;
+  item: CreateScheduledListenInput;
 }) => {
   const prisma = getTestPrisma();
 
@@ -212,8 +212,8 @@ export const createFutureListen = async ({
     });
   }
 
-  // Create future listen
-  return prisma.futureListen.create({
+  // Create scheduled listen
+  return prisma.scheduledListen.create({
     data: {
       userId,
       albumId: album.id,
@@ -232,8 +232,8 @@ export const createFutureListen = async ({
   });
 };
 
-export const getFutureListensForUser = (userId: string) =>
-  getTestPrisma().futureListen.findMany({
+export const getScheduledListensForUser = (userId: string) =>
+  getTestPrisma().scheduledListen.findMany({
     where: { userId },
     orderBy: { date: 'asc' },
     include: {

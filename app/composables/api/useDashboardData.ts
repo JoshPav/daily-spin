@@ -1,25 +1,26 @@
 import { addDays, startOfDay, subDays } from 'date-fns';
 import { computed, ref, triggerRef } from 'vue';
-import type { DailyListens, FutureListenItem } from '#shared/schema';
+import type { DailyListens, ScheduledListenItem } from '#shared/schema';
 import type { FetchAmounts } from '~/constants/fetchConfig';
 import { toDateKey } from '~/utils/dateUtils';
 import { useListens } from './useListens';
+import { useScheduledListens } from './useScheduledListens';
 
 type DeviceType = 'mobile' | 'desktop';
 
 type DashboardFetchConfig = {
   past: FetchAmounts;
-  future: FetchAmounts;
+  scheduled: FetchAmounts;
 };
 
 const FETCH_CONFIG: Record<DeviceType, DashboardFetchConfig> = {
   mobile: {
     past: { initial: 14, fetchMore: 7 },
-    future: { initial: 7, fetchMore: 7 },
+    scheduled: { initial: 7, fetchMore: 7 },
   },
   desktop: {
     past: { initial: 21, fetchMore: 14 },
-    future: { initial: 7, fetchMore: 7 },
+    scheduled: { initial: 7, fetchMore: 7 },
   },
 };
 
@@ -29,14 +30,14 @@ export type PastDayData = {
   listens?: DailyListens;
 };
 
-/** Data for a future date */
-export type FutureDayData = {
-  type: 'future';
-  futureListen?: FutureListenItem;
+/** Data for a scheduled date */
+export type ScheduledDayData = {
+  type: 'scheduled';
+  scheduledListen?: ScheduledListenItem;
 };
 
 /** Discriminated union for day data. undefined = still loading */
-export type DayData = PastDayData | FutureDayData;
+export type DayData = PastDayData | ScheduledDayData;
 
 /**
  * Unified composable for dashboard data.
@@ -44,7 +45,7 @@ export type DayData = PastDayData | FutureDayData;
  * Returns:
  * - displayDates: Array of YYYY-MM-DD date keys to render
  * - getDataForDate: Function to get data for a date (undefined = loading)
- * - updateDay: Function to update data for a date (DailyListens or FutureListenItem)
+ * - updateDay: Function to update data for a date (DailyListens or ScheduledListenItem)
  * - loading/error: Data fetching state
  * - listensHistory: { hasMore, fetchMore } for infinite scroll
  */
@@ -63,11 +64,11 @@ export const useDashboardData = () => {
     fetchMore: fetchMoreListens,
   } = useListens(config.value.past);
   const {
-    futureListensByDate,
-    loading: futureListensLoading,
-    hasMore: futureHasMore,
-    fetchMore: fetchMoreFuture,
-  } = useFutureListens(config.value.future);
+    scheduledListensByDate,
+    loading: scheduledListensLoading,
+    hasMore: scheduledHasMore,
+    fetchMore: fetchMoreScheduled,
+  } = useScheduledListens(config.value.scheduled);
 
   // Track how many times we've fetched more to expand displayDates
   const pastFetchCount = ref(0);
@@ -95,8 +96,8 @@ export const useDashboardData = () => {
     // Today
     dates.push(toDateKey(today));
 
-    // Future dates
-    for (let i = 1; i <= config.value.future.initial; i++) {
+    // Scheduled dates
+    for (let i = 1; i <= config.value.scheduled.initial; i++) {
       dates.push(toDateKey(addDays(today, i)));
     }
 
@@ -108,25 +109,25 @@ export const useDashboardData = () => {
 
   /**
    * Get data for a specific date.
-   * Missing listens/futureListen indicates loading or empty.
+   * Missing listens/scheduledListen indicates loading or empty.
    */
   const getDataForDate = (dateKey: string): DayData => {
     const pastData = listensByDate.value.get(dateKey);
-    const futureData = futureListensByDate.value.get(dateKey);
+    const scheduledData = scheduledListensByDate.value.get(dateKey);
 
     // If we have actual listens, show as past
     if (pastData && pastData.albums.length > 0) {
       return { type: 'past', listens: pastData };
     }
 
-    // If there's a future listen scheduled, show as future
-    if (futureData) {
-      return { type: 'future', futureListen: futureData };
+    // If there's a scheduled listen, show as scheduled
+    if (scheduledData) {
+      return { type: 'scheduled', scheduledListen: scheduledData };
     }
 
-    // Today with no albums - show as future to allow adding via the + button
+    // Today with no albums - show as scheduled to allow adding via the + button
     if (dateKey === todayKey) {
-      return { type: 'future' };
+      return { type: 'scheduled' };
     }
 
     // Past dates with no data
@@ -134,16 +135,16 @@ export const useDashboardData = () => {
       return { type: 'past', listens: pastData };
     }
 
-    // Future dates
-    return { type: 'future' };
+    // Scheduled dates
+    return { type: 'scheduled' };
   };
 
   /** Update data for a specific date */
   function updateDay(date: string, data: DailyListens): void;
-  function updateDay(date: string, data: FutureListenItem): void;
+  function updateDay(date: string, data: ScheduledListenItem): void;
   function updateDay(
     date: string,
-    data: DailyListens | FutureListenItem,
+    data: DailyListens | ScheduledListenItem,
   ): void {
     const dateKey = toDateKey(date);
 
@@ -151,8 +152,8 @@ export const useDashboardData = () => {
       listensByDate.value.set(dateKey, data);
       triggerRef(listensByDate);
     } else {
-      futureListensByDate.value.set(dateKey, data);
-      triggerRef(futureListensByDate);
+      scheduledListensByDate.value.set(dateKey, data);
+      triggerRef(scheduledListensByDate);
     }
   }
 
@@ -167,15 +168,15 @@ export const useDashboardData = () => {
     getDataForDate,
     updateDay,
     loading,
-    futureListensLoading,
+    scheduledListensLoading,
     error,
     listensHistory: {
       hasMore,
       fetchMore,
     },
-    futureListens: {
-      hasMore: futureHasMore,
-      fetchMore: fetchMoreFuture,
+    scheduledListens: {
+      hasMore: scheduledHasMore,
+      fetchMore: fetchMoreScheduled,
     },
   };
 };

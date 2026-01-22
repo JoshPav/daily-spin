@@ -411,7 +411,7 @@ import { registerEndpoint } from '@nuxt/test-utils/runtime';
 registerEndpoint('/api/listens', () => mockListensData);
 
 // Mock with dynamic responses
-registerEndpoint('/api/future-listens/:id', {
+registerEndpoint('/api/listens/scheduled/:id', {
   method: 'DELETE',
   handler: (event) => {
     deletedIds.push(event.context.params.id);

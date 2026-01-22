@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FavoriteSong } from '#shared/schema';
 import type {
-  FutureDayData,
   PastDayData,
+  ScheduledDayData,
 } from '~/composables/api/useDashboardData';
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import { toDateKey } from '~/utils/dateUtils';
@@ -12,7 +12,7 @@ const {
   getDataForDate,
   updateDay,
   loading,
-  futureListensLoading,
+  scheduledListensLoading,
   error,
   listensHistory,
 } = useDashboardData();
@@ -138,12 +138,12 @@ onUnmounted(() => {
                 :listens="(getDataForDate(dateKey) as PastDayData).listens"
                 :on-favorite-song-update="updateFavoriteSongForDate"
               />
-              <FutureAlbumDay
+              <ScheduledAlbumDay
                 v-else
                 :ref="setTodayRef(dateKey)"
                 :date="dateKey"
-                :future-listen="(getDataForDate(dateKey) as FutureDayData).futureListen"
-                :pending="futureListensLoading"
+                :scheduled-listen="(getDataForDate(dateKey) as ScheduledDayData).scheduledListen"
+                :pending="scheduledListensLoading"
               />
             </template>
           </ClientOnly>

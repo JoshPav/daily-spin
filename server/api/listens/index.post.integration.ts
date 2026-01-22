@@ -20,11 +20,11 @@ import type {
 } from '~~/shared/schema';
 import {
   createBacklogItem,
-  createFutureListen,
+  createScheduledListen,
   createUser,
   getAllListensForUser,
   getBacklogItemsForUser,
-  getFutureListensForUser,
+  getScheduledListensForUser,
 } from '~~/tests/db/utils';
 import {
   addAlbumListenBody,
@@ -343,13 +343,13 @@ describe('POST /api/listens Integration Tests', () => {
     });
   });
 
-  describe('future listen cleanup', () => {
-    it('should remove album from future listens when listened to', async () => {
+  describe('scheduled listen cleanup', () => {
+    it('should remove album from scheduled listens when listened to', async () => {
       // Given
       const albumSpotifyId = 'scheduled-album';
       const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: albumSpotifyId,
@@ -359,9 +359,9 @@ describe('POST /api/listens Integration Tests', () => {
         },
       });
 
-      // Verify future listen exists
-      const futureListensBefore = await getFutureListensForUser(userId);
-      expect(futureListensBefore).toHaveLength(1);
+      // Verify scheduled listen exists
+      const scheduledListensBefore = await getScheduledListensForUser(userId);
+      expect(scheduledListensBefore).toHaveLength(1);
 
       const body = addAlbumListenBody({
         album: album({ albumId: albumSpotifyId }),
@@ -371,15 +371,15 @@ describe('POST /api/listens Integration Tests', () => {
       await handler(createHandlerEvent(userId, { body }));
 
       // Then
-      const futureListensAfter = await getFutureListensForUser(userId);
-      expect(futureListensAfter).toHaveLength(0);
+      const scheduledListensAfter = await getScheduledListensForUser(userId);
+      expect(scheduledListensAfter).toHaveLength(0);
     });
 
-    it('should not affect future listens when listening to album not scheduled', async () => {
+    it('should not affect scheduled listens when listening to album not scheduled', async () => {
       // Given
       const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'different-album',
@@ -397,19 +397,19 @@ describe('POST /api/listens Integration Tests', () => {
       await handler(createHandlerEvent(userId, { body }));
 
       // Then
-      const futureListensAfter = await getFutureListensForUser(userId);
-      expect(futureListensAfter).toHaveLength(1);
-      expect(futureListensAfter[0].album.spotifyId).toBe('different-album');
+      const scheduledListensAfter = await getScheduledListensForUser(userId);
+      expect(scheduledListensAfter).toHaveLength(1);
+      expect(scheduledListensAfter[0].album.spotifyId).toBe('different-album');
     });
 
-    it('should only remove future listen for the current user', async () => {
+    it('should only remove scheduled listen for the current user', async () => {
       // Given
       const otherUser = await createUser();
       const albumSpotifyId = 'shared-scheduled-album';
       const scheduledDate = new Date('2026-01-15T00:00:00.000Z');
 
       // Both users have the same album scheduled
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: albumSpotifyId,
@@ -418,7 +418,7 @@ describe('POST /api/listens Integration Tests', () => {
           date: scheduledDate,
         },
       });
-      await createFutureListen({
+      await createScheduledListen({
         userId: otherUser.id,
         item: {
           spotifyId: albumSpotifyId,
@@ -435,14 +435,15 @@ describe('POST /api/listens Integration Tests', () => {
       // When - current user listens to the album
       await handler(createHandlerEvent(userId, { body }));
 
-      // Then - only current user's future listen is removed
-      const currentUserFutureListens = await getFutureListensForUser(userId);
-      expect(currentUserFutureListens).toHaveLength(0);
+      // Then - only current user's scheduled listen is removed
+      const currentUserScheduledListens =
+        await getScheduledListensForUser(userId);
+      expect(currentUserScheduledListens).toHaveLength(0);
 
-      const otherUserFutureListens = await getFutureListensForUser(
+      const otherUserScheduledListens = await getScheduledListensForUser(
         otherUser.id,
       );
-      expect(otherUserFutureListens).toHaveLength(1);
+      expect(otherUserScheduledListens).toHaveLength(1);
     });
   });
 });

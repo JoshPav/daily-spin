@@ -9,7 +9,7 @@ const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
-import type { DailyListens, FutureListenItem } from '~~/shared/schema';
+import type { DailyListens, ScheduledListenItem } from '~~/shared/schema';
 import {
   cleanupAfterTest,
   fireEvent,
@@ -25,9 +25,9 @@ import {
   dailyAlbumListen,
   dailyListens,
   favouriteSong,
-  futureListenItem,
-  getFutureListensResponse,
   getListensReponse,
+  getScheduledListensResponse,
+  scheduledListenItem,
 } from '~~/tests/factories/api.factory';
 
 const mountDashboard = () => mountPage('/dashboard');
@@ -44,11 +44,11 @@ const getPastDayCard = (dayNumber: string): Element | undefined => {
 };
 
 /**
- * Finds a future album day card by its displayed day number.
+ * Finds a scheduled album day card by its displayed day number.
  */
-const getFutureDayCard = (dayNumber: string): Element | undefined => {
-  const futureAlbumDays = screen.getAllByTestId('future-album-day');
-  return futureAlbumDays.find((day) => {
+const getScheduledDayCard = (dayNumber: string): Element | undefined => {
+  const scheduledAlbumDays = screen.getAllByTestId('scheduled-album-day');
+  return scheduledAlbumDays.find((day) => {
     const dayNumEl = day.querySelector('[data-testid="day-number"]');
     return dayNumEl?.textContent === dayNumber;
   });
@@ -75,9 +75,9 @@ const updateMockListenForDate = (
 let mockListensData: DailyListens[] = [];
 let mockListensDataBatch2: DailyListens[] = [];
 let mockListensDataBatch3: DailyListens[] = [];
-let mockFutureListensData: Record<string, FutureListenItem | null> = {};
+let mockScheduledListensData: Record<string, ScheduledListenItem | null> = {};
 let listensCallCount = 0;
-let deletedFutureListenIds: string[] = [];
+let deletedScheduledListenIds: string[] = [];
 let favoriteSongPatchCalls: { date: string; body: unknown }[] = [];
 let shouldThrowListensError = false;
 
@@ -136,13 +136,13 @@ registerEndpoint('/api/listens', () => {
   return [];
 });
 
-// Register endpoint mock for /api/future-listens (GET)
-registerEndpoint('/api/future-listens', () => ({
-  items: mockFutureListensData,
+// Register endpoint mock for /api/listens/scheduled (GET)
+registerEndpoint('/api/listens/scheduled', () => ({
+  items: mockScheduledListensData,
   pagination: {
     startDate: toDateString(new Date()),
     endDate: toDateString(new Date()),
-    total: Object.values(mockFutureListensData).filter((v) => v !== null)
+    total: Object.values(mockScheduledListensData).filter((v) => v !== null)
       .length,
     hasMore: false,
   },
@@ -159,16 +159,16 @@ describe('Dashboard Page', () => {
     mockListensData = [];
     mockListensDataBatch2 = [];
     mockListensDataBatch3 = [];
-    mockFutureListensData = {};
+    mockScheduledListensData = {};
     listensCallCount = 0;
-    deletedFutureListenIds = [];
+    deletedScheduledListenIds = [];
     favoriteSongPatchCalls = [];
     shouldThrowListensError = false;
     // Reset Spotify API mock
     mockSpotifyAlbumsGet.mockClear();
     // Clear Nuxt data cache to ensure fresh fetch
     clearNuxtData('listens');
-    clearNuxtData('future-listens');
+    clearNuxtData('scheduled-listens');
   });
 
   afterEach(() => {
@@ -700,7 +700,7 @@ describe('Dashboard Page', () => {
           expect(screen.getByTestId('add-listen-button')).toBeDefined();
 
           // Find today's card (Jan 15)
-          const todayCard = getFutureDayCard('15');
+          const todayCard = getScheduledDayCard('15');
           expect(todayCard).toBeDefined();
 
           // No month label since Jan 15 is not the 1st
@@ -742,14 +742,14 @@ describe('Dashboard Page', () => {
             favoriteSong: null,
           }));
 
-          const todayItem = futureListenItem({ date: toDateString(TODAY) });
-          mockFutureListensData = { [todayItem.date]: todayItem };
+          const todayItem = scheduledListenItem({ date: toDateString(TODAY) });
+          mockScheduledListensData = { [todayItem.date]: todayItem };
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
           await mountDashboard();
 
-          const todayCard = getFutureDayCard('15');
+          const todayCard = getScheduledDayCard('15');
           expect(todayCard).toBeDefined();
 
           const monthLabel = todayCard!.querySelector(
@@ -761,23 +761,23 @@ describe('Dashboard Page', () => {
         it('should render the day of the month', async () => {
           await mountDashboard();
 
-          const todayCard = getFutureDayCard('15');
+          const todayCard = getScheduledDayCard('15');
           expect(todayCard).toBeDefined();
         });
       });
     });
 
-    describe('future listens', () => {
+    describe('scheduled listens', () => {
       describe('when there are scheduled albums', () => {
         beforeEach(() => {
-          const { items } = getFutureListensResponse({ startDate: TODAY });
-          mockFutureListensData = items;
+          const { items } = getScheduledListensResponse({ startDate: TODAY });
+          mockScheduledListensData = items;
         });
 
-        it('should render scheduled future listens correctly', async () => {
+        it('should render scheduled scheduled listens correctly', async () => {
           await mountDashboard();
 
-          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const futureAlbumDays = screen.getAllByTestId('scheduled-album-day');
 
           // Find days with album images (scheduled albums)
           const daysWithImages = futureAlbumDays.filter((day) =>
@@ -789,8 +789,8 @@ describe('Dashboard Page', () => {
           const firstImage = daysWithImages[0]!.querySelector(
             '[data-testid="album-image"]',
           );
-          const scheduledImageUrls = Object.values(mockFutureListensData)
-            .filter((item): item is FutureListenItem => item !== null)
+          const scheduledImageUrls = Object.values(mockScheduledListensData)
+            .filter((item): item is ScheduledListenItem => item !== null)
             .map((item) => item.album.imageUrl);
           expect(scheduledImageUrls).toContain(firstImage?.getAttribute('src'));
 
@@ -808,8 +808,10 @@ describe('Dashboard Page', () => {
           const laterToday = new Date('2026-01-27T12:00:00.000Z');
           vi.setSystemTime(laterToday);
           mockListensData = getListensReponse({ n: 14, startDate: laterToday });
-          const { items } = getFutureListensResponse({ startDate: laterToday });
-          mockFutureListensData = items;
+          const { items } = getScheduledListensResponse({
+            startDate: laterToday,
+          });
+          mockScheduledListensData = items;
 
           await mountDashboard();
 
@@ -820,8 +822,8 @@ describe('Dashboard Page', () => {
           expect(hasFebruaryLabel).toBe(true);
         });
 
-        describe('future listens modal', () => {
-          const testFutureListen: FutureListenItem = {
+        describe('scheduled listens modal', () => {
+          const testScheduledListen: ScheduledListenItem = {
             id: 'test-modal-future-listen-id',
             date: '2026-01-16',
             album: {
@@ -832,8 +834,10 @@ describe('Dashboard Page', () => {
             },
           };
 
-          const openFutureListenModal = async (): Promise<Element> => {
-            const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const openScheduledListenModal = async (): Promise<Element> => {
+            const futureAlbumDays = screen.getAllByTestId(
+              'scheduled-album-day',
+            );
             const dayWithAlbum = futureAlbumDays.find((day) =>
               day.querySelector('[data-testid="album-image"]'),
             );
@@ -846,44 +850,47 @@ describe('Dashboard Page', () => {
 
           beforeEach(() => {
             clearNuxtData('listens');
-            clearNuxtData('future-listens');
+            clearNuxtData('scheduled-listens');
             listensCallCount = 0;
 
-            mockFutureListensData = {
-              [testFutureListen.date]: testFutureListen,
+            mockScheduledListensData = {
+              [testScheduledListen.date]: testScheduledListen,
             };
 
-            registerEndpoint(`/api/future-listens/${testFutureListen.id}`, {
-              method: 'DELETE',
-              handler: () => {
-                deletedFutureListenIds.push(testFutureListen.id);
-                return { success: true };
+            registerEndpoint(
+              `/api/listens/scheduled/${testScheduledListen.id}`,
+              {
+                method: 'DELETE',
+                handler: () => {
+                  deletedScheduledListenIds.push(testScheduledListen.id);
+                  return { success: true };
+                },
               },
-            });
+            );
           });
 
-          it('should render the FutureListensModal correctly', async () => {
+          it('should render the ScheduledListenModal correctly', async () => {
             await mountDashboard();
-            const modal = await openFutureListenModal();
+            const modal = await openScheduledListenModal();
 
             // Modal should display album artwork
             const albumImage = modal.querySelector(
-              `img[src="${testFutureListen.album.imageUrl}"]`,
+              `img[src="${testScheduledListen.album.imageUrl}"]`,
             );
             expect(albumImage).not.toBeNull();
 
             // Modal should display album name
-            expect(modal.textContent).toContain(testFutureListen.album.name);
+            expect(modal.textContent).toContain(testScheduledListen.album.name);
 
             // Modal should display artist name
-            const expectedArtistNames = testFutureListen.album.artists
+            const expectedArtistNames = testScheduledListen.album.artists
               .map((a) => a.name)
               .join(', ');
             expect(modal.textContent).toContain(expectedArtistNames);
 
             // Modal should have a link to Spotify
             const spotifyLink = modal.querySelector(
-              `a[href="https://open.spotify.com/album/${testFutureListen.album.spotifyId}"]`,
+              `a[href="https://open.spotify.com/album/${testScheduledListen.album.spotifyId}"]`,
             );
             expect(spotifyLink).not.toBeNull();
 
@@ -897,17 +904,17 @@ describe('Dashboard Page', () => {
             await fireEvent.click(removeButton as HTMLElement);
 
             await waitFor(() =>
-              deletedFutureListenIds.includes(testFutureListen.id),
+              deletedScheduledListenIds.includes(testScheduledListen.id),
             );
 
-            expect(deletedFutureListenIds).toContain(testFutureListen.id);
+            expect(deletedScheduledListenIds).toContain(testScheduledListen.id);
           });
         });
       });
 
       describe('when there are no scheduled albums', () => {
         beforeEach(() => {
-          mockFutureListensData = {};
+          mockScheduledListensData = {};
         });
 
         it('should render the formattedMonth name for the 1st day of the month', async () => {
@@ -927,7 +934,7 @@ describe('Dashboard Page', () => {
         it('should render empty future days correctly', async () => {
           await mountDashboard();
 
-          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const futureAlbumDays = screen.getAllByTestId('scheduled-album-day');
           expect(futureAlbumDays.length).toBeGreaterThan(0);
 
           // At least some should have empty album cover (no image)
@@ -951,7 +958,7 @@ describe('Dashboard Page', () => {
         it('should not open the modal when the placeholder is clicked', async () => {
           await mountDashboard();
 
-          const futureAlbumDays = screen.getAllByTestId('future-album-day');
+          const futureAlbumDays = screen.getAllByTestId('scheduled-album-day');
 
           // Find one with empty state (no scheduled album)
           const emptyDay = futureAlbumDays.find((day) =>
@@ -973,7 +980,7 @@ describe('Dashboard Page', () => {
   describe('when the user has no listens', () => {
     beforeEach(() => {
       mockListensData = [];
-      mockFutureListensData = {};
+      mockScheduledListensData = {};
     });
 
     it('should render empty day cards for the date range', async () => {
@@ -985,12 +992,12 @@ describe('Dashboard Page', () => {
       const pastDays = document.querySelectorAll(
         '[data-testid="past-album-day"]',
       );
-      const futureDays = document.querySelectorAll(
-        '[data-testid="future-album-day"]',
+      const scheduledDays = document.querySelectorAll(
+        '[data-testid="scheduled-album-day"]',
       );
 
       // We expect the date range to be rendered (past days + future days)
-      expect(pastDays.length + futureDays.length).toBeGreaterThan(0);
+      expect(pastDays.length + scheduledDays.length).toBeGreaterThan(0);
 
       // All past days should show empty state (no images)
       for (const day of pastDays) {
@@ -1054,11 +1061,11 @@ describe('Dashboard Page', () => {
       const pastDays = document.querySelectorAll(
         '[data-testid="past-album-day"]',
       );
-      const futureDays = document.querySelectorAll(
-        '[data-testid="future-album-day"]',
+      const scheduledDays = document.querySelectorAll(
+        '[data-testid="scheduled-album-day"]',
       );
       expect(pastDays).toHaveLength(0);
-      expect(futureDays).toHaveLength(0);
+      expect(scheduledDays).toHaveLength(0);
     });
   });
 

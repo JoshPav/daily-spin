@@ -12,8 +12,8 @@ import {
 /** Formats a Date to YYYY-MM-DD string */
 const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
 
-import type { GetFutureListensResponse } from '~~/shared/schema';
-import { createFutureListen, createUser } from '~~/tests/db/utils';
+import type { GetScheduledListensResponse } from '~~/shared/schema';
+import { createScheduledListen, createUser } from '~~/tests/db/utils';
 import { createHandlerEvent } from '~~/tests/factories/api.factory';
 import type { EventHandler } from '~~/tests/mocks/nitroMock';
 
@@ -24,9 +24,9 @@ const testAlbumItem = {
   artists: [{ spotifyId: 'artist-1', name: 'Test Artist' }],
 };
 
-describe('GET /api/future-listens Integration Tests', () => {
+describe('GET /api/listens/scheduled Integration Tests', () => {
   let userId: string;
-  let handler: EventHandler<GetFutureListensResponse>;
+  let handler: EventHandler<GetScheduledListensResponse>;
 
   // Fixed "today" for consistent tests
   const today = new Date('2026-01-15T00:00:00.000Z');
@@ -49,7 +49,7 @@ describe('GET /api/future-listens Integration Tests', () => {
     Object.values(items).filter((v) => v !== null).length;
 
   describe('Basic functionality', () => {
-    it('should return empty items (all nulls) when user has no future listens', async () => {
+    it('should return empty items (all nulls) when user has no scheduled listens', async () => {
       // When
       const result = await handler(
         createHandlerEvent(userId, {
@@ -65,17 +65,17 @@ describe('GET /api/future-listens Integration Tests', () => {
       expect(result.pagination.total).toBe(0);
     });
 
-    it('should return future listens within date range', async () => {
+    it('should return scheduled listens within date range', async () => {
       // Given
       const date1 = new Date('2026-01-20');
       const date2 = new Date('2026-01-25');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, date: date1 },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'album-2',
@@ -113,17 +113,17 @@ describe('GET /api/future-listens Integration Tests', () => {
       });
     });
 
-    it('should only return future listens for the authenticated user', async () => {
+    it('should only return scheduled listens for the authenticated user', async () => {
       // Given
       const otherUserId = (await createUser()).id;
       const date = new Date('2026-01-20');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, date },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId: otherUserId,
         item: {
           spotifyId: 'other-album',
@@ -153,7 +153,7 @@ describe('GET /api/future-listens Integration Tests', () => {
     it('should include all album fields in response', async () => {
       // Given
       const date = new Date('2026-01-20');
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, date },
       });
@@ -186,7 +186,7 @@ describe('GET /api/future-listens Integration Tests', () => {
     it('should handle albums with multiple artists', async () => {
       // Given
       const date = new Date('2026-01-20');
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'multi-artist-album',
@@ -223,7 +223,7 @@ describe('GET /api/future-listens Integration Tests', () => {
     it('should handle null imageUrl', async () => {
       // Given
       const date = new Date('2026-01-20');
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           spotifyId: 'no-image-album',
@@ -255,7 +255,7 @@ describe('GET /api/future-listens Integration Tests', () => {
       const date2 = new Date('2026-01-20');
       const date3 = new Date('2026-01-25'); // Outside requested range
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           ...testAlbumItem,
@@ -264,7 +264,7 @@ describe('GET /api/future-listens Integration Tests', () => {
         },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           ...testAlbumItem,
@@ -273,7 +273,7 @@ describe('GET /api/future-listens Integration Tests', () => {
         },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: {
           ...testAlbumItem,
@@ -304,12 +304,12 @@ describe('GET /api/future-listens Integration Tests', () => {
       const dateInRange = new Date('2026-01-18');
       const dateBeyondRange = new Date('2026-01-25');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-1', date: dateInRange },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-2', date: dateBeyondRange },
       });
@@ -332,7 +332,7 @@ describe('GET /api/future-listens Integration Tests', () => {
       // Given
       const date = new Date('2026-01-18');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, date },
       });
@@ -357,12 +357,12 @@ describe('GET /api/future-listens Integration Tests', () => {
       // Item outside default range (today + 10 days)
       const dateOutOfRange = addDays(today, 10);
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-1', date: dateInRange },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-2', date: dateOutOfRange },
       });
@@ -383,12 +383,12 @@ describe('GET /api/future-listens Integration Tests', () => {
       const date1 = new Date('2026-01-18');
       const date2 = new Date('2026-01-20');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-1', date: date1 },
       });
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, spotifyId: 'album-2', date: date2 },
       });
@@ -418,7 +418,7 @@ describe('GET /api/future-listens Integration Tests', () => {
       const endDate = new Date('2026-01-22');
       const itemDate = new Date('2026-01-20');
 
-      await createFutureListen({
+      await createScheduledListen({
         userId,
         item: { ...testAlbumItem, date: itemDate },
       });
