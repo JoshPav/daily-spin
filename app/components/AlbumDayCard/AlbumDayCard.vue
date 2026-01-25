@@ -4,8 +4,8 @@
     class="album-day-card relative w-full aspect-square rounded-lg bg-default transition-[transform,box-shadow] duration-150 ease-out"
     :class="{
       'today': isToday,
-      'opacity-30': isFuture,
-      'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)]': clickable,
+      'opacity-30': isFuture && !props.selectable,
+      'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)]': clickable || props.selectable,
     }"
     @click="$emit('click')"
   >
@@ -20,7 +20,10 @@
     <!-- Day number overlay -->
     <div
       data-testid="day-number"
-      class="absolute bottom-2 left-2 py-1.5 px-2.5 min-w-12 rounded-md bg-black/60 text-white text-2xl font-black leading-none z-5 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
+      class="absolute rounded-md bg-black/60 text-white font-black leading-none z-5 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
+      :class="props.compact
+        ? 'bottom-1 left-1 py-0.5 px-1.5 min-w-6 text-sm'
+        : 'bottom-2 left-2 py-1.5 px-2.5 min-w-12 text-2xl'"
     >
       {{ day }}
     </div>
@@ -107,6 +110,10 @@ const props = defineProps<{
   date: string;
   albums: AlbumCardInfo[];
   pending?: boolean;
+  /** When true, future days won't be dimmed (useful for date pickers) */
+  selectable?: boolean;
+  /** When true, uses smaller styling for compact layouts */
+  compact?: boolean;
 }>();
 
 defineEmits<{

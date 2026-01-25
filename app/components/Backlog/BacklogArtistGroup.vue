@@ -19,6 +19,17 @@
           </div>
         </div>
       </div>
+      <!-- Scheduled indicator -->
+      <UTooltip
+        v-if="scheduledCount > 0"
+        :text="`${scheduledCount} ${scheduledCount === 1 ? 'album' : 'albums'} scheduled`"
+      >
+        <div
+          class="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-500/20 text-indigo-400"
+        >
+          <UIcon :name="Icons.CALENDAR.DAYS" class="w-4 h-4" />
+        </div>
+      </UTooltip>
     </template>
 
     <!-- Albums in this group -->
@@ -27,9 +38,11 @@
         <USeparator />
         <BacklogItem
           :album="album"
+          :scheduled-listen="scheduledBySpotifyId?.get(album.spotifyId) ?? null"
           :hide-artist="true"
           :search-term="searchTerm"
           @deleted="emit('deleted')"
+          @schedule-changed="emit('scheduleChanged')"
         />
       </template>
     </div>
@@ -37,20 +50,31 @@
 </template>
 
 <script setup lang="ts">
-import type { Artist, BacklogAlbum } from '#shared/schema';
+import type { Artist, BacklogAlbum, ScheduledListenItem } from '#shared/schema';
+import { Icons } from '~/components/common/icons';
 
 const props = defineProps<{
   artist: Artist;
   albums: BacklogAlbum[];
+  scheduledBySpotifyId?: Map<string, ScheduledListenItem>;
   searchTerm?: string;
 }>();
 
 const emit = defineEmits<{
   deleted: [];
+  scheduleChanged: [];
 }>();
 
 const open = ref(false);
 const albumCount = computed(() => props.albums.length);
+
+// Count how many albums in this group are scheduled
+const scheduledCount = computed(() => {
+  if (!props.scheduledBySpotifyId) return 0;
+  return props.albums.filter((album) =>
+    props.scheduledBySpotifyId?.has(album.spotifyId),
+  ).length;
+});
 
 // Get artist image from first album (Spotify doesn't provide artist images in simplified artist objects)
 const artistImage = computed(() => {

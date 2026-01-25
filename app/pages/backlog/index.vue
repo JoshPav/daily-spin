@@ -1,10 +1,55 @@
 <script setup lang="ts">
+import { addDays, startOfDay } from 'date-fns';
+import type { ScheduledListenItem } from '#shared/schema';
 import { Icons } from '~/components/common/icons';
+import { toDateKey } from '~/utils/dateUtils';
 
 const { data, pending, error, refresh } = useBacklog();
 
+// Fetch scheduled listens to show which backlog items are already scheduled
+const scheduledBySpotifyId = ref<Map<string, ScheduledListenItem>>(new Map());
+
+const fetchScheduledListens = async () => {
+  try {
+    const today = startOfDay(new Date());
+    const endDate = addDays(today, 30); // Look ahead 30 days
+
+    const response = await $fetch<{
+      items: Record<string, ScheduledListenItem | null>;
+    }>('/api/listens/scheduled', {
+      query: {
+        startDate: toDateKey(today),
+        endDate: toDateKey(endDate),
+      },
+    });
+
+    const newMap = new Map<string, ScheduledListenItem>();
+    for (const [, item] of Object.entries(response.items)) {
+      if (item !== null) {
+        newMap.set(item.album.spotifyId, item);
+      }
+    }
+    scheduledBySpotifyId.value = newMap;
+  } catch {
+    // Silently fail - scheduled status is a nice-to-have
+  }
+};
+
+// Fetch on mount
+onMounted(() => {
+  fetchScheduledListens();
+});
+
+const getScheduledListen = (spotifyId: string) => {
+  return scheduledBySpotifyId.value.get(spotifyId) ?? null;
+};
+
 const handleDeleted = () => {
   refresh();
+};
+
+const handleScheduleChanged = () => {
+  fetchScheduledListens();
 };
 
 const albums = computed(() => data.value?.albums ?? []);
@@ -82,8 +127,10 @@ const viewModeOptions = [
               v-for="album in filteredAlbums"
               :key="album.id"
               :album="album"
+              :scheduled-listen="getScheduledListen(album.spotifyId)"
               :search-term="searchTerm"
               @deleted="handleDeleted"
+              @schedule-changed="handleScheduleChanged"
             />
           </template>
 
@@ -93,8 +140,10 @@ const viewModeOptions = [
               :key="artistKey"
               :artist="group.artist"
               :albums="group.albums"
+              :scheduled-by-spotify-id="scheduledBySpotifyId"
               :search-term="searchTerm"
               @deleted="handleDeleted"
+              @schedule-changed="handleScheduleChanged"
             />
           </template>
         </div>
