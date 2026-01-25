@@ -1,6 +1,7 @@
 <template>
   <div
-    class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted"
+    class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted cursor-pointer"
+    @click="openModal"
   >
     <img
       v-if="album.imageUrl"
@@ -35,12 +36,13 @@
       class="hover:cursor-pointer"
       :icon="Icons.TRASH"
       :loading="deleting"
-      @click="handleDelete"
+      @click.stop="handleDelete"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
+import { LazyBacklogItemModal } from '#components';
 import type { BacklogAlbum } from '#shared/schema';
 import { Icons } from '~/components/common/icons';
 
@@ -53,6 +55,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   deleted: [];
 }>();
+
+const overlay = useOverlay();
+const backlogItemModal = overlay.create(LazyBacklogItemModal);
+
+const openModal = () => {
+  backlogItemModal.open({
+    album: props.album,
+    onDeleted: () => emit('deleted'),
+  });
+};
 
 const artistNames = computed(() =>
   props.album.artists.map((a) => a.name).join(', '),

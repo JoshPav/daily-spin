@@ -50,6 +50,7 @@
         :error="error"
         @select="handleTrackSelect"
       />
+      <div ref="trackListEnd" />
     </CollapsibleSection>
   </div>
 </template>
@@ -79,6 +80,7 @@ const emit = defineEmits<{
 
 // Track list expansion
 const expanded = ref(false);
+const trackListEnd = ref<HTMLElement | null>(null);
 const { tracks, loading, error, fetchTracks } = useAlbumTracks();
 
 const artistNames = computed(() =>
@@ -96,10 +98,20 @@ const collapse = () => {
 
 defineExpose({ expand, collapse });
 
-// Fetch tracks when expanded for the first time
+// Fetch tracks when expanded for the first time and scroll into view
 watch(expanded, async (isExpanded) => {
-  if (isExpanded && tracks.value.length === 0) {
-    fetchTracks(props.album.spotifyId);
+  if (isExpanded) {
+    if (tracks.value.length === 0) {
+      fetchTracks(props.album.spotifyId);
+    }
+    // Wait for content to render and animation to complete
+    await nextTick();
+    setTimeout(() => {
+      trackListEnd.value?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 150);
   }
 });
 
