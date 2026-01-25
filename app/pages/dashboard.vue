@@ -95,7 +95,10 @@ onUnmounted(() => {
     >
       <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
         <!-- Loading more indicator (top) - excluded from scroll anchoring -->
-        <div v-if="loading" class="flex flex-col items-center gap-2 py-4 [overflow-anchor:none]">
+        <div
+          v-if="loading"
+          class="flex flex-col items-center gap-2 py-4 [overflow-anchor:none]"
+        >
           <span class="text-sm text-muted">Loading older albums...</span>
           <UProgress animation="carousel" class="w-32" />
         </div>
