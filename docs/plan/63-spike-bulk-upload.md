@@ -2,7 +2,8 @@
 
 **Issue:** #63 (Sub-task of #15)
 **Date:** 2026-01-16
-**Status:** Analysis Complete
+**Updated:** 2026-01-22
+**Status:** Ready for Implementation
 
 ## Executive Summary
 
@@ -69,7 +70,7 @@ type SpotifyHistoryMusicItem = {
 | **Track Order** | Sequential `playIndex` | Must infer from `endTime` |
 | **API Limits** | 50 tracks per request | Full history available |
 
-### Current Album Detection Logic (`server/services/recentlyPlayed.service.ts`)
+### Current Album Detection Logic (`server/services/spotify/recentlyPlayed.service.ts`)
 
 1. Fetch recently played tracks (last 50)
 2. Filter for tracks from albums with 5+ tracks
@@ -77,6 +78,46 @@ type SpotifyHistoryMusicItem = {
 4. Check if all unique tracks from album were played
 5. Determine listen order (ordered/shuffled/interrupted)
 6. Calculate listen time from first track's timestamp
+
+## Processing Time & Architecture Decision
+
+### Time Estimates
+
+The main bottleneck is **Spotify API calls** (180 req/min = 3 requests/second).
+
+| Data Size | Unique Albums | API Calls (Album-First) | Time @ 3/sec |
+|-----------|---------------|------------------------|--------------|
+| 6 months | ~50-100 | ~100-200 calls | **30-60 sec** |
+| 1 year | ~100-200 | ~200-400 calls | **1-2 min** |
+| 2+ years | ~200-500 | ~400-1000 calls | **2-6 min** |
+
+With caching (repeat albums across days), API calls can be reduced by 50-70%.
+
+### Synchronous vs Asynchronous Processing
+
+**Decision: Start with synchronous processing** with a loading indicator.
+
+**Rationale**:
+- Simpler implementation, no new infrastructure
+- Most uploads (< 1 year of data) complete in 1-2 minutes
+- Can add async processing later if needed
+
+**Fallback to async if needed** - Use CRON-polled job table (matches existing patterns):
+1. `POST /api/bulk-upload` → Creates job record, returns `jobId`
+2. CRON endpoint polls for pending jobs every minute
+3. Frontend polls `GET /api/bulk-upload/status/:jobId` for progress
+
+**Safeguards**:
+- Implement file size/record limit (e.g., max 50,000 records)
+- Add timeout handling with clear error messages
+
+### Existing Codebase Patterns
+
+The **BacklogService.addBacklogItems()** (`server/services/backlog.service.ts:58-134`) provides a template for bulk operations:
+- Deduplication checking before insert
+- Per-item error handling with continuation
+- Result reporting (added + skipped counts)
+- Uses `skipDuplicates: true` for conflict handling
 
 ## Proposed Bulk Upload Processing Algorithm
 
@@ -257,7 +298,7 @@ if (activeJob) {
 // 4. First result from Spotify search
 ```
 
-### 2. Timezone Handling
+### 3. Timezone Handling
 
 **Problem**: `endTime` is in user's local time without timezone indicator.
 
@@ -266,7 +307,7 @@ if (activeJob) {
 - Convert all times to UTC for storage
 - Use the same timezone for grouping by day
 
-### 3. Multi-Album Detection per Day
+### 4. Multi-Album Detection per Day
 
 **Problem**: User may listen to an album multiple times in one day.
 
@@ -274,7 +315,7 @@ if (activeJob) {
 
 **Proposed Solution**: Keep current behavior (one entry per album per day). This matches the app's "daily spin" concept.
 
-### 4. Partial Album Listens
+### 5. Partial Album Listens
 
 **Problem**: User may have listened to most but not all tracks.
 
@@ -282,7 +323,7 @@ if (activeJob) {
 - Maintain current 5-track minimum and "all tracks" requirement
 - Consider optional "relaxed mode" for >80% completion (future enhancement)
 
-### 5. API Rate Limiting
+### 6. API Rate Limiting
 
 **Problem**: Resolving thousands of tracks requires many Spotify API calls.
 
@@ -302,7 +343,7 @@ if (activeJob) {
 | 1 year, ~100 albums | ~2000 | ~200 | ~100 (50% cache hit) |
 | 1 year, ~500 albums | ~10000 | ~1000 | ~300 (70% cache hit) |
 
-### 6. Track Name Variations
+### 7. Track Name Variations
 
 **Problem**: Track names may differ between export and Spotify API:
 - "A Tout Le Monde - Remastered 2004" vs "A Tout Le Monde"
@@ -313,7 +354,7 @@ if (activeJob) {
 - Normalize strings before comparison (lowercase, remove special chars)
 - Use Levenshtein distance with threshold
 
-### 7. Cross-File Day Boundaries
+### 8. Cross-File Day Boundaries
 
 **Problem**: A day's listens may span multiple JSON files.
 
@@ -323,80 +364,105 @@ if (activeJob) {
 
 ### Phase 1: Core Infrastructure
 
-1. **File Upload UI**
-   - Multi-file drag-and-drop component
-   - File validation (JSON format, expected schema)
-   - Progress indicator
+1. **File Upload API**
+   - `POST /api/bulk-upload` endpoint accepting multipart/form-data
+   - JSON file validation (format, expected schema)
+   - Zod schema for SpotifyHistoryMusicItem validation
 
 2. **File Parser Service**
-   - Parse JSON files
+   - Parse JSON files server-side
    - Validate record schema
    - Merge and deduplicate across files
+   - Filter skips (msPlayed < 30000ms)
 
-3. **Timezone Selection**
-   - Add timezone selector to upload form
-   - Store user timezone preference
+3. **Timezone Handling**
+   - Accept timezone in request body
+   - Convert endTime to UTC for storage
+   - Group tracks by day in user's timezone
 
 ### Phase 2: Track Resolution
 
 4. **Spotify Search Service**
-   - Create service for track -> album resolution
-   - Implement caching layer (in-memory or database)
-   - Handle rate limiting with backoff
+   - Create service for track → album resolution
+   - Implement album-first resolution algorithm
+   - Handle rate limiting with exponential backoff
+   - In-memory caching during single upload session
 
-5. **Album Resolution Algorithm**
-   - Implement priority-based album selection
-   - Handle edge cases (not found, multiple matches)
+5. **Track Name Matching**
+   - Normalize track names (lowercase, remove special chars)
+   - Fuzzy matching for remastered/alternate versions
+   - Handle tracks not found gracefully
 
-### Phase 3: Album Detection
+### Phase 3: Album Detection & Storage
 
 6. **Bulk Album Detection Service**
-   - Adapt existing album detection logic for bulk data
-   - Handle per-day processing
-   - Generate AlbumListen records
+   - Group resolved tracks by album per day
+   - Check full album completion (all tracks played)
+   - Determine listen order and listen time
+   - Filter albums with < 5 tracks
 
 7. **Database Integration**
-   - Integrate with existing `DailyListenRepository`
-   - Implement conflict resolution (skip/merge)
+   - Use existing `DailyListenRepository.saveListens()`
+   - Leverage `skipDuplicates: true` for conflict handling
+   - Return summary of added/skipped albums
 
-### Phase 4: Background Processing
+### Phase 4: Frontend & Polish
 
-8. **Job Queue**
-   - Implement background job processing
-   - Progress tracking and status updates
-   - Error handling and retry logic
+8. **Upload UI**
+   - Multi-file drag-and-drop component
+   - Timezone selector
+   - Loading indicator with progress
+   - Results summary display
 
-9. **Status UI**
-   - Upload progress indicator
-   - Processing status display
-   - Error reporting and resolution
-
-### Phase 5: Polish
-
-10. **Testing**
-    - Unit tests for parser and resolution
+9. **Testing**
+    - Unit tests for parser and track resolution
     - Integration tests for full flow
-    - Edge case testing
+    - Edge case testing (partial albums, name variations)
 
-11. **Documentation**
-    - User guide for requesting Spotify data
-    - Troubleshooting guide
+### Future Enhancement: Background Processing
+
+If synchronous processing proves too slow for large uploads:
+- Add `BulkUploadJob` table for job tracking
+- CRON endpoint to poll and process pending jobs
+- Frontend polling for job status
 
 ## API Endpoints Required
 
-### New Endpoints
+### New Endpoints (Synchronous Approach)
 
 ```typescript
-// POST /api/bulk-upload/parse
-// Accepts: multipart/form-data with JSON files
-// Returns: Parsed summary (date range, track count, estimated albums)
+// POST /api/bulk-upload
+// Accepts: multipart/form-data with JSON files + timezone field
+// Returns: Processing results (albums added, skipped, errors)
 
-// POST /api/bulk-upload/process
-// Accepts: { timezone: string, files: FileId[] }
-// Returns: { jobId: string }
+interface BulkUploadRequest {
+  files: File[];           // StreamingHistory_music_N.json files
+  timezone: string;        // IANA timezone (e.g., "America/New_York")
+}
 
-// GET /api/bulk-upload/status/:jobId
-// Returns: { status: 'pending'|'processing'|'complete'|'failed', progress: number, results?: {...} }
+interface BulkUploadResponse {
+  success: boolean;
+  summary: {
+    totalTracks: number;
+    tracksProcessed: number;
+    tracksSkipped: number;    // Skips (< 30s plays)
+    albumsDetected: number;
+    albumsAdded: number;
+    albumsSkipped: number;    // Already existed
+    dateRange: { start: string; end: string };
+  };
+  errors?: Array<{
+    date: string;
+    message: string;
+  }>;
+}
+```
+
+### Future Endpoints (If Async Needed)
+
+```typescript
+// POST /api/bulk-upload/jobs - Create job, return jobId
+// GET /api/bulk-upload/jobs/:jobId - Poll job status
 ```
 
 ### Spotify API Calls Required
@@ -411,23 +477,24 @@ if (activeJob) {
 
 | Phase | Components | Complexity |
 |-------|------------|------------|
-| Phase 1 | UI, Parser, Timezone | Medium |
-| Phase 2 | Search Service, Caching | High |
-| Phase 3 | Detection, Repository | Medium |
-| Phase 4 | Job Queue, Status | High |
-| Phase 5 | Testing, Docs | Medium |
+| Phase 1 | API endpoint, Parser, Timezone | Medium |
+| Phase 2 | Spotify Search, Track Matching | High |
+| Phase 3 | Album Detection, DB Integration | Medium |
+| Phase 4 | Frontend UI, Testing | Medium |
+
+**Total**: ~Medium-High complexity. Core functionality (Phases 1-3) can be implemented first, with UI added after backend is working.
 
 ## Recommendations
 
-1. **Start with Phase 1-3**: Core functionality without background processing. Process synchronously with loading indicator.
+1. **Build backend first**: Implement Phases 1-3 (API, parser, track resolution, album detection) before the frontend UI. Test via API directly.
 
-2. **Implement aggressive caching**: Most users listen to similar artists/albums. Cache track resolutions to database.
+2. **Start with happy path**: Get basic flow working first, then add edge case handling (fuzzy matching, rate limiting) incrementally.
 
-3. **Consider "Extended Streaming History"**: Spotify also offers extended history (lifetime data) with more fields. Design schema to support this future enhancement.
+3. **Use session caching**: Cache album lookups in memory during a single upload session. Database caching can be added later if needed.
 
-4. **Add dry-run mode**: Let users preview what would be imported before committing.
+4. **Consider dry-run mode** (future): Let users preview what would be imported before committing.
 
-5. **Implement in stages**: Start with happy path, add edge case handling incrementally.
+5. **Design for Extended History** (future): Spotify's extended history format has more fields. Keep schema flexible for future support.
 
 ## Open Questions
 
@@ -435,6 +502,14 @@ if (activeJob) {
 2. How should we handle conflicts with existing listens (skip all / merge / prompt user)?
 3. Should there be limits on date range (e.g., only last year)?
 4. Do we need to store the raw upload data for debugging/reprocessing?
+
+## Decisions Made (2026-01-22)
+
+| Question | Decision |
+|----------|----------|
+| **Sync vs Async** | Start synchronous, add async later if needed |
+| **File handling** | Raw JSON files uploaded to server (multipart form data) |
+| **Processing limit** | Implement record limit to prevent timeouts |
 
 ## References
 

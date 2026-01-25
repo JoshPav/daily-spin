@@ -1,6 +1,7 @@
 <template>
   <div
-    class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted"
+    class="flex gap-4 p-3 bg-elevated rounded-lg items-center transition-colors duration-200 hover:bg-muted cursor-pointer"
+    @click="openModal"
   >
     <img
       v-if="album.imageUrl"
@@ -28,6 +29,14 @@
       </div>
       <div class="text-xs text-dimmed">Added {{ addedDate }}</div>
     </div>
+    <!-- Scheduled badge -->
+    <UTooltip v-if="scheduledListen" :text="scheduledTooltip">
+      <div
+        class="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-500/20 text-indigo-400"
+      >
+        <UIcon :name="Icons.CALENDAR.DAYS" class="w-4 h-4" />
+      </div>
+    </UTooltip>
     <UButton
       color="neutral"
       variant="ghost"
@@ -35,24 +44,45 @@
       class="hover:cursor-pointer"
       :icon="Icons.TRASH"
       :loading="deleting"
-      @click="handleDelete"
+      @click.stop="handleDelete"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { BacklogAlbum } from '#shared/schema';
+import { LazyBacklogItemModal } from '#components';
+import type { BacklogAlbum, ScheduledListenItem } from '#shared/schema';
 import { Icons } from '~/components/common/icons';
+import { formatDate } from '~/utils/dateUtils';
 
 const props = defineProps<{
   album: BacklogAlbum;
+  scheduledListen?: ScheduledListenItem | null;
   hideArtist?: boolean;
   searchTerm?: string;
 }>();
 
 const emit = defineEmits<{
   deleted: [];
+  scheduleChanged: [];
 }>();
+
+const overlay = useOverlay();
+const backlogItemModal = overlay.create(LazyBacklogItemModal);
+
+const scheduledTooltip = computed(() => {
+  if (!props.scheduledListen) return '';
+  return `Scheduled for ${formatDate(new Date(props.scheduledListen.date))}`;
+});
+
+const openModal = () => {
+  backlogItemModal.open({
+    album: props.album,
+    scheduledListen: props.scheduledListen,
+    onDeleted: () => emit('deleted'),
+    onScheduleChanged: () => emit('scheduleChanged'),
+  });
+};
 
 const artistNames = computed(() =>
   props.album.artists.map((a) => a.name).join(', '),

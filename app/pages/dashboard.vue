@@ -60,16 +60,9 @@ const handleScroll = async () => {
 
   // Check if scrolled near the top (loading older content)
   if (container.scrollTop <= SCROLL_THRESHOLD) {
-    // Save scroll position info before loading
-    const previousScrollHeight = container.scrollHeight;
-
+    // Browser's native scroll anchoring (overflow-anchor) handles
+    // keeping the viewport stable when content is prepended
     await listensHistory.fetchMore();
-
-    // Restore scroll position after content is prepended
-    await nextTick();
-    const newScrollHeight = container.scrollHeight;
-    const addedHeight = newScrollHeight - previousScrollHeight;
-    container.scrollTop = container.scrollTop + addedHeight;
   }
 };
 
@@ -101,8 +94,11 @@ onUnmounted(() => {
       class="h-[calc(100vh-var(--ui-header-height))] overflow-y-auto [scrollbar-gutter:stable]"
     >
       <div class="flex flex-col max-w-450 mx-auto px-4 md:px-6">
-        <!-- Loading more indicator (top) -->
-        <div v-if="loading" class="flex flex-col items-center gap-2 py-4">
+        <!-- Loading more indicator (top) - excluded from scroll anchoring -->
+        <div
+          v-if="loading"
+          class="flex flex-col items-center gap-2 py-4 [overflow-anchor:none]"
+        >
           <span class="text-sm text-muted">Loading older albums...</span>
           <UProgress animation="carousel" class="w-32" />
         </div>
@@ -124,7 +120,7 @@ onUnmounted(() => {
 
           <div
             v-if="!listensHistory.hasMore.value"
-            class="col-span-full text-center text-sm text-muted"
+            class="col-span-full text-center text-sm text-muted [overflow-anchor:none]"
           >
             You've reached the beginning of your listening history
           </div>

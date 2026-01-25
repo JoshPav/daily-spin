@@ -15,7 +15,7 @@ type DashboardFetchConfig = {
 
 const FETCH_CONFIG: Record<DeviceType, DashboardFetchConfig> = {
   mobile: {
-    past: { initial: 14, fetchMore: 7 },
+    past: { initial: 14, fetchMore: 8 },
     scheduled: { initial: 7, fetchMore: 7 },
   },
   desktop: {

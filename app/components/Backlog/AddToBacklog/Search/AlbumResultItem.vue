@@ -34,7 +34,10 @@ const formattedReleaseDate = computed(() =>
     ]"
     @click="$emit('click')"
   >
-    <div class="shrink-0">
+    <div
+      class="shrink-0 flex items-center justify-center"
+      :class="compact ? 'w-5 h-5' : 'w-6 h-6'"
+    >
       <UIcon
         v-if="selected"
         :name="Icons.CHECK_CIRCLE_SOLID"
