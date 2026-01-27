@@ -318,6 +318,85 @@ describe('Dashboard Page', () => {
           expect(albumImages[0]!.getAttribute('style')).toContain('z-index: 3');
           expect(albumImages[1]!.getAttribute('style')).toContain('z-index: 2');
         });
+
+        it('should show the favourite album on top of the stack', async () => {
+          // Given - set up albums with known IDs where favorite is from second album
+          const firstAlbum = dailyAlbumListen({
+            album: album({
+              albumId: 'first-album-id',
+              imageUrl: 'https://example.com/first.jpg',
+            }),
+          });
+          const secondAlbum = dailyAlbumListen({
+            album: album({
+              albumId: 'second-album-id',
+              imageUrl: 'https://example.com/second.jpg',
+            }),
+          });
+          const thirdAlbum = dailyAlbumListen({
+            album: album({
+              albumId: 'third-album-id',
+              imageUrl: 'https://example.com/third.jpg',
+            }),
+          });
+
+          mockListensData[0]!.albums = [firstAlbum, secondAlbum, thirdAlbum];
+          mockListensData[0]!.favoriteSong = favouriteSong({
+            albumId: 'second-album-id',
+          });
+
+          // When
+          await mountDashboard();
+
+          // Then - the second album should be on top (stack-0)
+          const dayWithMultiple = getPastDayCard('2');
+          const albumImages = dayWithMultiple!.querySelectorAll(
+            '[data-testid="album-image"]',
+          );
+
+          expect(albumImages[0]!.getAttribute('src')).toBe(
+            'https://example.com/second.jpg',
+          );
+          expect(albumImages[1]!.getAttribute('src')).toBe(
+            'https://example.com/first.jpg',
+          );
+          expect(albumImages[2]!.getAttribute('src')).toBe(
+            'https://example.com/third.jpg',
+          );
+        });
+
+        it('should show the favourite album first in the modal carousel', async () => {
+          // Given - set up albums with known IDs where favorite is from second album
+          const firstAlbum = dailyAlbumListen({
+            album: album({
+              albumId: 'first-album-id',
+              albumName: 'First Album Name',
+              artists: [artist({ name: 'First Artist' })],
+            }),
+          });
+          const secondAlbum = dailyAlbumListen({
+            album: album({
+              albumId: 'second-album-id',
+              albumName: 'Second Album Name',
+              artists: [artist({ name: 'Second Artist' })],
+            }),
+          });
+
+          mockListensData[0]!.albums = [firstAlbum, secondAlbum];
+          mockListensData[0]!.favoriteSong = favouriteSong({
+            albumId: 'second-album-id',
+          });
+
+          // When - open the modal
+          await mountDashboard();
+          const dayWithMultiple = getPastDayCard('2');
+          await fireEvent.click(dayWithMultiple!);
+          const modal = await waitForElement('[role="dialog"]');
+
+          // Then - the second album should be shown first in the carousel
+          expect(modal.textContent).toContain('Second Album Name');
+          expect(modal.textContent).toContain('Second Artist');
+        });
       });
 
       describe('daily listens modal', () => {

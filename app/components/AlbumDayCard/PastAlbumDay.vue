@@ -30,7 +30,10 @@
 import { computed } from 'vue';
 import { LazyDailyListensModal } from '#components';
 import type { DailyListens, FavoriteSong } from '#shared/schema';
-import { toAlbumCardInfo } from '~/utils/albums.utils';
+import {
+  getAlbumsSortedByFavorite,
+  toAlbumCardInfo,
+} from '~/utils/albums.utils';
 
 const { date, listens, onFavoriteSongUpdate } = defineProps<{
   date: string;
@@ -51,12 +54,12 @@ const needsFavoriteSong = computed(
   () => hasAlbums.value && !listens?.favoriteSong,
 );
 
-const albumCardInfo = computed(
-  () =>
-    listens?.albums
-      .map((a) => toAlbumCardInfo(a.album))
-      .filter((info) => info !== null) ?? [],
-);
+const albumCardInfo = computed(() => {
+  if (!listens) return [];
+  return getAlbumsSortedByFavorite(listens)
+    .map(toAlbumCardInfo)
+    .filter((info) => info !== null);
+});
 
 const handleClick = () => {
   if (!listens || !hasAlbums.value) return;

@@ -1,5 +1,8 @@
 import type { Album } from '#shared/schemas/common.schema';
-import type { DailyListens } from '#shared/schemas/listens.schema';
+import type {
+  DailyAlbumListen,
+  DailyListens,
+} from '#shared/schemas/listens.schema';
 import type { ScheduledListenAlbum } from '#shared/schemas/scheduledListen.schema';
 import type { AlbumCardInfo } from '~/components/AlbumDayCard/AlbumDayCard.types';
 
@@ -62,4 +65,55 @@ export function getPrimaryAlbum(dailyListen: DailyListens): Album | null {
 
   // Priority 2: First album by listen order
   return dailyListen.albums[0]?.album ?? null;
+}
+
+/**
+ * Sorts album listens with the favorite album first.
+ *
+ * If a favorite song is set, the album listen containing it is moved to the front.
+ * Otherwise, album listens remain in their original order.
+ *
+ * @param albumListens - The album listens to sort
+ * @param favoriteSong - The favorite song (if set)
+ * @returns Album listens sorted with favorite first
+ */
+export function sortAlbumListensByFavorite(
+  albumListens: DailyAlbumListen[],
+  favoriteSong: DailyListens['favoriteSong'],
+): DailyAlbumListen[] {
+  if (!favoriteSong || albumListens.length <= 1) {
+    return albumListens;
+  }
+
+  const favoriteIndex = albumListens.findIndex(
+    (a) => a.album.albumId === favoriteSong.albumId,
+  );
+
+  if (favoriteIndex <= 0) {
+    return albumListens;
+  }
+
+  // Move favorite to front
+  const sorted = [...albumListens];
+  const [favorite] = sorted.splice(favoriteIndex, 1);
+  if (favorite) {
+    sorted.unshift(favorite);
+  }
+  return sorted;
+}
+
+/**
+ * Returns albums sorted with the favorite album first.
+ *
+ * If a favorite song is set, the album containing it is moved to the front.
+ * Otherwise, albums remain in their original order.
+ *
+ * @param dailyListen - The day's listening data
+ * @returns Albums sorted with favorite first
+ */
+export function getAlbumsSortedByFavorite(dailyListen: DailyListens): Album[] {
+  return sortAlbumListensByFavorite(
+    dailyListen.albums,
+    dailyListen.favoriteSong,
+  ).map((a) => a.album);
 }

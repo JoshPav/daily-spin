@@ -8,6 +8,7 @@ import {
   scheduledListenAlbum,
 } from '~~/tests/factories/api.factory';
 import {
+  getAlbumsSortedByFavorite,
   getPrimaryAlbum,
   scheduledAlbumToCardInfo,
   toAlbumCardInfo,
@@ -86,6 +87,109 @@ describe('getPrimaryAlbum', () => {
     const result = getPrimaryAlbum(day);
 
     expect(result).toEqual(firstAlbum);
+  });
+});
+
+describe('getAlbumsSortedByFavorite', () => {
+  it('returns empty array when there are no albums', () => {
+    const day = {
+      date: '2026-01-15',
+      albums: [],
+      favoriteSong: null,
+    };
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns albums in original order when no favorite is set', () => {
+    const album1 = album({ albumId: 'album-1' });
+    const album2 = album({ albumId: 'album-2' });
+    const album3 = album({ albumId: 'album-3' });
+    const day = dailyListens({
+      albums: [
+        dailyAlbumListen({ album: album1 }),
+        dailyAlbumListen({ album: album2 }),
+        dailyAlbumListen({ album: album3 }),
+      ],
+      favoriteSong: null,
+    });
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result.map((a) => a.albumId)).toEqual([
+      'album-1',
+      'album-2',
+      'album-3',
+    ]);
+  });
+
+  it('returns single album unchanged', () => {
+    const singleAlbum = album({ albumId: 'album-1' });
+    const day = dailyListens({
+      albums: [dailyAlbumListen({ album: singleAlbum })],
+      favoriteSong: favouriteSong({ albumId: 'album-1' }),
+    });
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.albumId).toBe('album-1');
+  });
+
+  it('moves favorite album to front when it is not first', () => {
+    const album1 = album({ albumId: 'album-1' });
+    const album2 = album({ albumId: 'album-2' });
+    const album3 = album({ albumId: 'album-3' });
+    const day = dailyListens({
+      albums: [
+        dailyAlbumListen({ album: album1 }),
+        dailyAlbumListen({ album: album2 }),
+        dailyAlbumListen({ album: album3 }),
+      ],
+      favoriteSong: favouriteSong({ albumId: 'album-3' }),
+    });
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result.map((a) => a.albumId)).toEqual([
+      'album-3',
+      'album-1',
+      'album-2',
+    ]);
+  });
+
+  it('keeps favorite album first when it is already first', () => {
+    const album1 = album({ albumId: 'album-1' });
+    const album2 = album({ albumId: 'album-2' });
+    const day = dailyListens({
+      albums: [
+        dailyAlbumListen({ album: album1 }),
+        dailyAlbumListen({ album: album2 }),
+      ],
+      favoriteSong: favouriteSong({ albumId: 'album-1' }),
+    });
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result.map((a) => a.albumId)).toEqual(['album-1', 'album-2']);
+  });
+
+  it('returns original order when favorite album not found', () => {
+    const album1 = album({ albumId: 'album-1' });
+    const album2 = album({ albumId: 'album-2' });
+    const day = dailyListens({
+      albums: [
+        dailyAlbumListen({ album: album1 }),
+        dailyAlbumListen({ album: album2 }),
+      ],
+      favoriteSong: favouriteSong({ albumId: 'non-existent' }),
+    });
+
+    const result = getAlbumsSortedByFavorite(day);
+
+    expect(result.map((a) => a.albumId)).toEqual(['album-1', 'album-2']);
   });
 });
 

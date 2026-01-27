@@ -96,7 +96,7 @@ const handleShare = async () => {
               :text="
                 isMonthComplete
                   ? undefined
-                  : 'Available when the month is complete'
+                  : 'Unlocks at the end of the month'
               "
             >
               <UButton
@@ -116,7 +116,7 @@ const handleShare = async () => {
               :text="
                 isMonthComplete
                   ? undefined
-                  : 'Available when the month is complete'
+                  : 'Unlocks at the end of the month'
               "
             >
               <UButton
