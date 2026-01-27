@@ -14,9 +14,11 @@ import { getTestPrisma } from '~~/tests/db/setup';
 import {
   createBacklogItem,
   createDailyListens,
+  createScheduledListen,
   createUser,
   getAllListensForUser,
   getBacklogItemsForUser,
+  getScheduledListensForUser,
   getSpotifyAccountForUser,
 } from '~~/tests/db/utils';
 import {
@@ -899,6 +901,233 @@ describe('processListens Task Integration Tests', () => {
 
           const otherUserBacklog = await getBacklogItemsForUser(otherUser.id);
           expect(otherUserBacklog).toHaveLength(1);
+        });
+      });
+
+      describe('scheduled listen cleanup', () => {
+        it('should remove listened album from scheduled listens', async () => {
+          // Given
+          const { album, history } = createFullAlbumPlayHistory();
+
+          // Add album to user's scheduled listens
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+              date: new Date('2026-01-05'),
+            },
+          });
+
+          // Verify scheduled listen exists
+          const scheduledBefore = await getScheduledListensForUser(userId);
+          expect(scheduledBefore).toHaveLength(1);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const scheduledAfter = await getScheduledListensForUser(userId);
+          expect(scheduledAfter).toHaveLength(0);
+        });
+
+        it('should remove multiple listened albums from scheduled listens', async () => {
+          // Given
+          const { album: album1, history: history1 } =
+            createFullAlbumPlayHistory({ hour: '08' });
+          const { album: album2, history: history2 } =
+            createFullAlbumPlayHistory({ hour: '14' });
+
+          // Add both albums to scheduled listens
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: album1.id,
+              name: album1.name,
+              artists: [
+                {
+                  spotifyId: album1.artists[0].id,
+                  name: album1.artists[0].name,
+                },
+              ],
+              date: new Date('2026-01-05'),
+            },
+          });
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: album2.id,
+              name: album2.name,
+              artists: [
+                {
+                  spotifyId: album2.artists[0].id,
+                  name: album2.artists[0].name,
+                },
+              ],
+              date: new Date('2026-01-06'),
+            },
+          });
+
+          // Verify scheduled listens exist
+          const scheduledBefore = await getScheduledListensForUser(userId);
+          expect(scheduledBefore).toHaveLength(2);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: [...history1, ...history2] }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const scheduledAfter = await getScheduledListensForUser(userId);
+          expect(scheduledAfter).toHaveLength(0);
+        });
+
+        it('should not affect other albums in scheduled listens', async () => {
+          // Given
+          const { album: listenedAlbum, history } =
+            createFullAlbumPlayHistory();
+
+          // Add listened album and another album to scheduled listens
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: listenedAlbum.id,
+              name: listenedAlbum.name,
+              artists: [
+                {
+                  spotifyId: listenedAlbum.artists[0].id,
+                  name: listenedAlbum.artists[0].name,
+                },
+              ],
+              date: new Date('2026-01-05'),
+            },
+          });
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: 'other-album-id',
+              name: 'Other Album',
+              artists: [{ spotifyId: 'other-artist-id', name: 'Other Artist' }],
+              date: new Date('2026-01-06'),
+            },
+          });
+
+          const scheduledBefore = await getScheduledListensForUser(userId);
+          expect(scheduledBefore).toHaveLength(2);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then
+          const scheduledAfter = await getScheduledListensForUser(userId);
+          expect(scheduledAfter).toHaveLength(1);
+          expect(scheduledAfter[0].album.spotifyId).toBe('other-album-id');
+        });
+
+        it('should only remove scheduled listen for the user who listened', async () => {
+          // Given
+          const otherUser = await createUser({ trackListeningHistory: false });
+          const { album, history } = createFullAlbumPlayHistory();
+
+          // Both users have the same album scheduled
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+              date: new Date('2026-01-05'),
+            },
+          });
+          await createScheduledListen({
+            userId: otherUser.id,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+              date: new Date('2026-01-06'),
+            },
+          });
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then - only current user's scheduled listen is removed
+          const currentUserScheduled = await getScheduledListensForUser(userId);
+          expect(currentUserScheduled).toHaveLength(0);
+
+          const otherUserScheduled = await getScheduledListensForUser(
+            otherUser.id,
+          );
+          expect(otherUserScheduled).toHaveLength(1);
+        });
+
+        it('should remove album from both backlog and scheduled listens', async () => {
+          // Given
+          const { album, history } = createFullAlbumPlayHistory();
+
+          // Add album to both backlog and scheduled listens
+          await createBacklogItem({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+            },
+          });
+          await createScheduledListen({
+            userId,
+            item: {
+              spotifyId: album.id,
+              name: album.name,
+              artists: [
+                { spotifyId: album.artists[0].id, name: album.artists[0].name },
+              ],
+              date: new Date('2026-01-05'),
+            },
+          });
+
+          // Verify both exist
+          const backlogBefore = await getBacklogItemsForUser(userId);
+          expect(backlogBefore).toHaveLength(1);
+          const scheduledBefore = await getScheduledListensForUser(userId);
+          expect(scheduledBefore).toHaveLength(1);
+
+          mockGetRecentlyPlayedTracks.mockResolvedValue(
+            recentlyPlayed({ items: history }),
+          );
+
+          // When
+          await processEvent();
+
+          // Then - both are removed
+          const backlogAfter = await getBacklogItemsForUser(userId);
+          expect(backlogAfter).toHaveLength(0);
+          const scheduledAfter = await getScheduledListensForUser(userId);
+          expect(scheduledAfter).toHaveLength(0);
         });
       });
     });

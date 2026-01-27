@@ -6,6 +6,7 @@ import {
   DailyListenRepository,
 } from '~~/server/repositories/dailyListen.repository';
 import { BacklogService } from '~~/server/services/backlog.service';
+import { ScheduledListenService } from '~~/server/services/scheduledListen.service';
 import { SpotifyService } from '~~/server/services/spotify/spotify.service';
 import type {
   AuthDetails,
@@ -49,6 +50,7 @@ export class RecentlyPlayedService {
   constructor(
     private dailyListenRepo = new DailyListenRepository(),
     private backlogService = new BacklogService(),
+    private scheduledListenService = new ScheduledListenService(),
     private spotifyService = new SpotifyService(),
   ) {}
 
@@ -72,14 +74,18 @@ export class RecentlyPlayedService {
       todaysListens,
     );
 
-    // Remove listened albums from backlog
+    // Remove listened albums from backlog and scheduled listens
     await Promise.all(
-      todaysListens.map((listen) =>
+      todaysListens.flatMap((listen) => [
         this.backlogService.removeBacklogItemByAlbumSpotifyId(
           userId,
           listen.album.spotifyId,
         ),
-      ),
+        this.scheduledListenService.removeScheduledListenByAlbumSpotifyId(
+          userId,
+          listen.album.spotifyId,
+        ),
+      ]),
     );
 
     logger.info("Successfully processed today's listens", {
