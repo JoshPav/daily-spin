@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { format } from 'date-fns';
-import { ref, watch } from 'vue';
+import { endOfMonth, format, isPast } from 'date-fns';
+import { computed, ref, watch } from 'vue';
 import { Icons } from '~/components/common/icons';
 import { useShareImage } from '~/composables/features/useShareImage';
 import { SHARE_IMAGE_CONFIG } from '~/constants/shareConfig';
@@ -15,6 +15,12 @@ const { year, month, selectedMonth, monthOptions, monthTitle } = useMonthPicker(
     initialMonth: route.params.month ? Number(route.params.month) : undefined,
   },
 );
+
+// Check if the selected month is complete (in the past)
+const isMonthComplete = computed(() => {
+  const lastDayOfMonth = endOfMonth(new Date(year.value, month.value - 1, 1));
+  return isPast(lastDayOfMonth);
+});
 
 // Update URL when month changes
 watch([year, month], ([newYear, newMonth]) => {
@@ -86,27 +92,43 @@ const handleShare = async () => {
         <div class="flex items-center gap-3">
           <!-- Action buttons (only show when there's data) -->
           <template v-if="hasListens && !loading">
-            <UButton
-              color="neutral"
-              variant="soft"
-              :icon="Icons.DOWNLOAD"
-              :loading="isGenerating"
-              :disabled="isGenerating"
-              @click="handleDownload"
+            <UTooltip
+              :text="
+                isMonthComplete
+                  ? undefined
+                  : 'Available when the month is complete'
+              "
             >
-              Download
-            </UButton>
+              <UButton
+                color="neutral"
+                variant="soft"
+                :icon="Icons.DOWNLOAD"
+                :loading="isGenerating"
+                :disabled="isGenerating || !isMonthComplete"
+                @click="handleDownload"
+              >
+                Download
+              </UButton>
+            </UTooltip>
 
-            <UButton
+            <UTooltip
               v-if="canShare()"
-              color="primary"
-              :icon="Icons.SHARE"
-              :loading="isGenerating"
-              :disabled="isGenerating"
-              @click="handleShare"
+              :text="
+                isMonthComplete
+                  ? undefined
+                  : 'Available when the month is complete'
+              "
             >
-              Share
-            </UButton>
+              <UButton
+                color="primary"
+                :icon="Icons.SHARE"
+                :loading="isGenerating"
+                :disabled="isGenerating || !isMonthComplete"
+                @click="handleShare"
+              >
+                Share
+              </UButton>
+            </UTooltip>
           </template>
 
           <!-- Month picker as text dropdown -->
@@ -121,6 +143,14 @@ const handleShare = async () => {
           </USelectMenu>
         </div>
       </div>
+
+      <!-- Month incomplete notice -->
+      <p
+        v-if="hasListens && !loading && !isMonthComplete"
+        class="text-sm text-muted text-center mb-6"
+      >
+        Keep listening! Download and share unlocks at the end of the month.
+      </p>
 
       <!-- Loading state -->
       <div v-if="loading" class="flex justify-center">
