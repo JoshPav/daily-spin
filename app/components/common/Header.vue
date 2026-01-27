@@ -10,21 +10,20 @@ const route = useRoute();
 // Quick add modal
 const quickAddOpen = ref(false);
 
-const navItems = computed<NavigationMenuItem[][]>(() => [
-  [
-    {
-      label: 'Dashboard',
-      icon: Icons.CALENDAR.DAYS,
-      to: Route.DASHBOARD,
-      active: route.path === Route.DASHBOARD,
-    },
-    {
-      label: 'Backlog',
-      icon: Icons.MUSIC.SONG_LIST,
-      to: Route.BACKLOG,
-      active: route.path === Route.BACKLOG,
-    },
-  ],
+// Desktop navigation items
+const navItems = computed<NavigationMenuItem[]>(() => [
+  {
+    label: 'Dashboard',
+    icon: Icons.CALENDAR.DAYS,
+    to: Route.DASHBOARD,
+    active: route.path === Route.DASHBOARD,
+  },
+  {
+    label: 'Backlog',
+    icon: Icons.MUSIC.SONG_LIST,
+    to: Route.BACKLOG,
+    active: route.path === Route.BACKLOG,
+  },
 ]);
 
 const handleAdded = async () => {
@@ -54,7 +53,15 @@ const bodyItems = computed<NavigationMenuItem[][]>(() => [
       },
     },
   ],
-  ...navItems.value,
+  [
+    ...navItems.value,
+    {
+      label: 'Monthly Recap',
+      icon: Icons.RECAP,
+      to: Route.RECAP,
+      active: route.path.startsWith(Route.RECAP),
+    },
+  ],
   [
     {
       label: 'Bulk import',
@@ -100,7 +107,7 @@ const to = computed(() =>
     mode="slideover"
   >
     <template v-if="loggedIn">
-      <UNavigationMenu :items="navItems" highlight />
+      <UNavigationMenu :items="[navItems]" highlight />
     </template>
 
     <template #right>

@@ -3,14 +3,16 @@
     ref="cardEl"
     class="album-day-card relative w-full aspect-square rounded-lg bg-default transition-[transform,box-shadow] duration-150 ease-out"
     :class="{
-      'today': isToday,
+      'today': isToday && props.highlightToday,
+      'full-color': props.fullColor,
+      'non-interactive': !props.interactive,
       'opacity-30': isFuture && !props.selectable,
-      'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)]': clickable || props.selectable,
+      'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)]': props.interactive && (clickable || props.selectable),
     }"
     @click="$emit('click')"
   >
     <div
-      v-if="day === 1"
+      v-if="day === 1 && props.showMonthHeader"
       data-testid="month-label"
       class="absolute -top-8 left-0 right-0 py-1.5 px-3 bg-black/85 text-primary text-sm font-bold tracking-widest text-center z-3 pointer-events-none rounded-t"
     >
@@ -21,9 +23,7 @@
     <div
       data-testid="day-number"
       class="absolute rounded-md bg-black/60 text-white font-black leading-none z-5 pointer-events-none [text-shadow:0_2px_4px_rgba(0,0,0,0.7)] [font-feature-settings:'tnum'_1,'zero'_1] tracking-tight"
-      :class="props.compact
-        ? 'bottom-1 left-1 py-0.5 px-1.5 min-w-6 text-sm'
-        : 'bottom-2 left-2 py-1.5 px-2.5 min-w-12 text-2xl'"
+      :class="dayNumberClasses"
     >
       {{ day }}
     </div>
@@ -47,7 +47,7 @@
     <template v-else-if="images.length === 0">
       <div
         data-testid="empty-album-cover"
-        class="absolute inset-0 rounded-lg overflow-hidden flex items-center justify-center p-3 text-neutral-400 text-sm font-medium text-center"
+        class="absolute inset-0 rounded-lg overflow-hidden flex items-center justify-center p-3 text-neutral-400 text-sm font-medium text-center border border-neutral-700/50"
         :class="isFuture ? 'bg-linear-to-br from-[#1c1c2a] to-[#12121f]' : 'bg-linear-to-br from-[#1a1a1a] to-[#0a0a0a]'"
       >
         <slot name="empty">
@@ -99,22 +99,38 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import type { AlbumCardInfo, AlbumCardSize } from './AlbumDayCard.types';
 
-export type AlbumCardInfo = {
-  imageUrl: string | null;
-  artistName: string;
-  albumName: string;
-};
+export type { AlbumCardInfo, AlbumCardSize } from './AlbumDayCard.types';
 
-const props = defineProps<{
-  date: string;
-  albums: AlbumCardInfo[];
-  pending?: boolean;
-  /** When true, future days won't be dimmed (useful for date pickers) */
-  selectable?: boolean;
-  /** When true, uses smaller styling for compact layouts */
-  compact?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    date: string;
+    albums: AlbumCardInfo[];
+    pending?: boolean;
+    /** When true, future days won't be dimmed (useful for date pickers) */
+    selectable?: boolean;
+    /** @deprecated Use size="sm" instead */
+    compact?: boolean;
+    /** Size variant for the card */
+    size?: AlbumCardSize;
+    /** When true, shows month header above day 1 of each month */
+    showMonthHeader?: boolean;
+    /** When true, shows green glow highlight for today */
+    highlightToday?: boolean;
+    /** When true, shows album art in full color (no grayscale filter) */
+    fullColor?: boolean;
+    /** When true, enables hover effects and click interactions */
+    interactive?: boolean;
+  }>(),
+  {
+    size: 'md',
+    showMonthHeader: true,
+    highlightToday: true,
+    fullColor: false,
+    interactive: true,
+  },
+);
 
 defineEmits<{
   click: [];
@@ -127,6 +143,24 @@ const {
   formatted: { formattedMonth },
   relative: { isFuture, isToday },
 } = useDate(props.date);
+
+// Resolve effective size (compact prop for backwards compatibility)
+const effectiveSize = computed<AlbumCardSize>(() => {
+  if (props.compact) return 'sm';
+  return props.size;
+});
+
+// Size-based classes for day number overlay
+const dayNumberClasses = computed(() => {
+  const sizeClasses: Record<AlbumCardSize, string> = {
+    xs: 'bottom-0.5 left-0.5 py-0.5 px-1 min-w-4 text-[10px]',
+    sm: 'bottom-1 left-1 py-0.5 px-1.5 min-w-6 text-sm',
+    md: 'bottom-2 left-2 py-1.5 px-2.5 min-w-12 text-2xl',
+    lg: 'bottom-2.5 left-2.5 py-2 px-3 min-w-14 text-3xl',
+    xl: 'bottom-3 left-3 py-2.5 px-4 min-w-16 text-4xl',
+  };
+  return sizeClasses[effectiveSize.value];
+});
 
 const albumCount = computed(() => props.albums.length);
 
@@ -187,17 +221,17 @@ defineExpose({
   filter: grayscale(60%) brightness(0.55) contrast(0.95);
 }
 
-/* Restore colour on hover */
-.album-day-card:hover .stacked-album.stack-0 {
+/* Restore colour on hover (only for interactive cards) */
+.album-day-card:not(.non-interactive):hover .stacked-album.stack-0 {
   filter: grayscale(0%) brightness(1) contrast(1);
 }
-.album-day-card:hover .stacked-album.stack-1 {
+.album-day-card:not(.non-interactive):hover .stacked-album.stack-1 {
   filter: grayscale(0%) brightness(0.85) contrast(1);
 }
-.album-day-card:hover .stacked-album.stack-2 {
+.album-day-card:not(.non-interactive):hover .stacked-album.stack-2 {
   filter: grayscale(0%) brightness(0.7) contrast(1);
 }
-.album-day-card:hover .stacked-album.stack-3 {
+.album-day-card:not(.non-interactive):hover .stacked-album.stack-3 {
   filter: grayscale(0%) brightness(0.6) contrast(1);
 }
 
@@ -217,6 +251,20 @@ defineExpose({
   filter: grayscale(0%) brightness(0.7) contrast(1);
 }
 .album-day-card.today .stacked-album.stack-3 {
+  filter: grayscale(0%) brightness(0.6) contrast(1);
+}
+
+/* Full color mode (no grayscale filter) */
+.album-day-card.full-color .stacked-album.stack-0 {
+  filter: grayscale(0%) brightness(1) contrast(1);
+}
+.album-day-card.full-color .stacked-album.stack-1 {
+  filter: grayscale(0%) brightness(0.85) contrast(1);
+}
+.album-day-card.full-color .stacked-album.stack-2 {
+  filter: grayscale(0%) brightness(0.7) contrast(1);
+}
+.album-day-card.full-color .stacked-album.stack-3 {
   filter: grayscale(0%) brightness(0.6) contrast(1);
 }
 

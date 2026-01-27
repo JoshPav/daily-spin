@@ -86,8 +86,9 @@
 <script setup lang="ts">
 import { addDays, startOfDay } from 'date-fns';
 import type { ScheduledListenItem } from '#shared/schema';
-import type { AlbumCardInfo } from '~/components/AlbumDayCard/AlbumDayCard.vue';
+import type { AlbumCardInfo } from '~/components/AlbumDayCard/AlbumDayCard.types';
 import { Icons } from '~/components/common/icons';
+import { scheduledAlbumToCardInfo } from '~/utils/albums.utils';
 import { toDateKey } from '~/utils/dateUtils';
 
 export interface ScheduleDay {
@@ -119,15 +120,8 @@ const days = computed<ScheduleDay[]>(() => {
     const dateKey = toDateKey(date);
     const scheduledListen = scheduledListensByDate.value.get(dateKey) ?? null;
 
-    const albums: AlbumCardInfo[] = scheduledListen
-      ? [
-          {
-            imageUrl: scheduledListen.album.imageUrl,
-            artistName: scheduledListen.album.artists[0]?.name ?? 'Unknown',
-            albumName: scheduledListen.album.name,
-          },
-        ]
-      : [];
+    const info = scheduledAlbumToCardInfo(scheduledListen?.album ?? null);
+    const albums: AlbumCardInfo[] = info ? [info] : [];
 
     result.push({ date: dateKey, scheduledListen, albums });
   }
