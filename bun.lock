@@ -34,6 +34,7 @@
         "@testing-library/vue": "^8.1.0",
         "@types/lodash.merge": "^4.6.9",
         "@types/pg": "^8.16.0",
+        "@types/sharp": "^0.32.0",
         "@vitejs/plugin-vue": "^6.0.3",
         "@vitest/ui": "^4.0.16",
         "@vue/test-utils": "^2.4.6",
@@ -42,6 +43,7 @@
         "happy-dom": "^20.0.11",
         "lodash.merge": "^4.6.2",
         "prisma": "^7.2.0",
+        "sharp": "^0.34.5",
         "vitest": "^4.0.16",
       },
     },
@@ -904,6 +906,8 @@
     "@types/react": ["@types/react@19.2.8", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-3MbSL37jEchWZz2p2mjntRZtPt837ij10ApxKfgmXCTuHWagYg7iA5bqPw6C8BMPfwidlvfPI/fxOc42HLhcyg=="],
 
     "@types/resolve": ["@types/resolve@1.20.2", "", {}, "sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q=="],
+
+    "@types/sharp": ["@types/sharp@0.32.0", "", { "dependencies": { "sharp": "*" } }, "sha512-OOi3kL+FZDnPhVzsfD37J88FNeZh6gQsGcLc95NbeURRGvmSjeXiDcyWzF2o3yh/gQAUn2uhh/e+CPCa5nwAxw=="],
 
     "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw=="],
 
