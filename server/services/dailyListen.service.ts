@@ -96,10 +96,7 @@ export class DailyListenService {
       range.end,
     );
 
-    const shouldAutoFetch = useRuntimeConfig().disableAutoFetch !== 'true';
-
     if (
-      shouldAutoFetch &&
       dateInRange(new Date(), range) &&
       !listens.find((listen) => isToday(listen.date))
     ) {

@@ -124,7 +124,6 @@ prisma/
 
 Required runtime config (nuxt.config.ts runtimeConfig):
 - `SPOTIFY_CLIENT_ID`: Spotify API client ID (exposed to client via public.spotifyClientId)
-- `DISABLE_AUTO_FETCH`: Set to 'true' to disable automatic fetching of today's listens
 - `CRON_SECRET`: Secret token for authenticating cron job requests from cron-job.org
 
 Test environment variables go in `.env.test`.
