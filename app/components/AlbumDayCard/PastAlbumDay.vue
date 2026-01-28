@@ -27,10 +27,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed } from 'vue';
 import { LazyDailyListensModal } from '#components';
 import type { DailyListens, FavoriteSong } from '#shared/schema';
-import type { AlbumCardInfo } from './AlbumDayCard.vue';
+import {
+  getAlbumsSortedByFavorite,
+  toAlbumCardInfo,
+} from '~/utils/albums.utils';
 
 const { date, listens, onFavoriteSongUpdate } = defineProps<{
   date: string;
@@ -51,14 +54,12 @@ const needsFavoriteSong = computed(
   () => hasAlbums.value && !listens?.favoriteSong,
 );
 
-const albumCardInfo = computed<AlbumCardInfo[]>(
-  () =>
-    listens?.albums.map((a) => ({
-      imageUrl: a.album.imageUrl,
-      artistName: a.album.artists[0]?.name ?? 'Unknown Artist',
-      albumName: a.album.albumName,
-    })) ?? [],
-);
+const albumCardInfo = computed(() => {
+  if (!listens) return [];
+  return getAlbumsSortedByFavorite(listens)
+    .map(toAlbumCardInfo)
+    .filter((info) => info !== null);
+});
 
 const handleClick = () => {
   if (!listens || !hasAlbums.value) return;
@@ -69,36 +70,6 @@ const handleClick = () => {
 };
 
 // Sticky month header tracking
-const { setCurrentMonth } = useCurrentMonth();
 const cardRef = ref<{ cardEl: HTMLElement | null } | null>(null);
-
-onMounted(() => {
-  watch(
-    () => cardRef.value?.cardEl,
-    (el) => {
-      if (!el) return;
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-              setCurrentMonth(dateRef.value);
-            }
-          });
-        },
-        {
-          threshold: [0.3, 0.5, 0.7],
-          rootMargin: '-40% 0px -40% 0px',
-        },
-      );
-
-      observer.observe(el);
-
-      onUnmounted(() => {
-        observer.unobserve(el);
-      });
-    },
-    { immediate: true },
-  );
-});
+useMonthHeaderTracking(cardRef, dateRef);
 </script>

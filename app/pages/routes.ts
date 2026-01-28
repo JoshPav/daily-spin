@@ -4,6 +4,7 @@ export enum Route {
   DASHBOARD = '/dashboard',
   BACKLOG = '/backlog',
   PREFERENCES = '/preferences',
+  RECAP = '/summary',
   LANDING_PAGE = '/',
 }
 

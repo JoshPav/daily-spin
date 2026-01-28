@@ -1,8 +1,5 @@
 <template>
-  <NuxtImg
-    src="/DailySpinLogo.svg"
-    height="42"
-    width="200"
-    alt="DailySpin logo"
-  />
+  <span class="text-2xl font-black text-highlighted tracking-tight">
+    DailySpin
+  </span>
 </template>
