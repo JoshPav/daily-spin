@@ -63,7 +63,7 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      navigateFallback: '/offline',
+      navigateFallback: '/offline.html',
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       navigateFallbackDenylist: [/^\/api\//],
       runtimeCaching: [
@@ -132,9 +132,6 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    prerender: {
-      routes: ['/offline'],
-    },
     scheduledTasks: {
       // Every hour
       '0 * * * *': ['processListens'],
