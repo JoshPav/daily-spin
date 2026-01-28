@@ -19,7 +19,7 @@
       <AlbumCarousel
         v-if="dailyListens"
         ref="carouselRef"
-        :albums="dailyListens.albums"
+        :albums="sortedAlbums"
         :favorite-song="favoriteSong"
         :disabled="saving"
         @select-track="handleSelectTrack"
@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import type { AlbumTrack } from '~/composables/api/spotify/useAlbumTracks';
+import { sortAlbumListensByFavorite } from '~/utils/albums.utils';
 import { formatDate } from '~/utils/dateUtils';
 import type { DailyListens, FavoriteSong } from '~~/shared/schema';
 
@@ -68,6 +69,11 @@ const modalHeader = computed(() =>
 );
 
 const albumCount = computed(() => props.dailyListens.albums.length);
+
+// Sort albums with favorite first for carousel display
+const sortedAlbums = computed(() =>
+  sortAlbumListensByFavorite(props.dailyListens.albums, favoriteSong.value),
+);
 
 // Find the album name for the favorite song
 const favoriteSongAlbumName = computed(() => {

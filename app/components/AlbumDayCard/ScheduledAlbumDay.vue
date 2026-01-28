@@ -35,10 +35,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed } from 'vue';
 import { LazyLogAlbumModal, LazyScheduledListenModal } from '#components';
 import type { ScheduledListenItem } from '#shared/schema';
-import type { AlbumCardInfo } from './AlbumDayCard.vue';
+import { scheduledAlbumToCardInfo } from '~/utils/albums.utils';
 
 const {
   date,
@@ -63,15 +63,9 @@ const openAddModal = () => {
   addAlbumModal.open({ dateOfListen: dateRef.value });
 };
 
-const albumCardInfo = computed<AlbumCardInfo[]>(() => {
-  if (!scheduledListen) return [];
-  return [
-    {
-      imageUrl: scheduledListen.album.imageUrl,
-      artistName: scheduledListen.album.artists[0]?.name ?? 'Unknown Artist',
-      albumName: scheduledListen.album.name,
-    },
-  ];
+const albumCardInfo = computed(() => {
+  const info = scheduledAlbumToCardInfo(scheduledListen?.album ?? null);
+  return info ? [info] : [];
 });
 
 const handleClick = () => {
@@ -80,36 +74,6 @@ const handleClick = () => {
 };
 
 // Sticky month header tracking
-const { setCurrentMonth } = useCurrentMonth();
 const cardRef = ref<{ cardEl: HTMLElement | null } | null>(null);
-
-onMounted(() => {
-  watch(
-    () => cardRef.value?.cardEl,
-    (el) => {
-      if (!el) return;
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-              setCurrentMonth(dateRef.value);
-            }
-          });
-        },
-        {
-          threshold: [0.3, 0.5, 0.7],
-          rootMargin: '-40% 0px -40% 0px',
-        },
-      );
-
-      observer.observe(el);
-
-      onUnmounted(() => {
-        observer.unobserve(el);
-      });
-    },
-    { immediate: true },
-  );
-});
+useMonthHeaderTracking(cardRef, dateRef);
 </script>
