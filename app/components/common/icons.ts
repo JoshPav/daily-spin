@@ -66,7 +66,5 @@ export const Icons = {
   USER_UP: 'tabler:user-up',
   WARNING: 'i-lucide-triangle-alert',
   WIFI: 'i-lucide-wifi',
-  DOWNLOAD: 'i-lucide-download',
   X: 'i-lucide-x',
-  SHARE: 'i-lucide-share',
 };
