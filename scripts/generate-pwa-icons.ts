@@ -4,7 +4,7 @@ import sharp from 'sharp';
 const ICONS_DIR = join(import.meta.dir, '../public/icons');
 
 // Colors matching the app theme
-const BACKGROUND_COLOR = '#0a0a0a';
+const BACKGROUND_COLOR = '#181818';
 const TEXT_COLOR = '#ffffff';
 
 // Montserrat ExtraBold (800) font - Google Fonts URL for woff2
