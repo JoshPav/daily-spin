@@ -8,12 +8,26 @@
         <NuxtPage />
       </NuxtLayout>
     </UMain>
+
+    <InstallPrompt />
   </UApp>
 </template>
 
 <script lang="ts" setup>
-// Fonts
+// Fonts and PWA meta tags
 useHead({
+  meta: [
+    {
+      name: 'viewport',
+      content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+    },
+    { name: 'theme-color', content: '#1db954' },
+    { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    {
+      name: 'apple-mobile-web-app-status-bar-style',
+      content: 'black-translucent',
+    },
+  ],
   link: [
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     { rel: 'preconnect', href: 'https://fonts.gstatic.com' },
@@ -25,6 +39,8 @@ useHead({
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Monomaniac+One&display=optional',
     },
+    { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
+    { rel: 'manifest', href: '/manifest.webmanifest' },
   ],
 });
 </script>
