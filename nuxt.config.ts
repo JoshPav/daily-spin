@@ -39,8 +39,8 @@ export default defineNuxtConfig({
       name: 'DailySpin',
       short_name: 'DailySpin',
       description: 'Track your daily album listening history',
-      theme_color: '#1db954',
-      background_color: '#1a1a1a',
+      theme_color: '#0a0a0a',
+      background_color: '#0a0a0a',
       display: 'standalone',
       orientation: 'portrait',
       icons: [
@@ -55,7 +55,7 @@ export default defineNuxtConfig({
           type: 'image/png',
         },
         {
-          src: '/icons/pwa-512x512.png',
+          src: '/icons/pwa-maskable-512x512.png',
           sizes: '512x512',
           type: 'image/png',
           purpose: 'maskable',
@@ -63,8 +63,9 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      navigateFallback: '/',
+      navigateFallback: '/offline.html',
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      navigateFallbackDenylist: [/^\/api\//],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

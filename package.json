@@ -50,6 +50,7 @@
     "@testing-library/vue": "^8.1.0",
     "@types/lodash.merge": "^4.6.9",
     "@types/pg": "^8.16.0",
+    "@types/sharp": "^0.32.0",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vitest/ui": "^4.0.16",
     "@vue/test-utils": "^2.4.6",
@@ -58,6 +59,7 @@
     "happy-dom": "^20.0.11",
     "lodash.merge": "^4.6.2",
     "prisma": "^7.2.0",
+    "sharp": "^0.34.5",
     "vitest": "^4.0.16"
   }
 }
