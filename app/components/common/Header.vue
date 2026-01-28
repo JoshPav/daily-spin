@@ -6,6 +6,7 @@ import { Icons } from '../common/icons';
 
 const { loggedIn, user, loading } = useAuth();
 const route = useRoute();
+const pwa = usePWA();
 
 // Quick add modal
 const quickAddOpen = ref(false);
@@ -77,6 +78,16 @@ const bodyItems = computed<NavigationMenuItem[][]>(() => [
       to: Route.PREFERENCES,
       active: route.path === Route.PREFERENCES,
     },
+    ...(pwa?.showInstallPrompt
+      ? [
+          {
+            label: 'Install App',
+            icon: Icons.DOWNLOAD,
+            class: 'hover:cursor-pointer',
+            onSelect: () => pwa?.install(),
+          },
+        ]
+      : []),
     {
       label: 'Sign out',
       icon: Icons.LOG_OUT,
