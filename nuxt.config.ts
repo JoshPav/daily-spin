@@ -19,10 +19,12 @@ export default defineNuxtConfig({
     spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
     spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     baseUrl: process.env.BASE_URL,
-    disableAutoFetch: process.env.DISABLE_AUTO_FETCH,
     cronSecret: process.env.CRON_SECRET,
+    vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+    vapidSubject: process.env.VAPID_SUBJECT,
     public: {
       spotifyClientId: process.env.SPOTIFY_CLIENT_ID,
+      vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
     },
   },
   css: ['~/assets/css/main.css'],
@@ -34,6 +36,9 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
   ],
   pwa: {
+    strategies: 'injectManifest',
+    srcDir: 'service-worker',
+    filename: 'sw.ts',
     registerType: 'autoUpdate',
     manifest: {
       name: 'DailySpin',
@@ -62,54 +67,8 @@ export default defineNuxtConfig({
         },
       ],
     },
-    workbox: {
-      navigateFallback: '/offline.html',
+    injectManifest: {
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-      navigateFallbackDenylist: [/^\/api\//],
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-        {
-          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'gstatic-fonts-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-        {
-          urlPattern: /^https:\/\/i\.scdn\.co\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'spotify-images-cache',
-            expiration: {
-              maxEntries: 100,
-              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-      ],
     },
     client: {
       installPrompt: true,
@@ -139,6 +98,8 @@ export default defineNuxtConfig({
       '0 3 * * *': ['scheduleBacklogListens'],
       // Daily at 6 AM UTC
       '0 6 * * *': ['updateTodaysAlbumPlaylist'],
+      // Daily at 8 PM UTC - remind users to pick song of the day
+      '0 20 * * *': ['sendFavoriteSongReminders'],
     },
     experimental: {
       tasks: true,

@@ -12,6 +12,14 @@ const {
   save,
 } = usePreferencesForm();
 
+const {
+  isSubscribed,
+  loading: pushLoading,
+  supported: pushSupported,
+  isBlocked: pushBlocked,
+  toggle: togglePush,
+} = usePushNotifications();
+
 const getPlaylistTypeLabel = (type: PlaylistType) => {
   return type === 'album_of_the_day' ? 'Album of the Day' : 'Song of the Day';
 };
@@ -78,6 +86,26 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
               description="Automatically create/update a Spotify playlist for daily song picks"
               :loading="pending"
               :changed="isChanged('createSongOfDayPlaylist')"
+            />
+          </div>
+        </PreferencesCard>
+
+        <PreferencesCard
+          v-if="pushSupported"
+          title="Notifications"
+          description="Get notified about important updates"
+        >
+          <div class="flex flex-col gap-2">
+            <div v-if="pushBlocked" class="text-sm text-warning-500 mb-2">
+              Notifications are blocked. Please enable them in your browser
+              settings.
+            </div>
+            <PreferenceToggle
+              :model-value="isSubscribed"
+              title="Push Notifications"
+              description="Receive notifications when you need to reconnect your Spotify account"
+              :loading="pushLoading"
+              @update:model-value="togglePush"
             />
           </div>
         </PreferencesCard>

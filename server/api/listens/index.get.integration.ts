@@ -169,10 +169,6 @@ describe('GET /api/listens Integration Tests', () => {
   });
 
   describe('auto-fetch today', () => {
-    afterEach(() => {
-      delete mockRuntimeConfig.disableAutoFetch;
-    });
-
     it('should auto-fetch today when today is in range and missing', async () => {
       // Given
       const { album: spotifyAlbum, history } = createFullAlbumPlayHistory({
@@ -252,29 +248,6 @@ describe('GET /api/listens Integration Tests', () => {
       expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
       expect(result).toHaveLength(1);
       expect(result[0].albums).toHaveLength(1);
-    });
-
-    it('should not auto-fetch when disableAutoFetch is true', async () => {
-      // Given
-      mockRuntimeConfig.disableAutoFetch = 'true';
-
-      const startDate = new Date('2026-01-14T00:00:00.000Z');
-      const endDate = new Date('2026-01-15T23:59:59.999Z');
-
-      // When
-      const result = await handler(
-        createHandlerEvent(userId, {
-          query: {
-            startDate: toDateString(startDate),
-            endDate: toDateString(endDate),
-          },
-        }),
-      );
-
-      // Then
-      expect(mockGetRecentlyPlayedTracks).not.toHaveBeenCalled();
-      expect(result).toHaveLength(2);
-      expect(result[1].albums).toEqual([]);
     });
 
     it('should handle auto-fetch returning no albums', async () => {
