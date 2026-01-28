@@ -19,6 +19,9 @@ const SIZES = {
   'apple-touch-icon.png': 180,
 };
 
+// SVG icon size
+const SVG_SIZE = 512;
+
 /**
  * Fetch and convert font to base64 for SVG embedding
  */
@@ -83,6 +86,42 @@ async function generateIcon(
   console.log(`Generated: ${filename} (${size}x${size})`);
 }
 
+/**
+ * Create a lightweight SVG that references Google Fonts instead of embedding
+ */
+function createLightweightSvg(size: number): string {
+  const fontSize = Math.round(size * 0.15 * 0.85);
+
+  return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&amp;display=swap');
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="${BACKGROUND_COLOR}"/>
+  <text
+    x="50%"
+    y="50%"
+    font-family="Montserrat, sans-serif"
+    font-size="${fontSize}"
+    font-weight="800"
+    fill="${TEXT_COLOR}"
+    text-anchor="middle"
+    dominant-baseline="central"
+    letter-spacing="-1"
+  >DailySpin</text>
+</svg>`;
+}
+
+async function saveSvgIcon(): Promise<void> {
+  const svg = createLightweightSvg(SVG_SIZE);
+  const outputPath = join(ICONS_DIR, 'icon.svg');
+
+  await Bun.write(outputPath, svg);
+
+  console.log(`Generated: icon.svg (${SVG_SIZE}x${SVG_SIZE})`);
+}
+
 async function main(): Promise<void> {
   console.log('Generating PWA icons...\n');
 
@@ -93,6 +132,8 @@ async function main(): Promise<void> {
   for (const [filename, size] of Object.entries(SIZES)) {
     await generateIcon(filename, size, fontBase64);
   }
+
+  await saveSvgIcon();
 
   console.log('\nDone! Icons generated in public/icons/');
   console.log(
