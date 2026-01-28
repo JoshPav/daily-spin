@@ -26,8 +26,9 @@ The existing logo is horizontal (203x44). Extract the calendar/record mark from 
 **Update `nuxt.config.ts`:**
 
 - Add `@vite-pwa/nuxt` to modules
-- Configure manifest with app name, theme color (#D5651B), icons
+- Configure manifest with app name, theme color (#1db954), icons
 - Set `registerType: 'autoUpdate'` for automatic SW updates
+- Set `client: { installPrompt: true }` to enable the built-in `usePWA` composable
 - Configure workbox runtime caching for:
   - Google Fonts (CacheFirst, 1 year)
   - Spotify album images at i.scdn.co (CacheFirst, 30 days)
@@ -38,25 +39,27 @@ The existing logo is horizontal (203x44). Extract the calendar/record mark from 
 
 Add to `useHead()`:
 - `viewport` with `viewport-fit=cover`
-- `theme-color` (#D5651B)
+- `theme-color` (#1db954)
 - `apple-mobile-web-app-capable`
 - `apple-mobile-web-app-status-bar-style`
 - `apple-touch-icon` link
+- `manifest` link to `/manifest.webmanifest`
 
 ### 1.5 Install Prompt UI
 
-**Create `app/composables/pwa/usePWA.ts`:**
-- Handle `beforeinstallprompt` event
-- Expose `showInstallPrompt`, `installPWA()`, `cancelInstallPrompt()`
+The `@vite-pwa/nuxt` module provides a built-in `usePWA()` composable when `client.installPrompt` is enabled. This composable exposes:
+- `showInstallPrompt` - reactive flag for when install is available
+- `install()` - triggers native install prompt
+- `cancelInstall()` - dismisses and stores opt-out in localStorage
+- `isPWAInstalled` - check if already installed
 
 **Create `app/components/pwa/InstallPrompt.vue`:**
 - Fixed banner at bottom when install is available
 - "Install" and "Not now" buttons
-- Remember dismissal for 7 days in localStorage
+- Uses the module's `usePWA()` composable
 
-**Create `app/components/pwa/IOSInstallInstructions.vue`:**
-- Modal with step-by-step Safari "Add to Home Screen" instructions
-- Show for iOS users who can't use beforeinstallprompt
+**Update `app/components/common/Header.vue`:**
+- Add "Install App" option to nav menu when app is installable
 
 ---
 
@@ -198,15 +201,16 @@ await pushService.sendToUser(userId, {
 
 ## Files to Create/Modify
 
-### New Files
-- `app/composables/pwa/usePWA.ts`
-- `app/composables/pwa/usePushNotifications.ts`
+### New Files (Phase 1)
 - `app/components/pwa/InstallPrompt.vue`
-- `app/components/pwa/IOSInstallInstructions.vue`
-- `app/components/settings/NotificationSettings.vue`
 - `public/icons/pwa-192x192.png`
 - `public/icons/pwa-512x512.png`
 - `public/icons/apple-touch-icon.png`
+- `public/icons/icon.svg`
+
+### New Files (Phase 2-3)
+- `app/composables/pwa/usePushNotifications.ts`
+- `app/components/settings/NotificationSettings.vue`
 - `server/api/push/subscribe.post.ts`
 - `server/api/push/unsubscribe.post.ts`
 - `server/repositories/pushSubscription.repository.ts`
@@ -215,9 +219,14 @@ await pushService.sendToUser(userId, {
 - `service-worker/sw.ts`
 - `shared/schemas/push.schema.ts`
 
-### Modified Files
-- `nuxt.config.ts` - PWA module, runtime config, scheduled tasks
+### Modified Files (Phase 1)
+- `nuxt.config.ts` - PWA module config
 - `app/app.vue` - PWA meta tags
+- `app/components/common/Header.vue` - Install App menu option
+- `app/components/common/icons.ts` - DOWNLOAD icon
+
+### Modified Files (Phase 2-3)
+- `nuxt.config.ts` - runtime config, scheduled tasks
 - `prisma/schema.prisma` - PushSubscription model
 - `server/services/spotify/spotify.service.ts` - reauth notification
 - `server/repositories/dailyListen.repository.ts` - getUsersWithoutFavoriteSong

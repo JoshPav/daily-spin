@@ -639,10 +639,10 @@ Before implementing any new feature, follow this workflow:
    - Explore the codebase and understand existing patterns
    - Identify which files need to be modified
    - Design the implementation approach
-   - Write the plan to a file in `.claude/plans/` directory (e.g., `.claude/plans/15-bulk-upload-plan.md`)
+   - Write the plan to a file in `docs/plan/` directory (e.g., `docs/plan/15-bulk-upload-plan.md`)
    - Get user approval on the plan before writing code
 
-   In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review. All plans should be saved to `.claude/plans/` for easy reference.
+   In Claude Code, say "Let's plan this feature" or ask Claude to enter plan mode. Claude will explore the codebase, ask clarifying questions, and present a detailed implementation plan for review. All plans should be saved to `docs/plan/` for easy reference.
 
 4. **Wait for user direction**: After creating the plan, WAIT for the user to specify which parts to implement. Do not automatically start implementing the entire plan.
 
