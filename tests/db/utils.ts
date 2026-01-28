@@ -282,3 +282,26 @@ export const getSpotifyAccountForUser = (userId: string) =>
       providerId: 'spotify',
     },
   });
+
+export const createPushSubscription = async ({
+  userId,
+  endpoint,
+}: {
+  userId: string;
+  endpoint?: string;
+}) =>
+  getTestPrisma().pushSubscription.create({
+    data: {
+      userId,
+      endpoint:
+        endpoint ??
+        `https://push.example.com/subscription/${userId}/${Date.now()}`,
+      p256dh: 'test-p256dh-key',
+      auth: 'test-auth-key',
+    },
+  });
+
+export const getPushSubscriptionsForUser = (userId: string) =>
+  getTestPrisma().pushSubscription.findMany({
+    where: { userId },
+  });

@@ -1,5 +1,6 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { UserRepository } from '~~/server/repositories/user.repository';
+import { PushService } from '~~/server/services/push.service';
 import type { AuthDetails } from '~~/server/services/user.service';
 import {
   ExternalServiceError,
@@ -77,6 +78,23 @@ export class SpotifyService {
           },
         );
         await this.userRepository.setSpotifyRequiresReauth(userId, true);
+
+        // Send push notification to user
+        try {
+          const pushService = new PushService();
+          await pushService.sendToUser(userId, {
+            title: 'Spotify Connection Expired',
+            body: 'Tap to reconnect your Spotify account.',
+            data: { type: 'reauth', url: '/' },
+            actions: [{ action: 'reauth', title: 'Reconnect' }],
+          });
+        } catch (pushError) {
+          logger.warn('Failed to send reauth push notification', {
+            userId,
+            error:
+              pushError instanceof Error ? pushError.message : 'Unknown error',
+          });
+        }
       }
 
       logger.warn('BetterAuth getAccessToken failed', {

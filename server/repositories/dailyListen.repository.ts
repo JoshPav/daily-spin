@@ -296,6 +296,58 @@ export class DailyListenRepository {
     }
   }
 
+  /**
+   * Get users who have listens for a given date but haven't selected a favorite song,
+   * and who have push subscriptions enabled.
+   */
+  async getUsersWithoutFavoriteSong(date: Date) {
+    logger.debug('Fetching users without favorite song', {
+      date: date.toISOString(),
+    });
+
+    try {
+      const result = await this.prismaClient.dailyListen.findMany({
+        where: {
+          date,
+          favoriteSongId: null,
+          albums: {
+            some: {}, // Has at least one album listen
+          },
+          user: {
+            pushSubscriptions: {
+              some: {}, // Has at least one push subscription
+            },
+          },
+        },
+        select: {
+          userId: true,
+          albums: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      logger.debug('Successfully fetched users without favorite song', {
+        date: date.toISOString(),
+        count: result.length,
+      });
+
+      return result.map((listen) => ({
+        userId: listen.userId,
+        albumCount: listen.albums.length,
+      }));
+    } catch (error) {
+      logger.error('Failed to fetch users without favorite song', {
+        date: date.toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
   private async findOrCreateArtist(artist: CreateArtist) {
     logger.debug('Finding or creating artist', {
       artistSpotifyId: artist.spotifyId,

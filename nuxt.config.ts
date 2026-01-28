@@ -98,6 +98,8 @@ export default defineNuxtConfig({
       '0 3 * * *': ['scheduleBacklogListens'],
       // Daily at 6 AM UTC
       '0 6 * * *': ['updateTodaysAlbumPlaylist'],
+      // Daily at 8 PM UTC - remind users to pick song of the day
+      '0 20 * * *': ['sendFavoriteSongReminders'],
     },
     experimental: {
       tasks: true,
