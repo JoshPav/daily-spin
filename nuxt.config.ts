@@ -39,8 +39,8 @@ export default defineNuxtConfig({
       name: 'DailySpin',
       short_name: 'DailySpin',
       description: 'Track your daily album listening history',
-      theme_color: '#0a0a0a',
-      background_color: '#0a0a0a',
+      theme_color: '#181818',
+      background_color: '#181818',
       display: 'standalone',
       orientation: 'portrait',
       icons: [
