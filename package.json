@@ -57,6 +57,7 @@
     "dotenv": "^17.2.3",
     "dotenv-cli": "^11.0.0",
     "happy-dom": "^20.0.11",
+    "ico-endec": "^0.1.6",
     "lodash.merge": "^4.6.2",
     "prisma": "^7.2.0",
     "sharp": "^0.34.5",

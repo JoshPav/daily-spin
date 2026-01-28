@@ -10,6 +10,25 @@ const testFiles = [
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '32x32',
+          href: '/icons/favicon-32x32.png',
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '16x16',
+          href: '/icons/favicon-16x16.png',
+        },
+      ],
+    },
+  },
   ignore: testFiles,
   devServer: {
     host: '127.0.0.1',

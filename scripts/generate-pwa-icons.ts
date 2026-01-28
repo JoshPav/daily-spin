@@ -1,7 +1,9 @@
 import { join } from 'node:path';
+import { encode as encodeIco } from 'ico-endec';
 import sharp from 'sharp';
 
 const ICONS_DIR = join(import.meta.dir, '../public/icons');
+const PUBLIC_DIR = join(import.meta.dir, '../public');
 
 // Colors matching the app theme
 const BACKGROUND_COLOR = '#181818';
@@ -17,7 +19,12 @@ const SIZES = {
   'pwa-512x512.png': 512,
   'pwa-maskable-512x512.png': 512,
   'apple-touch-icon.png': 180,
+  'favicon-32x32.png': 32,
+  'favicon-16x16.png': 16,
 };
+
+// Sizes to include in favicon.ico (multi-resolution)
+const FAVICON_ICO_SIZES = [16, 32, 48];
 
 // SVG icon size
 const SVG_SIZE = 512;
@@ -122,8 +129,28 @@ async function saveSvgIcon(): Promise<void> {
   console.log(`Generated: icon.svg (${SVG_SIZE}x${SVG_SIZE})`);
 }
 
+async function generateFaviconIco(fontBase64: string): Promise<void> {
+  // Generate PNG buffers at each size for the ICO
+  const pngBuffers = await Promise.all(
+    FAVICON_ICO_SIZES.map(async (size) => {
+      const svg = createLogoSvg(size, fontBase64, false);
+      return sharp(Buffer.from(svg)).png().toBuffer();
+    }),
+  );
+
+  // Encode as ICO with multiple resolutions
+  const icoBuffer = encodeIco(pngBuffers);
+  const outputPath = join(PUBLIC_DIR, 'favicon.ico');
+
+  await Bun.write(outputPath, icoBuffer);
+
+  console.log(
+    `Generated: favicon.ico (${FAVICON_ICO_SIZES.map((s) => `${s}x${s}`).join(', ')})`,
+  );
+}
+
 async function main(): Promise<void> {
-  console.log('Generating PWA icons...\n');
+  console.log('Generating PWA icons and favicons...\n');
 
   console.log('Fetching Montserrat font...');
   const fontBase64 = await fetchFontAsBase64();
@@ -134,8 +161,11 @@ async function main(): Promise<void> {
   }
 
   await saveSvgIcon();
+  await generateFaviconIco(fontBase64);
 
-  console.log('\nDone! Icons generated in public/icons/');
+  console.log(
+    '\nDone! Icons generated in public/icons/ and public/favicon.ico',
+  );
   console.log(
     '\nNote: You may need to rebuild the app for changes to take effect.',
   );
