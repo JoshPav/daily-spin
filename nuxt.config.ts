@@ -5,6 +5,7 @@ const testFiles = [
   '**/*.integration.ts',
   '**/*.component.ts',
   '**/*.spec.ts',
+  '**/tests/**',
 ];
 
 export default defineNuxtConfig({
