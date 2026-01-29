@@ -2,24 +2,80 @@
  * Component tests for the backlog add page.
  * Tests search functionality, album selection, and adding to backlog.
  */
-
+import { registerEndpoint } from '@nuxt/test-utils/runtime';
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
+import { readBody } from 'h3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import type { AddBacklogItemsResponse } from '~~/shared/schema';
 import {
   cleanupAfterTest,
   fireEvent,
+  mountPage,
   screen,
   waitFor,
 } from '~~/tests/component';
-import { simplifiedArtist } from '~~/tests/factories/spotify.factory';
+import { mockUseAuth } from '~~/tests/component/authMock';
 import {
-  addedAlbums,
-  createSearchResultAlbum,
-  createSearchResultAlbums,
-  mountAddPage,
-  resetAddMockState,
-} from './add-setup';
+  simplifiedAlbum,
+  simplifiedArtist,
+} from '~~/tests/factories/spotify.factory';
+
+// Track added albums for assertions
+let addedAlbums: Array<{
+  spotifyId: string;
+  name: string;
+  imageUrl: string | undefined;
+  releaseDate: string;
+  totalTracks: number;
+  artists: Array<{
+    spotifyId: string;
+    name: string;
+    imageUrl: string | undefined;
+  }>;
+}> = [];
+
+const resetAddMockState = () => {
+  addedAlbums = [];
+};
+
+// Mock useAuth to bypass auth loading (must be at module level)
+mockUseAuth();
+
+// Register endpoint mock for POST /api/backlog
+registerEndpoint('/api/backlog', {
+  method: 'POST',
+  handler: async (event) => {
+    const body = await readBody(event);
+    addedAlbums = body;
+    return {
+      added: body.length,
+      skipped: [],
+    } satisfies AddBacklogItemsResponse;
+  },
+});
+
+const mountAddPage = () => mountPage('/backlog/add');
+
+/**
+ * Create multiple search result albums
+ */
+const createSearchResultAlbums = (count: number): SimplifiedAlbum[] => {
+  return Array.from({ length: count }, (_, i) =>
+    simplifiedAlbum({
+      id: `album-${i + 1}`,
+      name: `Test Album ${i + 1}`,
+      album_type: 'album',
+      total_tracks: 10,
+      artists: [
+        simplifiedArtist({
+          id: `artist-${i + 1}`,
+          name: `Artist ${i + 1}`,
+        }),
+      ],
+    }),
+  );
+};
 
 // Create mock state that will be used by vi.mock
 const mockSearchResults = ref<SimplifiedAlbum[]>([]);
@@ -148,9 +204,11 @@ describe('Add to Backlog Page', () => {
 
     it('should display artist names in search results', async () => {
       const mockAlbums = [
-        createSearchResultAlbum({
+        simplifiedAlbum({
           id: 'album-1',
           name: 'My Album',
+          album_type: 'album',
+          total_tracks: 10,
           artists: [simplifiedArtist({ name: 'Cool Artist' })],
         }),
       ];

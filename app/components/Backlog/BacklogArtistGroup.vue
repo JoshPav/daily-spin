@@ -26,6 +26,7 @@
       >
         <div
           class="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-500/20 text-indigo-400"
+          data-testid="scheduled-indicator"
         >
           <UIcon :name="Icons.CALENDAR.DAYS" class="w-4 h-4" />
         </div>
