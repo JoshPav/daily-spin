@@ -1,11 +1,17 @@
 /**
  * Component tests for the backlog page - Album Display Mode.
  * Tests album view functionality including display, filtering, sorting, and deletion.
+ * Modal interaction tests (scheduling, removing) are in modal.component.ts.
  */
 import { registerEndpoint } from '@nuxt/test-utils/runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BacklogAlbum } from '~~/shared/schema';
-import { cleanupAfterTest, fireEvent, screen, waitFor } from '~~/tests/component';
+import {
+  cleanupAfterTest,
+  fireEvent,
+  screen,
+  waitFor,
+} from '~~/tests/component';
 import {
   artist,
   backlogAlbum,
@@ -65,40 +71,23 @@ describe('Album Display Mode', () => {
   });
 
   describe('shows albums', () => {
-    it('should render albums in album view mode', async () => {
+    it('should render albums with names, artists, images, and dates', async () => {
       await mountBacklog();
-      // Wait for artist view to load first (default view)
       await waitFor(() => screen.queryByText('Zeta Artist') !== null);
-
-      // Switch to albums view
       await switchToAlbumsView();
-
-      // Now albums should be visible directly (not collapsed)
       await waitFor(() => screen.queryByText('Alpha Album') !== null);
 
+      // Album names visible
       expect(screen.getByText('Alpha Album')).toBeDefined();
       expect(screen.getByText('Beta Album')).toBeDefined();
       expect(screen.getByText('Gamma Album')).toBeDefined();
-    });
 
-    it('should render artist names for each album', async () => {
-      await mountBacklog();
-      await waitFor(() => screen.queryByText('Zeta Artist') !== null);
-      await switchToAlbumsView();
-      await waitFor(() => screen.queryByText('Alpha Album') !== null);
-
-      // In album view, artist names appear under each album
+      // Artist names visible under each album
       expect(screen.getByText('Zeta Artist')).toBeDefined();
       expect(screen.getByText('Alpha Artist')).toBeDefined();
       expect(screen.getByText('Mu Artist')).toBeDefined();
-    });
 
-    it('should render album images', async () => {
-      await mountBacklog();
-      await waitFor(() => screen.queryByText('Zeta Artist') !== null);
-      await switchToAlbumsView();
-      await waitFor(() => screen.queryByText('Alpha Album') !== null);
-
+      // Album images present
       const images = document.querySelectorAll('img');
       const albumImages = Array.from(images).filter(
         (img) =>
@@ -107,15 +96,8 @@ describe('Album Display Mode', () => {
           img.getAttribute('src')?.includes('gamma.jpg'),
       );
       expect(albumImages.length).toBe(3);
-    });
 
-    it('should render added date for albums', async () => {
-      await mountBacklog();
-      await waitFor(() => screen.queryByText('Zeta Artist') !== null);
-      await switchToAlbumsView();
-      await waitFor(() => screen.queryByText('Alpha Album') !== null);
-
-      // Alpha added 5 days ago, Beta 1 day ago, Gamma 3 days ago
+      // Added dates visible (Alpha 5 days ago, Beta 1 day ago, Gamma 3 days ago)
       expect(screen.getByText(/Added 5 days ago/i)).toBeDefined();
       expect(screen.getByText(/Added yesterday/i)).toBeDefined();
       expect(screen.getByText(/Added 3 days ago/i)).toBeDefined();
@@ -195,7 +177,7 @@ describe('Album Display Mode', () => {
         album: {
           spotifyId: albumA.spotifyId,
           name: albumA.name,
-          imageUrl: albumA.imageUrl!,
+          imageUrl: albumA.imageUrl ?? '',
           artists: albumA.artists,
           releaseDate: null,
         },
@@ -251,8 +233,44 @@ describe('Album Display Mode', () => {
     });
   });
 
+  describe('album modal', () => {
+    it('should open modal with correct album details when clicking an album', async () => {
+      await mountBacklog();
+      await waitFor(() => screen.queryByText('Zeta Artist') !== null);
+      await switchToAlbumsView();
+      await waitFor(() => screen.queryByText('Alpha Album') !== null);
+
+      // Click on the Alpha Album item
+      const albumItem = screen
+        .getByText('Alpha Album')
+        .closest('[class*="bg-elevated"]');
+      expect(albumItem).not.toBeNull();
+      await fireEvent.click(albumItem as HTMLElement);
+
+      // Wait for modal to open
+      await waitFor(() => document.querySelector('[role="dialog"]') !== null);
+
+      const modal = document.querySelector('[role="dialog"]');
+      expect(modal).not.toBeNull();
+
+      // Verify modal displays album name
+      expect(modal?.textContent).toContain('Alpha Album');
+
+      // Verify modal displays artist name
+      expect(modal?.textContent).toContain('Zeta Artist');
+
+      // Verify modal displays added date
+      expect(modal?.textContent).toContain('Added on 10 January 2026');
+
+      // Verify modal displays album image
+      const albumImage = modal?.querySelector('img[alt="Alpha Album cover"]');
+      expect(albumImage).not.toBeNull();
+      expect(albumImage?.getAttribute('src')).toContain('alpha.jpg');
+    });
+  });
+
   describe('sort order works', () => {
-    it('should display albums in default sort order (newest first)', async () => {
+    it('should display albums in default sort order with sort dropdown available', async () => {
       await mountBacklog();
       await waitFor(() => screen.queryByText('Zeta Artist') !== null);
       await switchToAlbumsView();
@@ -270,18 +288,10 @@ describe('Album Display Mode', () => {
               ? 'Alpha'
               : null,
       );
-
       const filteredTexts = albumTexts.filter((t) => t !== null);
       expect(filteredTexts[0]).toBe('Beta');
-    });
 
-    it('should render sort dropdown', async () => {
-      await mountBacklog();
-      await waitFor(() => screen.queryByText('Zeta Artist') !== null);
-      await switchToAlbumsView();
-      await waitFor(() => screen.queryByText('Alpha Album') !== null);
-
-      // Look for the sort dropdown button (shows "Newest First" or similar text)
+      // Sort dropdown should be available
       const buttons = screen.getAllByRole('button');
       const sortButton = buttons.find((btn) => {
         const text = btn.textContent || '';
@@ -292,7 +302,6 @@ describe('Album Display Mode', () => {
           text.includes('Z →')
         );
       });
-
       expect(sortButton).toBeDefined();
     });
   });

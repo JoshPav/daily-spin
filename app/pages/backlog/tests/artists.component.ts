@@ -6,7 +6,12 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BacklogAlbum } from '~~/shared/schema';
-import { cleanupAfterTest, fireEvent, screen, waitFor } from '~~/tests/component';
+import {
+  cleanupAfterTest,
+  fireEvent,
+  screen,
+  waitFor,
+} from '~~/tests/component';
 import {
   artist,
   backlogAlbum,
@@ -107,34 +112,20 @@ describe('Artist Display Mode', () => {
   });
 
   describe('shows artists', () => {
-    it('should render artist groups in artist view mode (default)', async () => {
+    it('should render artist groups with names, album counts, and avatars', async () => {
       await mountBacklog();
-
-      // Artist view is the default, should show artist names as headers
       await waitFor(() => screen.queryByText('Shared Artist') !== null);
 
+      // Artist names visible as headers
       expect(screen.getByText('Shared Artist')).toBeDefined();
       expect(screen.getByText('Alpha Artist')).toBeDefined();
       expect(screen.getByText('Zeta Artist')).toBeDefined();
-    });
 
-    it('should show album count for each artist', async () => {
-      await mountBacklog();
-
-      await waitFor(() => screen.queryByText('2 albums') !== null);
-
-      // Shared Artist has 2 albums
+      // Album counts visible (Shared Artist has 2, others have 1)
       expect(screen.getByText('2 albums')).toBeDefined();
-      // Others have 1 album each
       expect(screen.getAllByText('1 album').length).toBe(2);
-    });
 
-    it('should render artist avatars', async () => {
-      await mountBacklog();
-
-      await waitFor(() => screen.queryByText('Shared Artist') !== null);
-
-      // Avatar images should be present
+      // Artist avatars present
       const avatars = document.querySelectorAll('span[class*="rounded-full"]');
       expect(avatars.length).toBeGreaterThanOrEqual(3);
     });
@@ -179,6 +170,33 @@ describe('Artist Display Mode', () => {
       await waitFor(() => screen.queryByText('First Shared Album') === null);
       expect(screen.queryByText('First Shared Album')).toBeNull();
     });
+
+    it('should open modal with correct info when clicking album in expanded group', async () => {
+      await mountBacklog();
+
+      await waitFor(() => screen.queryByText('Shared Artist') !== null);
+
+      // Expand the artist group
+      const artistGroup = screen.getByText('Shared Artist').closest('button');
+      await fireEvent.click(artistGroup as HTMLElement);
+
+      await waitFor(() => screen.queryByText('First Shared Album') !== null);
+
+      // Click on the album to open modal
+      const albumItem = screen
+        .getByText('First Shared Album')
+        .closest('[class*="bg-elevated"]');
+      await fireEvent.click(albumItem as HTMLElement);
+
+      // Wait for modal to open
+      await waitFor(() => document.querySelector('[role="dialog"]') !== null);
+
+      const modal = document.querySelector('[role="dialog"]');
+      expect(modal).not.toBeNull();
+      // Modal should show album name and artist
+      expect(modal?.textContent).toContain('First Shared Album');
+      expect(modal?.textContent).toContain('Shared Artist');
+    });
   });
 
   describe('shows scheduled on artist and specific album', () => {
@@ -190,7 +208,7 @@ describe('Artist Display Mode', () => {
         album: {
           spotifyId: sharedArtistAlbum1.spotifyId,
           name: sharedArtistAlbum1.name,
-          imageUrl: sharedArtistAlbum1.imageUrl!,
+          imageUrl: sharedArtistAlbum1.imageUrl ?? '',
           artists: sharedArtistAlbum1.artists,
           releaseDate: null,
         },
@@ -337,9 +355,8 @@ describe('Artist Display Mode', () => {
   });
 
   describe('sort order works', () => {
-    it('should display artists in default sort order (newest album first)', async () => {
+    it('should display artists in default sort order with sort dropdown available', async () => {
       await mountBacklog();
-
       await waitFor(() => screen.queryByText('Shared Artist') !== null);
 
       // Default sort is date-added-desc
@@ -352,17 +369,9 @@ describe('Artist Display Mode', () => {
           text?.includes('Zeta Artist')
         );
       });
-
-      // First artist should be Shared Artist (has newest album)
       expect(artistButtons[0]?.textContent).toContain('Shared Artist');
-    });
 
-    it('should render sort dropdown', async () => {
-      await mountBacklog();
-
-      await waitFor(() => screen.queryByText('Shared Artist') !== null);
-
-      // Look for the sort dropdown button (shows "Newest First" or similar text)
+      // Sort dropdown should be available
       const buttons = screen.getAllByRole('button');
       const sortButton = buttons.find((btn) => {
         const text = btn.textContent || '';
@@ -373,7 +382,6 @@ describe('Artist Display Mode', () => {
           text.includes('Z →')
         );
       });
-
       expect(sortButton).toBeDefined();
     });
   });

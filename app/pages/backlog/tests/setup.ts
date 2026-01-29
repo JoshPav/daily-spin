@@ -6,22 +6,24 @@
  */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { computed, ref } from 'vue';
-import type {
-  GetBacklogResponse,
-  ScheduledListenItem,
-} from '~~/shared/schema';
+import type { GetBacklogResponse, ScheduledListenItem } from '~~/shared/schema';
 import { fireEvent, mountPage, waitFor } from '~~/tests/component';
 
 // Shared mock state that tests can modify
 export let mockBacklogData: GetBacklogResponse = { albums: [] };
-export let mockScheduledListensData: Record<string, ScheduledListenItem | null> = {};
+export let mockScheduledListensData: Record<
+  string,
+  ScheduledListenItem | null
+> = {};
 export let deletedBacklogIds: string[] = [];
 
 export const setMockBacklogData = (data: GetBacklogResponse) => {
   mockBacklogData = data;
 };
 
-export const setMockScheduledListensData = (data: Record<string, ScheduledListenItem | null>) => {
+export const setMockScheduledListensData = (
+  data: Record<string, ScheduledListenItem | null>,
+) => {
   mockScheduledListensData = data;
 };
 
@@ -97,10 +99,9 @@ export const switchToAlbumsView = async () => {
     await fireEvent.click(viewModeButton);
 
     // Wait for dropdown menu to appear
-    await waitFor(
-      () => document.querySelector('[role="menuitem"]') !== null,
-      { timeout: 3000 },
-    );
+    await waitFor(() => document.querySelector('[role="menuitem"]') !== null, {
+      timeout: 3000,
+    });
 
     // Find and click the Albums option
     const menuItems = document.querySelectorAll('[role="menuitem"]');

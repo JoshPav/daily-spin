@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: ignore potential nulls for test code */
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import {
   cleanupAfterTest,
@@ -11,6 +11,27 @@ import {
   waitFor,
   waitForElement,
 } from '~~/tests/component';
+
+// Mock useSpotifyAlbumSearch for the AddToBacklog modal
+vi.mock('~~/app/composables/api/spotify/useSpotifyAlbumSearch', () => ({
+  useSpotifyAlbumSearch: () => ({
+    searchQuery: ref(''),
+    searchResults: ref([]),
+    loading: ref(false),
+    error: ref<string | null>(null),
+    allowEPs: ref(false),
+    search: vi.fn(),
+  }),
+}));
+
+// Mock useSpotifyApi to prevent network requests
+vi.mock('~~/app/composables/api/spotify/useSpotifyApi', () => ({
+  useSpotifyApi: async () => ({
+    artists: {
+      get: async () => [],
+    },
+  }),
+}));
 
 // Mock API endpoints
 registerEndpoint('/api/backlog', () => ({
@@ -220,6 +241,36 @@ describe('Header Navigation', () => {
           dashboardLink.getAttribute('aria-current') === 'page' ||
           dashboardLink.className.includes('active');
         expect(isActive).toBe(true);
+      });
+
+      it('should open AddToBacklog modal when "Add to Backlog" is clicked', async () => {
+        // When - open menu and click "Add to Backlog"
+        const navDialog = await openMobileMenu();
+
+        const addToBacklogItem = Array.from(
+          navDialog.querySelectorAll('button'),
+        ).find((item) => item.textContent?.includes('Add to Backlog'));
+
+        expect(addToBacklogItem).toBeDefined();
+        await fireEvent.click(addToBacklogItem as HTMLElement);
+
+        // Then - the AddToBacklog modal should open
+        // Wait for a second dialog to appear (the modal)
+        await waitFor(
+          () => document.querySelectorAll('[role="dialog"]').length >= 2,
+        );
+
+        const dialogs = document.querySelectorAll('[role="dialog"]');
+        expect(dialogs.length).toBeGreaterThanOrEqual(2);
+
+        // Find the modal (it contains the search empty state text)
+        const modal = Array.from(dialogs).find(
+          (d) =>
+            d.textContent?.includes('Search for albums') ||
+            d.textContent?.includes('Search albums'),
+        );
+
+        expect(modal).toBeTruthy();
       });
     });
 
