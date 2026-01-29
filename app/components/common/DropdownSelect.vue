@@ -1,6 +1,11 @@
 <template>
   <UDropdownMenu :items="dropdownItems" :disabled="disabled">
-    <UButton color="primary" variant="outline" :disabled="disabled">
+    <UButton
+      color="primary"
+      variant="outline"
+      :disabled="disabled"
+      :data-testid="testId"
+    >
       <UIcon v-if="selectedIcon" :name="selectedIcon" class="text-lg" />
       <span v-if="selectedLabel" :class="{ 'hidden md:block': iconOnly }"
         >{{ selectedLabel }}</span
@@ -32,6 +37,7 @@ const props = defineProps<{
   label?: string;
   iconOnly?: boolean;
   disabled?: boolean;
+  testId?: string;
 }>();
 
 const modelValue = defineModel<T>({ required: true });

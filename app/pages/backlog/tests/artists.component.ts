@@ -185,17 +185,16 @@ describe('Artist Display Mode', () => {
       // Click on the album to open modal
       const albumItem = screen
         .getByText('First Shared Album')
-        .closest('[class*="bg-elevated"]');
+        .closest('[data-testid="backlog-item"]');
       await fireEvent.click(albumItem as HTMLElement);
 
       // Wait for modal to open
-      await waitFor(() => document.querySelector('[role="dialog"]') !== null);
+      await waitFor(() => screen.queryByRole('dialog') !== null);
 
-      const modal = document.querySelector('[role="dialog"]');
-      expect(modal).not.toBeNull();
+      const modal = screen.getByRole('dialog');
       // Modal should show album name and artist
-      expect(modal?.textContent).toContain('First Shared Album');
-      expect(modal?.textContent).toContain('Shared Artist');
+      expect(modal.textContent).toContain('First Shared Album');
+      expect(modal.textContent).toContain('Shared Artist');
     });
   });
 
@@ -223,10 +222,10 @@ describe('Artist Display Mode', () => {
 
       await waitFor(() => screen.queryByText('Shared Artist') !== null);
 
-      // The artist group should have a scheduled indicator (indigo calendar icon)
+      // The artist group should have a scheduled indicator
       const artistSection = screen.getByText('Shared Artist').closest('button');
       const scheduledIndicator = artistSection?.querySelector(
-        '[class*="bg-indigo-500"]',
+        '[data-testid="scheduled-indicator"]',
       );
       expect(scheduledIndicator).not.toBeNull();
     });
@@ -245,12 +244,12 @@ describe('Artist Display Mode', () => {
       // Find the scheduled album card
       const albumCard = screen
         .getByText('First Shared Album')
-        .closest('[class*="bg-elevated"]');
+        .closest('[data-testid="backlog-item"]');
 
       // Should have scheduled indicator
-      const scheduledIndicator = albumCard
-        ?.closest('div')
-        ?.querySelector('[class*="bg-indigo-500"]');
+      const scheduledIndicator = albumCard?.querySelector(
+        '[data-testid="scheduled-indicator"]',
+      );
       expect(scheduledIndicator).not.toBeNull();
     });
   });
@@ -277,11 +276,11 @@ describe('Artist Display Mode', () => {
 
       await waitFor(() => screen.queryByText('First Shared Album') !== null);
 
-      // Find the album text and its parent BacklogItem (has bg-elevated class)
-      const albumText = screen.getByText('First Shared Album');
-      // Navigate up to find the BacklogItem container which has the delete button
-      const albumContainer = albumText.closest('[class*="hover:bg-muted"]');
-      const deleteButton = albumContainer?.querySelector('button');
+      // Find the BacklogItem and its delete button
+      const albumItem = screen
+        .getByText('First Shared Album')
+        .closest('[data-testid="backlog-item"]');
+      const deleteButton = albumItem?.querySelector('button');
 
       expect(deleteButton).not.toBeNull();
       await fireEvent.click(deleteButton as HTMLElement);

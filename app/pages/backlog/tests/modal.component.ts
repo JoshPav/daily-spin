@@ -63,11 +63,11 @@ describe('Album Modal Actions', () => {
 
     const albumItem = screen
       .getByText('Test Album')
-      .closest('[class*="bg-elevated"]');
+      .closest('[data-testid="backlog-item"]');
     await fireEvent.click(albumItem as HTMLElement);
 
-    await waitFor(() => document.querySelector('[role="dialog"]') !== null);
-    return document.querySelector('[role="dialog"]');
+    await waitFor(() => screen.queryByRole('dialog') !== null);
+    return screen.getByRole('dialog');
   };
 
   describe('remove from backlog', () => {

@@ -85,6 +85,7 @@ const viewModeOptions = [
             :options="viewModeOptions"
             label="Select view"
             icon-only
+            test-id="view-mode-dropdown"
           />
           <UButton color="primary" :icon="Icons.PLUS" to="/backlog/add">
             Add Album

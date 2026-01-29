@@ -8,7 +8,6 @@ import { readBody } from 'h3';
 const toDateString = (d: Date): string => format(d, 'yyyy-MM-dd');
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref } from 'vue';
 import type { DailyListens, ScheduledListenItem } from '~~/shared/schema';
 import {
   cleanupAfterTest,
@@ -19,6 +18,7 @@ import {
   waitForElement,
   waitForText,
 } from '~~/tests/component';
+import { mockUseAuth } from '~~/tests/component/authMock';
 import {
   album,
   artist,
@@ -102,19 +102,7 @@ mockNuxtImport('useSpotifyApi', () => {
 });
 
 // Mock useAuth to bypass auth loading (must be at module level)
-mockNuxtImport('useAuth', () => {
-  return () => ({
-    loggedIn: computed(() => true),
-    user: computed(() => ({
-      id: 'test-user-id',
-      name: 'Test User',
-      image: 'https://example.com/avatar.jpg',
-      initial: 'T',
-    })),
-    loading: ref(false),
-    requiresReauth: computed(() => false),
-  });
-});
+mockUseAuth();
 
 // Register endpoint mock for /api/listens
 // Returns data based on call count to support multi-batch infinite scroll tests

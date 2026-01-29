@@ -2,13 +2,11 @@
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { readBody } from 'h3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { computed, ref } from 'vue';
 import type { GetPreferencesResponse } from '~~/shared/schema';
 import {
   cleanupAfterTest,
   createMockPushSubscription,
   fireEvent,
-  mockUser,
   mountPage,
   resetPushNotificationMocks,
   screen,
@@ -18,6 +16,7 @@ import {
   TEST_VAPID_PUBLIC_KEY,
   waitFor,
 } from '~~/tests/component';
+import { mockUseAuth } from '~~/tests/component/authMock';
 import {
   getPreferencesResponse,
   linkedPlaylist,
@@ -33,14 +32,7 @@ let subscribeCalls: { body: unknown }[] = [];
 let unsubscribeCalls: { body: unknown }[] = [];
 
 // Mock useAuth to bypass auth loading (must be at module level)
-mockNuxtImport('useAuth', () => {
-  return () => ({
-    loggedIn: computed(() => true),
-    user: computed(() => mockUser),
-    loading: ref(false),
-    requiresReauth: computed(() => false),
-  });
-});
+mockUseAuth();
 
 // Mock useRuntimeConfig to provide VAPID key for push notifications
 mockNuxtImport('useRuntimeConfig', () => {

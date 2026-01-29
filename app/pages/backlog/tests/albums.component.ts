@@ -193,9 +193,9 @@ describe('Album Display Mode', () => {
       await switchToAlbumsView();
       await waitFor(() => screen.queryByText('Alpha Album') !== null);
 
-      // The scheduled indicator is a calendar icon in an indigo badge
-      const scheduledIndicators = document.querySelectorAll(
-        '[class*="bg-indigo-500"]',
+      // The scheduled indicator is a calendar icon
+      const scheduledIndicators = screen.queryAllByTestId(
+        'scheduled-indicator',
       );
       expect(scheduledIndicators.length).toBeGreaterThanOrEqual(1);
     });
@@ -219,10 +219,10 @@ describe('Album Display Mode', () => {
       await waitFor(() => screen.queryByText('Alpha Album') !== null);
 
       // Find the delete button for Alpha Album
-      const albumCard = screen
+      const albumItem = screen
         .getByText('Alpha Album')
-        .closest('[class*="bg-elevated"]');
-      const deleteButton = albumCard?.querySelector('button');
+        .closest('[data-testid="backlog-item"]');
+      const deleteButton = albumItem?.querySelector('button');
 
       expect(deleteButton).not.toBeNull();
       await fireEvent.click(deleteButton as HTMLElement);
@@ -243,27 +243,26 @@ describe('Album Display Mode', () => {
       // Click on the Alpha Album item
       const albumItem = screen
         .getByText('Alpha Album')
-        .closest('[class*="bg-elevated"]');
+        .closest('[data-testid="backlog-item"]');
       expect(albumItem).not.toBeNull();
       await fireEvent.click(albumItem as HTMLElement);
 
       // Wait for modal to open
-      await waitFor(() => document.querySelector('[role="dialog"]') !== null);
+      await waitFor(() => screen.queryByRole('dialog') !== null);
 
-      const modal = document.querySelector('[role="dialog"]');
-      expect(modal).not.toBeNull();
+      const modal = screen.getByRole('dialog');
 
       // Verify modal displays album name
-      expect(modal?.textContent).toContain('Alpha Album');
+      expect(modal.textContent).toContain('Alpha Album');
 
       // Verify modal displays artist name
-      expect(modal?.textContent).toContain('Zeta Artist');
+      expect(modal.textContent).toContain('Zeta Artist');
 
       // Verify modal displays added date
-      expect(modal?.textContent).toContain('Added on 10 January 2026');
+      expect(modal.textContent).toContain('Added on 10 January 2026');
 
       // Verify modal displays album image
-      const albumImage = modal?.querySelector('img[alt="Alpha Album cover"]');
+      const albumImage = modal.querySelector('img[alt="Alpha Album cover"]');
       expect(albumImage).not.toBeNull();
       expect(albumImage?.getAttribute('src')).toContain('alpha.jpg');
     });
