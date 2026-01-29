@@ -6,9 +6,16 @@ import { computed, ref } from 'vue';
 import type { GetPreferencesResponse } from '~~/shared/schema';
 import {
   cleanupAfterTest,
+  createMockPushSubscription,
   fireEvent,
+  mockUser,
   mountPage,
+  resetPushNotificationMocks,
   screen,
+  setMockNotificationPermission,
+  setMockPushSubscription,
+  setupPushNotificationMocks,
+  TEST_VAPID_PUBLIC_KEY,
   waitFor,
 } from '~~/tests/component';
 import {
@@ -22,19 +29,25 @@ const mountPreferences = () => mountPage('/preferences');
 // Shared mock state that tests can modify
 let mockPreferencesData: GetPreferencesResponse | null = null;
 let patchCalls: { body: unknown }[] = [];
+let subscribeCalls: { body: unknown }[] = [];
+let unsubscribeCalls: { body: unknown }[] = [];
 
 // Mock useAuth to bypass auth loading (must be at module level)
 mockNuxtImport('useAuth', () => {
   return () => ({
     loggedIn: computed(() => true),
-    user: computed(() => ({
-      id: 'test-user-id',
-      name: 'Test User',
-      image: 'https://example.com/avatar.jpg',
-      initial: 'T',
-    })),
+    user: computed(() => mockUser),
     loading: ref(false),
     requiresReauth: computed(() => false),
+  });
+});
+
+// Mock useRuntimeConfig to provide VAPID key for push notifications
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => ({
+    public: {
+      vapidPublicKey: TEST_VAPID_PUBLIC_KEY,
+    },
   });
 });
 
@@ -55,10 +68,34 @@ registerEndpoint('/api/preferences', {
   },
 });
 
+// Register endpoint mocks for push notifications
+registerEndpoint('/api/push/subscribe', {
+  method: 'POST',
+  handler: async (event) => {
+    const body = await readBody(event);
+    subscribeCalls.push({ body });
+    return { success: true };
+  },
+});
+
+registerEndpoint('/api/push/unsubscribe', {
+  method: 'POST',
+  handler: async (event) => {
+    const body = await readBody(event);
+    unsubscribeCalls.push({ body });
+    return { success: true };
+  },
+});
+
 describe('Preferences Page', () => {
   beforeEach(() => {
     mockPreferencesData = getPreferencesResponse();
     patchCalls = [];
+    subscribeCalls = [];
+    unsubscribeCalls = [];
+    // Reset and setup push notification browser API mocks
+    resetPushNotificationMocks();
+    setupPushNotificationMocks();
     // Clear Nuxt data cache to ensure fresh fetch
     clearNuxtData('preferences');
   });
@@ -146,7 +183,8 @@ describe('Preferences Page', () => {
         await mountPreferences();
 
         const switchButtons = screen.getAllByRole('switch');
-        expect(switchButtons).toHaveLength(3);
+        // 3 feature toggles + 1 push notification toggle = 4 switches
+        expect(switchButtons).toHaveLength(4);
 
         const saveButton = screen.getByRole('button', { name: /Save Changes/ });
         expect(saveButton.hasAttribute('disabled')).toBe(true);
@@ -286,6 +324,125 @@ describe('Preferences Page', () => {
         await waitFor(() => screen.queryByText('Album of the Day') !== null);
 
         expect(screen.queryByText('No playlists linked yet')).toBeNull();
+      });
+    });
+  });
+
+  describe('notifications card', () => {
+    it('should render the Notifications card with Push Notifications toggle when push is supported', async () => {
+      await mountPreferences();
+
+      await waitFor(() => screen.queryByText('Notifications') !== null);
+
+      // Card title and description
+      expect(screen.getByText('Notifications')).toBeDefined();
+      expect(
+        screen.getByText('Get notified about important updates'),
+      ).toBeDefined();
+
+      // Push Notifications toggle
+      expect(screen.getByText('Push Notifications')).toBeDefined();
+      expect(
+        screen.getByText(
+          'Receive notifications when you need to reconnect your Spotify account',
+        ),
+      ).toBeDefined();
+    });
+
+    describe('when notifications are blocked', () => {
+      beforeEach(() => {
+        setMockNotificationPermission('denied');
+        setupPushNotificationMocks();
+      });
+
+      it('should show blocked warning message', async () => {
+        await mountPreferences();
+
+        await waitFor(() => screen.queryByText('Notifications') !== null);
+        expect(
+          screen.getByText(
+            'Notifications are blocked. Please enable them in your browser settings.',
+          ),
+        ).toBeDefined();
+      });
+    });
+
+    describe('when toggling push notifications', () => {
+      beforeEach(() => {
+        // Pre-grant permission so subscribe doesn't need to request it
+        setMockNotificationPermission('granted');
+        setMockPushSubscription(null);
+        setupPushNotificationMocks();
+      });
+
+      it('should subscribe when toggling on', async () => {
+        await mountPreferences();
+
+        await waitFor(() => screen.queryByText('Push Notifications') !== null);
+
+        const switches = screen.getAllByRole('switch');
+        const pushSwitch = switches[3]!;
+
+        expect(pushSwitch.getAttribute('aria-checked')).toBe('false');
+
+        await fireEvent.click(pushSwitch);
+
+        // Should call subscribe endpoint
+        await waitFor(() => subscribeCalls.length > 0);
+        expect(subscribeCalls).toHaveLength(1);
+        expect(subscribeCalls[0]?.body).toMatchObject({
+          endpoint: 'https://fcm.googleapis.com/fcm/send/test-endpoint',
+          keys: {
+            p256dh: 'test-p256dh-key',
+            auth: 'test-auth-key',
+          },
+        });
+      });
+
+      it('should unsubscribe when toggling off', async () => {
+        // Start with an existing subscription
+        setMockPushSubscription(createMockPushSubscription());
+        setupPushNotificationMocks();
+
+        await mountPreferences();
+
+        await waitFor(() => screen.queryByText('Push Notifications') !== null);
+
+        // Find the push notifications switch
+        const switches = screen.getAllByRole('switch');
+        const pushSwitch = switches[3]!;
+
+        // Click to unsubscribe
+        await fireEvent.click(pushSwitch);
+
+        // Should call unsubscribe endpoint
+        await waitFor(() => unsubscribeCalls.length > 0);
+        expect(unsubscribeCalls).toHaveLength(1);
+        expect(unsubscribeCalls[0]?.body).toMatchObject({
+          endpoint: 'https://fcm.googleapis.com/fcm/send/test-endpoint',
+        });
+      });
+    });
+
+    describe('when push notifications are not supported', () => {
+      beforeEach(() => {
+        // Remove browser APIs to simulate unsupported environment
+        // @ts-expect-error - intentionally removing for test
+        delete window.PushManager;
+        // @ts-expect-error - intentionally removing for test
+        delete window.Notification;
+        // @ts-expect-error - intentionally removing for test
+        delete navigator.serviceWorker;
+      });
+
+      it('should not render the Notifications card', async () => {
+        await mountPreferences();
+
+        // Wait for page to load (check for Features card)
+        await waitFor(() => screen.queryByText('Features') !== null);
+
+        // Notifications card should not be present
+        expect(screen.queryByText('Notifications')).toBeNull();
       });
     });
   });
