@@ -19,7 +19,11 @@ const {
   checking: pushChecking,
   isBlocked: pushBlocked,
   toggle: togglePush,
+  permission: pushPermission,
 } = usePushNotifications();
+
+// Temporary debug flag - remove after debugging
+const showPushDebug = ref(false);
 
 const getPlaylistTypeLabel = (type: PlaylistType) => {
   return type === 'album_of_the_day' ? 'Album of the Day' : 'Song of the Day';
@@ -109,6 +113,21 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
               :loading="pushLoading || pushChecking"
               @update:model-value="togglePush"
             />
+            <!-- Temporary debug display - tap to toggle -->
+            <div
+              class="mt-2 p-2 bg-gray-800 rounded text-xs font-mono cursor-pointer"
+              @click="showPushDebug = !showPushDebug"
+            >
+              <div>tap to {{ showPushDebug ? 'hide' : 'show' }} debug</div>
+              <div v-if="showPushDebug" class="mt-2 space-y-1">
+                <div>checking: {{ pushChecking }}</div>
+                <div>supported: {{ pushSupported }}</div>
+                <div>loading: {{ pushLoading }}</div>
+                <div>subscribed: {{ isSubscribed }}</div>
+                <div>blocked: {{ pushBlocked }}</div>
+                <div>permission: {{ pushPermission }}</div>
+              </div>
+            </div>
           </div>
         </PreferencesCard>
 
