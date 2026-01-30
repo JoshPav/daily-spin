@@ -12,6 +12,6 @@
   right: 0;
   bottom: 0;
   padding-top: var(--ui-header-height);
-  overflow: hidden;
+  overflow-y: auto;
 }
 </style>

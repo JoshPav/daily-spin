@@ -2,6 +2,21 @@ import { computed, onMounted, ref } from 'vue';
 
 type NotificationPermission = 'default' | 'granted' | 'denied';
 
+const SERVICE_WORKER_READY_TIMEOUT_MS = 5000;
+
+/**
+ * Wait for the service worker to be ready, with a timeout.
+ * Returns the registration if ready, or null if timed out.
+ */
+async function waitForServiceWorkerReady(
+  timeoutMs: number,
+): Promise<ServiceWorkerRegistration | null> {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
+}
+
 /**
  * Convert a base64 VAPID public key to Uint8Array for PushManager
  */
@@ -53,11 +68,15 @@ export const usePushNotifications = () => {
 
     permission.value = Notification.permission;
 
-    // Check if already subscribed
+    // Check if already subscribed (with timeout to prevent hanging on mobile)
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      isSubscribed.value = !!subscription;
+      const registration = await waitForServiceWorkerReady(
+        SERVICE_WORKER_READY_TIMEOUT_MS,
+      );
+      if (registration) {
+        const subscription = await registration.pushManager.getSubscription();
+        isSubscribed.value = !!subscription;
+      }
     } catch (error) {
       console.error('Failed to check push subscription:', error);
     } finally {
@@ -101,7 +120,13 @@ export const usePushNotifications = () => {
       return false;
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await waitForServiceWorkerReady(
+      SERVICE_WORKER_READY_TIMEOUT_MS,
+    );
+    if (!registration) {
+      console.warn('Service worker not ready for push subscription');
+      return false;
+    }
 
     // Subscribe to push
     const subscription = await registration.pushManager.subscribe({
@@ -138,7 +163,13 @@ export const usePushNotifications = () => {
     loading.value = true;
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await waitForServiceWorkerReady(
+        SERVICE_WORKER_READY_TIMEOUT_MS,
+      );
+      if (!registration) {
+        console.warn('Service worker not ready for push unsubscription');
+        return false;
+      }
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
