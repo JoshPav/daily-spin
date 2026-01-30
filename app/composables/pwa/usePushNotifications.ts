@@ -22,6 +22,7 @@ export const usePushNotifications = () => {
   const isSubscribed = ref(false);
   const loading = ref(false);
   const supported = ref(false);
+  const checking = ref(true);
 
   const config = useRuntimeConfig();
 
@@ -35,14 +36,20 @@ export const usePushNotifications = () => {
    * Check if push notifications are supported and get current state
    */
   const checkSupport = async () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+      checking.value = false;
+      return;
+    }
 
     supported.value =
       'serviceWorker' in navigator &&
       'PushManager' in window &&
       'Notification' in window;
 
-    if (!supported.value) return;
+    if (!supported.value) {
+      checking.value = false;
+      return;
+    }
 
     permission.value = Notification.permission;
 
@@ -53,6 +60,8 @@ export const usePushNotifications = () => {
       isSubscribed.value = !!subscription;
     } catch (error) {
       console.error('Failed to check push subscription:', error);
+    } finally {
+      checking.value = false;
     }
   };
 
@@ -74,6 +83,9 @@ export const usePushNotifications = () => {
 
   /**
    * Subscribe to push notifications
+   * NOTE: Permission should be requested in toggle() before calling this,
+   * to ensure it happens directly on user gesture (required by mobile browsers).
+   * NOTE: Loading state is managed by toggle(), not this function.
    */
   const subscribe = async (): Promise<boolean> => {
     if (!supported.value || !config.public.vapidPublicKey) {
@@ -83,50 +95,38 @@ export const usePushNotifications = () => {
       return false;
     }
 
-    loading.value = true;
-
-    try {
-      // Request permission if not already granted
-      if (permission.value !== 'granted') {
-        const granted = await requestPermission();
-        if (!granted) {
-          loading.value = false;
-          return false;
-        }
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-
-      // Subscribe to push
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          config.public.vapidPublicKey as string,
-        ),
-      });
-
-      // Send subscription to server
-      const subscriptionJson = subscription.toJSON();
-      await $fetch('/api/push/subscribe', {
-        method: 'POST',
-        body: {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscriptionJson.keys?.p256dh,
-            auth: subscriptionJson.keys?.auth,
-          },
-          expirationTime: subscription.expirationTime,
-        },
-      });
-
-      isSubscribed.value = true;
-      return true;
-    } catch (error) {
-      console.error('Failed to subscribe to push notifications:', error);
+    // Permission must already be granted (requested in toggle before this call)
+    if (permission.value !== 'granted') {
+      console.warn('Permission not granted before subscribe call');
       return false;
-    } finally {
-      loading.value = false;
     }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    // Subscribe to push
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(
+        config.public.vapidPublicKey as string,
+      ),
+    });
+
+    // Send subscription to server
+    const subscriptionJson = subscription.toJSON();
+    await $fetch('/api/push/subscribe', {
+      method: 'POST',
+      body: {
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: subscriptionJson.keys?.p256dh,
+          auth: subscriptionJson.keys?.auth,
+        },
+        expirationTime: subscription.expirationTime,
+      },
+    });
+
+    isSubscribed.value = true;
+    return true;
   };
 
   /**
@@ -166,12 +166,36 @@ export const usePushNotifications = () => {
 
   /**
    * Toggle subscription state
+   * IMPORTANT: On mobile browsers, requestPermission must be called as directly
+   * as possible from user gesture. We call it here before any other async work.
    */
   const toggle = async (): Promise<boolean> => {
     if (isSubscribed.value) {
       return unsubscribe();
     }
-    return subscribe();
+
+    // Set loading immediately so user sees feedback
+    loading.value = true;
+
+    try {
+      // Request permission immediately on user gesture (critical for mobile browsers)
+      // This must happen BEFORE any async operations to satisfy iOS Safari's requirements
+      if (permission.value !== 'granted') {
+        const granted = await requestPermission();
+        if (!granted) {
+          return false;
+        }
+      }
+
+      return await subscribe();
+    } catch (error) {
+      console.error('Failed to toggle push notifications:', error);
+      return false;
+    } finally {
+      // Ensure loading is always reset
+      // Note: subscribe() also sets loading=false, but this catches any edge cases
+      loading.value = false;
+    }
   };
 
   onMounted(() => {
@@ -184,6 +208,7 @@ export const usePushNotifications = () => {
     isSubscribed,
     loading,
     supported,
+    checking,
     // Computed
     isBlocked,
     canSubscribe,

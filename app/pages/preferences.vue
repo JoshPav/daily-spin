@@ -16,6 +16,7 @@ const {
   isSubscribed,
   loading: pushLoading,
   supported: pushSupported,
+  checking: pushChecking,
   isBlocked: pushBlocked,
   toggle: togglePush,
 } = usePushNotifications();
@@ -90,8 +91,9 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
           </div>
         </PreferencesCard>
 
+        <!-- Show skeleton while checking push support, or show card if supported -->
         <PreferencesCard
-          v-if="pushSupported"
+          v-if="pushChecking || pushSupported"
           title="Notifications"
           description="Get notified about important updates"
         >
@@ -104,7 +106,7 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
               :model-value="isSubscribed"
               title="Push Notifications"
               description="Receive notifications when you need to reconnect your Spotify account"
-              :loading="pushLoading"
+              :loading="pushLoading || pushChecking"
               @update:model-value="togglePush"
             />
           </div>
