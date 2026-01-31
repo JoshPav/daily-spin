@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { endOfMonth, format, isPast } from 'date-fns';
+import { endOfMonth, format, isPast, isToday } from 'date-fns';
 import { computed, ref, watch } from 'vue';
 import { Icons } from '~/components/common/icons';
 import { useShareImage } from '~/composables/features/useShareImage';
@@ -16,10 +16,10 @@ const { year, month, selectedMonth, monthOptions, monthTitle } = useMonthPicker(
   },
 );
 
-// Check if the selected month is complete (in the past)
+// Check if the selected month is complete (last day or past)
 const isMonthComplete = computed(() => {
   const lastDayOfMonth = endOfMonth(new Date(year.value, month.value - 1, 1));
-  return isPast(lastDayOfMonth);
+  return isToday(lastDayOfMonth) || isPast(lastDayOfMonth);
 });
 
 // Update URL when month changes
