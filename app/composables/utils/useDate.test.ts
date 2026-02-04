@@ -84,4 +84,51 @@ describe('useDate', () => {
       expect(utils.isFuture()).toBe(true);
     });
   });
+
+  describe('isInLastWeek', () => {
+    it('should return true for today', () => {
+      const today = new Date();
+      const { utils } = useDate(today.toISOString());
+
+      expect(utils.isInLastWeek()).toBe(true);
+    });
+
+    it('should return true for yesterday', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const { utils } = useDate(yesterday.toISOString());
+
+      expect(utils.isInLastWeek()).toBe(true);
+    });
+
+    it('should return true for 6 days ago', () => {
+      const sixDaysAgo = new Date();
+      sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+      const { utils } = useDate(sixDaysAgo.toISOString());
+
+      expect(utils.isInLastWeek()).toBe(true);
+    });
+
+    it('should return false for 7 days ago', () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const { utils } = useDate(sevenDaysAgo.toISOString());
+
+      expect(utils.isInLastWeek()).toBe(false);
+    });
+
+    it('should return false for future dates', () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const { utils } = useDate(tomorrow.toISOString());
+
+      expect(utils.isInLastWeek()).toBe(false);
+    });
+
+    it('should return false for dates far in the past', () => {
+      const { utils } = useDate('2020-01-01');
+
+      expect(utils.isInLastWeek()).toBe(false);
+    });
+  });
 });
