@@ -21,7 +21,7 @@
         class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
       >
         <button
-          v-if="isToday"
+          v-if="isInLastWeek"
           data-testid="add-listen-button"
           class="flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-primary transition-all duration-200 hover:text-(--color-primary-vibrant) hover:scale-110 active:scale-105"
           @click.stop="openAddModal"
@@ -56,7 +56,7 @@ const addAlbumModal = overlay.create(LazyLogAlbumModal);
 
 const {
   date: dateRef,
-  relative: { isToday },
+  relative: { isInLastWeek },
 } = useDate(date);
 
 const openAddModal = () => {

@@ -6,6 +6,8 @@ import {
   getMonth,
   getYear,
   parseISO,
+  startOfDay,
+  subDays,
 } from 'date-fns';
 import { computed } from 'vue';
 
@@ -24,6 +26,13 @@ export const useDate = (dateString: string) => {
 
   const isFuture = () => dfnsIsFuture(date.value);
 
+  const isInLastWeek = () => {
+    const today = startOfDay(new Date());
+    const sevenDaysAgo = subDays(today, 6);
+    const dateToCheck = startOfDay(date.value);
+    return dateToCheck >= sevenDaysAgo && dateToCheck <= today;
+  };
+
   return {
     date,
     day,
@@ -35,10 +44,12 @@ export const useDate = (dateString: string) => {
     relative: {
       isFuture: computed(() => dfnsIsFuture(date.value)),
       isToday: computed(() => dfnsIsToday(date.value)),
+      isInLastWeek: computed(() => isInLastWeek()),
     },
     utils: {
       isFuture,
       isToday,
+      isInLastWeek,
     },
   };
 };
