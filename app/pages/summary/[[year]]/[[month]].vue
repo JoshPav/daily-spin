@@ -2,6 +2,7 @@
 import { endOfMonth, format, isPast, isToday } from 'date-fns';
 import { computed, ref, watch } from 'vue';
 import { Icons } from '~/components/common/icons';
+import { usePreloadedShareImage } from '~/composables/features/usePreloadedShareImage';
 import { useShareImage } from '~/composables/features/useShareImage';
 import { SHARE_IMAGE_CONFIG } from '~/constants/shareConfig';
 
@@ -38,9 +39,18 @@ const shareCardRef = ref<InstanceType<
   typeof import('~/components/MonthlySummary/MonthlySummaryShareCard.vue').default
 > | null>(null);
 
-// Share image composable
-const { generateImage, downloadImage, shareImage, canShare } = useShareImage();
-const isGenerating = ref(false);
+// Share image utilities
+const { downloadImage, shareImage, canShare } = useShareImage();
+
+// Preload image in background when data is ready and month is complete
+const shouldPreload = computed(
+  () => hasListens.value && !loading.value && isMonthComplete.value,
+);
+
+const { getImage, isWaiting } = usePreloadedShareImage({
+  getElement: () => shareCardRef.value?.cardRef,
+  shouldPreload,
+});
 
 // Generate filename for download
 const getFilename = () => {
@@ -52,12 +62,11 @@ const getFilename = () => {
 const handleDownload = async () => {
   if (!shareCardRef.value?.cardRef) return;
 
-  isGenerating.value = true;
   try {
-    const blob = await generateImage(shareCardRef.value.cardRef);
+    const blob = await getImage();
     downloadImage(blob, getFilename());
-  } finally {
-    isGenerating.value = false;
+  } catch (error) {
+    console.error('Failed to generate image:', error);
   }
 };
 
@@ -65,17 +74,16 @@ const handleDownload = async () => {
 const handleShare = async () => {
   if (!shareCardRef.value?.cardRef) return;
 
-  isGenerating.value = true;
   try {
-    const blob = await generateImage(shareCardRef.value.cardRef);
+    const blob = await getImage();
     const shared = await shareImage(blob, getFilename());
 
     // Fall back to download if share isn't supported
     if (!shared) {
       downloadImage(blob, getFilename());
     }
-  } finally {
-    isGenerating.value = false;
+  } catch (error) {
+    console.error('Failed to generate image:', error);
   }
 };
 </script>
@@ -103,8 +111,8 @@ const handleShare = async () => {
                 color="neutral"
                 variant="soft"
                 :icon="Icons.DOWNLOAD"
-                :loading="isGenerating"
-                :disabled="isGenerating || !isMonthComplete"
+                :loading="isWaiting"
+                :disabled="isWaiting || !isMonthComplete"
                 @click="handleDownload"
               >
                 Download
@@ -122,8 +130,8 @@ const handleShare = async () => {
               <UButton
                 color="primary"
                 :icon="Icons.SHARE"
-                :loading="isGenerating"
-                :disabled="isGenerating || !isMonthComplete"
+                :loading="isWaiting"
+                :disabled="isWaiting || !isMonthComplete"
                 @click="handleShare"
               >
                 Share
