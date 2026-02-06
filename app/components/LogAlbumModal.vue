@@ -62,13 +62,19 @@ import {
 } from '~/constants/listenMetadata';
 import { formatDate } from '~/utils/dateUtils';
 
-const { dateOfListen } = defineProps<{ dateOfListen: Date }>();
+const { dateOfListen, onAlbumLogged } = defineProps<{
+  dateOfListen: Date;
+  onAlbumLogged?: () => void;
+}>();
 const emit = defineEmits<{ close: [] }>();
 
 const { selectedAlbum, listenMethod, listenTime, saving, logAlbumListen } =
   useLogAlbum({
     date: dateOfListen,
-    onSuccess: () => emit('close'),
+    onSuccess: () => {
+      onAlbumLogged?.();
+      emit('close');
+    },
   });
 
 const listenMethodOptions = toRadioOptions(LISTEN_METHOD_CONFIG);

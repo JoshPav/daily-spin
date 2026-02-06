@@ -62,6 +62,7 @@ export const useDashboardData = () => {
     hasMore,
     error,
     fetchMore: fetchMoreListens,
+    refresh: refreshListens,
   } = useListens(config.value.past);
   const {
     scheduledListensByDate,
@@ -167,6 +168,7 @@ export const useDashboardData = () => {
     displayDates,
     getDataForDate,
     updateDay,
+    refreshListens,
     loading,
     scheduledListensLoading,
     error,

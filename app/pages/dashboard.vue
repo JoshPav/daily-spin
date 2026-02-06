@@ -11,6 +11,7 @@ const {
   displayDates,
   getDataForDate,
   updateDay,
+  refreshListens,
   loading,
   scheduledListensLoading,
   error,
@@ -133,6 +134,7 @@ onUnmounted(() => {
                 :date="dateKey"
                 :listens="(getDataForDate(dateKey) as PastDayData).listens"
                 :on-favorite-song-update="updateFavoriteSongForDate"
+                :on-album-logged="refreshListens"
               />
               <ScheduledAlbumDay
                 v-else
