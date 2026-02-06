@@ -33,7 +33,7 @@ const getPlaylistTypeDescription = (type: PlaylistType) => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full overflow-y-auto">
+  <div class="h-[calc(100vh-var(--ui-header-height))] overflow-y-auto">
     <main class="max-w-200 mx-auto p-4 md:p-6 w-full flex-1 flex flex-col">
       <h1 class="m-0 text-2xl md:text-[32px] font-black text-highlighted mb-6">
         Preferences
