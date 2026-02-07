@@ -1,8 +1,8 @@
 import type { SearchResults, SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import { ref, watch } from 'vue';
+import { MIN_ALBUM_TRACKS } from '~~/shared/constants/album.constants';
 
 const SEARCH_LIMIT = 20;
-const MIN_ALBUM_TRACKS = 4;
 
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
 

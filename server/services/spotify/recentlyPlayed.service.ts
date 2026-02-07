@@ -25,6 +25,7 @@ import {
   groupTracksByAlbum,
   type PlayHistoryWithIndex,
 } from '~~/server/utils/tracks.utils';
+import { MIN_ALBUM_TRACKS } from '~~/shared/constants/album.constants';
 
 const logger = createTaggedLogger('Service:RecentlyPlayed');
 
@@ -43,8 +44,6 @@ type FinishedAlbum = {
 };
 
 type ProcessedGroup = UnfinishedAlbum | FinishedAlbum;
-
-const MIN_REQUIRED_TRACKS = 4;
 
 export class RecentlyPlayedService {
   constructor(
@@ -157,7 +156,7 @@ export class RecentlyPlayedService {
         .filter(
           (item) =>
             isPlayedToday(item.played_at, today) &&
-            item.track.album.total_tracks >= MIN_REQUIRED_TRACKS,
+            item.track.album.total_tracks >= MIN_ALBUM_TRACKS,
         )
         .sort(
           (a, b) =>
@@ -195,7 +194,7 @@ export class RecentlyPlayedService {
     const uniqueTracks = new Set([...tracks.map(({ track }) => track.id)]);
 
     const listenedInFull =
-      uniqueTracks.size === totalTracks && totalTracks >= MIN_REQUIRED_TRACKS;
+      uniqueTracks.size === totalTracks && totalTracks >= MIN_ALBUM_TRACKS;
 
     if (!listenedInFull) {
       return {

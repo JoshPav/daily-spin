@@ -1,8 +1,8 @@
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import { ref } from 'vue';
+import { MIN_ALBUM_TRACKS } from '~~/shared/constants/album.constants';
 
 const RELEASES_LIMIT = 50;
-const MIN_ALBUM_TRACKS = 4;
 
 /**
  * Filter to only include full albums with enough tracks
