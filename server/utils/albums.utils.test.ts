@@ -82,14 +82,14 @@ describe('albums.utils', () => {
       expect(isRealAlbum(album)).toBe(true);
     });
 
-    it('should return true for album with exactly 5 tracks (minimum)', () => {
-      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 5 });
+    it('should return true for album with exactly 4 tracks (minimum)', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 4 });
 
       expect(isRealAlbum(album)).toBe(true);
     });
 
-    it('should return false for album with less than 5 tracks', () => {
-      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 4 });
+    it('should return false for album with less than 4 tracks', () => {
+      const album = simplifiedAlbum({ album_type: 'album', total_tracks: 3 });
 
       expect(isRealAlbum(album)).toBe(false);
     });
@@ -139,14 +139,14 @@ describe('albums.utils', () => {
     it('should filter out albums with too few tracks', () => {
       const albums = [
         simplifiedAlbum({ album_type: 'album', total_tracks: 10 }),
-        simplifiedAlbum({ album_type: 'album', total_tracks: 3 }),
-        simplifiedAlbum({ album_type: 'album', total_tracks: 5 }),
+        simplifiedAlbum({ album_type: 'album', total_tracks: 2 }),
+        simplifiedAlbum({ album_type: 'album', total_tracks: 4 }),
       ];
 
       const result = filterRealAlbums(albums);
 
       expect(result).toHaveLength(2);
-      expect(result.every((a) => a.total_tracks >= 5)).toBe(true);
+      expect(result.every((a) => a.total_tracks >= 4)).toBe(true);
     });
 
     it('should filter out compilations', () => {

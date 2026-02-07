@@ -79,11 +79,12 @@ const formattedReleaseDate = computed(() =>
         {{ artistNames }}
       </div>
       <div
-        v-if="formattedReleaseDate"
-        class="font-montserrat text-xs font-medium"
+        class="flex items-center gap-2 font-montserrat text-xs font-medium"
         :class="selected ? 'text-gray-800' : 'text-neutral-500'"
       >
-        {{ formattedReleaseDate }}
+        <span v-if="formattedReleaseDate">{{ formattedReleaseDate }}</span>
+        <span v-if="formattedReleaseDate && album.total_tracks">&middot;</span>
+        <span v-if="album.total_tracks">{{ album.total_tracks }} tracks</span>
       </div>
     </div>
   </div>
