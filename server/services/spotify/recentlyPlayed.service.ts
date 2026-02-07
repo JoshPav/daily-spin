@@ -44,7 +44,7 @@ type FinishedAlbum = {
 
 type ProcessedGroup = UnfinishedAlbum | FinishedAlbum;
 
-const MIN_REQUIRED_TRACKS = 5;
+const MIN_REQUIRED_TRACKS = 4;
 
 export class RecentlyPlayedService {
   constructor(
@@ -195,7 +195,7 @@ export class RecentlyPlayedService {
     const uniqueTracks = new Set([...tracks.map(({ track }) => track.id)]);
 
     const listenedInFull =
-      uniqueTracks.size === totalTracks && totalTracks >= 5;
+      uniqueTracks.size === totalTracks && totalTracks >= MIN_REQUIRED_TRACKS;
 
     if (!listenedInFull) {
       return {

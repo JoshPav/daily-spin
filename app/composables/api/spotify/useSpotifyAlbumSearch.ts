@@ -2,7 +2,7 @@ import type { SearchResults, SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
 import { ref, watch } from 'vue';
 
 const SEARCH_LIMIT = 20;
-const MIN_ALBUM_TRACKS = 5;
+const MIN_ALBUM_TRACKS = 4;
 
 export type SearchResult = SearchResults<['album']>['albums']['items'][number];
 
@@ -28,7 +28,7 @@ export const useSpotifyAlbumSearch = () => {
   const searchResults = ref<SearchResult[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
-  const allowEPs = ref(false);
+  const allowEPs = ref(true);
   let debounceTimeout: NodeJS.Timeout | null = null;
 
   const performSearch = async (query: string) => {
