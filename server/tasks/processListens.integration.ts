@@ -571,11 +571,11 @@ describe('processListens Task Integration Tests', () => {
         expect(savedListens).toBeUndefined();
       });
 
-      it('should not save album with less than 5 tracks', async () => {
+      it('should not save album with less than 4 tracks', async () => {
         // Given
 
         const { history } = createFullAlbumPlayHistory({
-          tracksInAlbum: 4,
+          tracksInAlbum: 3,
         });
 
         mockGetRecentlyPlayedTracks.mockResolvedValue(

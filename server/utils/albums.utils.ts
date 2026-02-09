@@ -1,7 +1,7 @@
 import type { SimplifiedAlbum } from '@spotify/web-api-ts-sdk';
+import { MIN_ALBUM_TRACKS } from '~~/shared/constants/album.constants';
 
 const DESIRED_IMAGE_SIZE = 300;
-const MIN_ALBUM_TRACKS = 5;
 const MAX_EP_TRACKS = 7;
 
 export const getAlbumArtwork = (images: SimplifiedAlbum['images']) => {
