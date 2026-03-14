@@ -5,7 +5,6 @@ import {
   type AlbumListenInput,
   DailyListenRepository,
 } from '../repositories/dailyListen.repository';
-import { NoSkipRepository } from '../repositories/noSkip.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { dateInRange, isToday, toDateString } from '../utils/datetime.utils';
 import { createTaggedLogger } from '../utils/logger';
@@ -21,7 +20,6 @@ export class DailyListenService {
     private userRepo = new UserRepository(),
     private backlogService = new BacklogService(),
     private scheduledListenService = new ScheduledListenService(),
-    private noSkipRepo = new NoSkipRepository(),
   ) {}
 
   async addAlbumListen(userId: string, body: AddAlbumListenBody) {
@@ -92,10 +90,11 @@ export class DailyListenService {
       endDate: range.end.toISOString(),
     });
 
-    const [listens, noSkipAlbumIds] = await Promise.all([
-      this.dailyListenRepo.getListens(userId, range.start, range.end),
-      this.noSkipRepo.getNoSkipAlbumIds(userId),
-    ]);
+    const listens = await this.dailyListenRepo.getListens(
+      userId,
+      range.start,
+      range.end,
+    );
 
     if (
       dateInRange(new Date(), range) &&
@@ -128,9 +127,7 @@ export class DailyListenService {
       }
     }
 
-    const mappedListens = listens.map((listen) =>
-      mapDailyListens(listen, noSkipAlbumIds),
-    );
+    const mappedListens = listens.map(mapDailyListens);
 
     logger.debug('Fetched listens successfully', {
       userId,
