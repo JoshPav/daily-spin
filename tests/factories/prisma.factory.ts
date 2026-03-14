@@ -84,6 +84,9 @@ type DailyListenWithAlbums = Prisma.DailyListenGetPayload<{
                 artist: true;
               };
             };
+            noSkipUsers: {
+              select: { id: true };
+            };
           };
         };
       };
@@ -112,6 +115,9 @@ export const albumModel = createFactory<
           artist: true;
         };
       };
+      noSkipUsers: {
+        select: { id: true };
+      };
     };
   }>
 >(() => ({
@@ -134,6 +140,7 @@ export const albumModel = createFactory<
       artist: artistModel(),
     },
   ],
+  noSkipUsers: [],
 }));
 
 export const albumListen = createFactory<AlbumListenWithAlbum>(() => {

@@ -76,6 +76,7 @@ describe('listenMapper', () => {
           listenOrder: 'ordered',
           listenMethod: 'spotify',
           listenTime: 'morning',
+          noSkip: false,
         },
       });
       expect(result.favoriteSong).toBeNull();
@@ -280,6 +281,7 @@ describe('listenMapper', () => {
         'listenOrder',
         'listenMethod',
         'listenTime',
+        'noSkip',
       ]);
     });
   });
