@@ -18,6 +18,7 @@ import type { GetListensResponse } from '~~/shared/schema';
 import {
   createBacklogItem,
   createDailyListens,
+  createNoSkipAlbum,
   createUser,
   getBacklogItemsForUser,
 } from '~~/tests/db/utils';
@@ -91,6 +92,7 @@ describe('GET /api/listens Integration Tests', () => {
         listenMethod: albumInput.listenMethod ?? 'spotify',
         listenOrder: albumInput.listenOrder ?? 'ordered',
         listenTime: albumInput.listenTime ?? null,
+        noSkip: false,
       },
     });
 
@@ -320,6 +322,123 @@ describe('GET /api/listens Integration Tests', () => {
       // Then
       const backlogAfter = await getBacklogItemsForUser(userId);
       expect(backlogAfter).toHaveLength(0);
+    });
+  });
+
+  describe('noSkip flag', () => {
+    it('should return noSkip: true for albums the user has marked as no-skip', async () => {
+      // Given
+      const day = new Date('2026-01-10T00:00:00.000Z');
+      const album = albumListenInput();
+      const dailyListen = await createDailyListens({
+        userId,
+        date: day,
+        albumListen: album,
+      });
+      const spotifyAlbumId = dailyListen.albums[0].album.spotifyId;
+
+      await createNoSkipAlbum({ userId, spotifyAlbumId });
+
+      // When
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: { startDate: toDateString(day), endDate: toDateString(day) },
+        }),
+      );
+
+      // Then
+      expect(result[0].albums[0].listenMetadata.noSkip).toBe(true);
+    });
+
+    it('should return noSkip: true across multiple listens of the same album', async () => {
+      // Given - same album listened on two different days
+      const albumInput = albumListenInput();
+      const day1 = new Date('2026-01-10T00:00:00.000Z');
+      const day2 = new Date('2026-01-11T00:00:00.000Z');
+
+      const firstListen = await createDailyListens({
+        userId,
+        date: day1,
+        albumListen: albumInput,
+      });
+      // Use the same spotify ID for the second listen
+      const secondAlbumInput = albumListenInput({
+        album: { ...albumInput.album },
+      });
+      await createDailyListens({
+        userId,
+        date: day2,
+        albumListen: secondAlbumInput,
+      });
+
+      const spotifyAlbumId = firstListen.albums[0].album.spotifyId;
+      await createNoSkipAlbum({ userId, spotifyAlbumId });
+
+      // When
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: { startDate: toDateString(day1), endDate: toDateString(day2) },
+        }),
+      );
+
+      // Then - both listens of the same album show noSkip: true
+      expect(result[0].albums[0].listenMetadata.noSkip).toBe(true);
+      expect(result[1].albums[0].listenMetadata.noSkip).toBe(true);
+    });
+
+    it('should return noSkip: false for albums not in the no-skip list', async () => {
+      // Given
+      const day = new Date('2026-01-10T00:00:00.000Z');
+      await createDailyListens({
+        userId,
+        date: day,
+        albumListen: albumListenInput(),
+      });
+
+      // When
+      const result = await handler(
+        createHandlerEvent(userId, {
+          query: { startDate: toDateString(day), endDate: toDateString(day) },
+        }),
+      );
+
+      // Then
+      expect(result[0].albums[0].listenMetadata.noSkip).toBe(false);
+    });
+
+    it('should not leak no-skip status across users', async () => {
+      // Given
+      const otherUser = await createUser();
+      const day = new Date('2026-01-10T00:00:00.000Z');
+      const albumInput = albumListenInput();
+
+      // Both users listen to the same album
+      const mainListen = await createDailyListens({
+        userId,
+        date: day,
+        albumListen: albumInput,
+      });
+      await createDailyListens({
+        userId: otherUser.id,
+        date: day,
+        albumListen: albumListenInput({ album: { ...albumInput.album } }),
+      });
+
+      // Only main user marks it no-skip
+      await createNoSkipAlbum({
+        userId,
+        spotifyAlbumId: mainListen.albums[0].album.spotifyId,
+      });
+
+      // When - other user fetches their listens
+      const result = await handler(
+        createHandlerEvent(otherUser.id, {
+          query: { startDate: toDateString(day), endDate: toDateString(day) },
+        }),
+      );
+
+      // Then - other user does not see noSkip: true
+      expect(result[0].albums[0].listenMetadata.noSkip).toBe(false);
     });
   });
 

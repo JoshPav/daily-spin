@@ -97,7 +97,7 @@ export const listenMetadata = createFactory<ListenMetadata>(() => ({
   listenOrder: 'ordered',
   listenMethod: 'spotify',
   listenTime: 'noon',
-  favoriteSong: null,
+  noSkip: false,
 }));
 
 export const dailyAlbumListen = createFactory<DailyAlbumListen>(() => ({

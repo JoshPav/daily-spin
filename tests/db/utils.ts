@@ -283,6 +283,33 @@ export const getSpotifyAccountForUser = (userId: string) =>
     },
   });
 
+export const createNoSkipAlbum = async ({
+  userId,
+  spotifyAlbumId,
+}: {
+  userId: string;
+  spotifyAlbumId: string;
+}) => {
+  const album = await getTestPrisma().album.findUnique({
+    where: { spotifyId: spotifyAlbumId },
+    select: { id: true },
+  });
+
+  if (!album) {
+    throw new Error(`Album with spotifyId ${spotifyAlbumId} not found`);
+  }
+
+  return getTestPrisma().userNoSkipAlbum.create({
+    data: { userId, albumId: album.id },
+  });
+};
+
+export const getNoSkipAlbumsForUser = (userId: string) =>
+  getTestPrisma().userNoSkipAlbum.findMany({
+    where: { userId },
+    include: { album: true },
+  });
+
 export const createPushSubscription = async ({
   userId,
   endpoint,

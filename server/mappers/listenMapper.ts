@@ -23,6 +23,7 @@ export const mapDailyListens = (
         listenOrder,
         listenMethod,
         listenTime,
+        noSkip: album.noSkipUsers.length > 0,
       },
     }),
   ),

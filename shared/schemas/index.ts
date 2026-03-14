@@ -65,6 +65,13 @@ export {
   type UpdateFavoriteSongResponse,
   updateFavoriteSongSchema,
 } from './listens.schema';
+// No-skip schemas and types
+export {
+  type ToggleNoSkip,
+  type ToggleNoSkipBody,
+  type ToggleNoSkipResponse,
+  toggleNoSkipSchema,
+} from './noSkip.schema';
 // Preferences schemas and types
 export {
   // Endpoint contract types

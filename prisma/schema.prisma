@@ -15,6 +15,7 @@ model User {
   scheduledListens          ScheduledListen[]
   userPlaylists             UserPlaylist[]
   pushSubscriptions         PushSubscription[]
+  noSkipAlbums              UserNoSkipAlbum[]
   name                      String
   email                     String
   emailVerified             Boolean            @default(false)
@@ -122,6 +123,7 @@ model Album {
   listens                AlbumListen[]
   scheduledListens       ScheduledListen[]
   favoriteSongDailyLists DailyListen[]
+  noSkipUsers            UserNoSkipAlbum[]
 
   @@index([spotifyId])
   @@map("album")
@@ -158,6 +160,22 @@ model BacklogItem {
   @@index([userId])
   @@index([albumId])
   @@map("backlog_item")
+}
+
+model UserNoSkipAlbum {
+  id        String   @id @default(cuid())
+  userId    String
+  albumId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
+  @@index([albumId])
+  @@map("user_no_skip_album")
 }
 
 model ScheduledListen {

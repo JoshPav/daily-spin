@@ -84,6 +84,9 @@ type DailyListenWithAlbums = Prisma.DailyListenGetPayload<{
                 artist: true;
               };
             };
+            noSkipUsers: {
+              select: { id: true };
+            };
           };
         };
       };
@@ -112,6 +115,9 @@ export const albumModel = createFactory<
           artist: true;
         };
       };
+      noSkipUsers: {
+        select: { id: true };
+      };
     };
   }>
 >(() => ({
@@ -134,6 +140,7 @@ export const albumModel = createFactory<
       artist: artistModel(),
     },
   ],
+  noSkipUsers: [],
 }));
 
 export const albumListen = createFactory<AlbumListenWithAlbum>(() => {
@@ -145,6 +152,7 @@ export const albumListen = createFactory<AlbumListenWithAlbum>(() => {
     listenOrder: 'ordered' as ListenOrder,
     listenMethod: 'spotify' as ListenMethod,
     listenTime: 'morning' as ListenTime,
+    noSkip: false,
     createdAt: recent(),
     updatedAt: recent(),
     album: albumData,

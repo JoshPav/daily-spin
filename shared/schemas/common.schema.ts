@@ -62,6 +62,7 @@ export const ListenMetadataSchema = z.object({
   listenOrder: ListenOrderSchema,
   listenMethod: ListenMethodSchema,
   listenTime: ListenTimeSchema.nullable(),
+  noSkip: z.boolean(),
 });
 
 export const FavoriteSongSchema = z.object({
