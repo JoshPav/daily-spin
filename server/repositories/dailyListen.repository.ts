@@ -165,6 +165,10 @@ export class DailyListenRepository {
                       order: 'asc',
                     },
                   },
+                  noSkipUsers: {
+                    where: { userId },
+                    select: { id: true },
+                  },
                 },
               },
             },
