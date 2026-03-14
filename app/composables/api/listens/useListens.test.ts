@@ -50,6 +50,7 @@ const createAlbumListen = (id: string): DailyListens['albums'][0] => ({
     listenOrder: 'ordered',
     listenMethod: 'spotify',
     listenTime: 'morning',
+    noSkip: false,
   },
 });
 

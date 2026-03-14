@@ -404,6 +404,7 @@ describe('Dashboard Page', () => {
                 listenOrder: 'ordered',
                 listenMethod: 'spotify',
                 listenTime: 'morning',
+                noSkip: false,
               },
             },
           ],

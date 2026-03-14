@@ -4,6 +4,7 @@ import { toDateString } from '../utils/datetime.utils';
 
 export const mapDailyListens = (
   dailyListens: DailyListenWithAlbums,
+  noSkipAlbumIds: Set<string> = new Set(),
 ): DailyListens => ({
   date: toDateString(dailyListens.date),
   albums: dailyListens.albums.map(
@@ -23,6 +24,7 @@ export const mapDailyListens = (
         listenOrder,
         listenMethod,
         listenTime,
+        noSkip: noSkipAlbumIds.has(album.id),
       },
     }),
   ),
