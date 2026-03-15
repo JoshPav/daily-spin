@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FavoriteSong } from '#shared/schema';
+import type { DailyListens, FavoriteSong } from '#shared/schema';
 import { useScrollToToday } from '~/composables/components/useScrollToToday';
 import type {
   PastDayData,
@@ -27,6 +27,27 @@ const updateFavoriteSongForDate = (
 
   if (data.type === 'past' && data.listens) {
     updateDay(date, { ...data.listens, favoriteSong });
+  }
+};
+
+// Update no-skip status for an album on a date
+const updateNoSkipForDate = (
+  date: string,
+  spotifyAlbumId: string,
+  noSkip: boolean,
+) => {
+  const data = getDataForDate(toDateKey(date));
+
+  if (data.type === 'past' && data.listens) {
+    const updatedListens: DailyListens = {
+      ...data.listens,
+      albums: data.listens.albums.map((a) =>
+        a.album.albumId === spotifyAlbumId
+          ? { ...a, listenMetadata: { ...a.listenMetadata, noSkip } }
+          : a,
+      ),
+    };
+    updateDay(date, updatedListens);
   }
 };
 
@@ -134,6 +155,7 @@ onUnmounted(() => {
                 :date="dateKey"
                 :listens="(getDataForDate(dateKey) as PastDayData).listens"
                 :on-favorite-song-update="updateFavoriteSongForDate"
+                :on-no-skip-update="updateNoSkipForDate"
                 :on-album-logged="refreshListens"
               />
               <ScheduledAlbumDay

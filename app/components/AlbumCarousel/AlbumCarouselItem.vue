@@ -33,6 +33,20 @@
           :icon="LISTEN_METHOD_CONFIG[listenMethod].icon"
         />
       </section>
+
+      <section class="flex flex-wrap gap-2">
+        <button
+          :aria-pressed="albumListen.listenMetadata.noSkip"
+          :class="albumListen.listenMetadata.noSkip
+            ? 'bg-green-500 text-white'
+            : 'bg-neutral-800 text-neutral-400 hover:text-white'"
+          class="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-semibold uppercase transition-colors"
+          @click="$emit('toggleNoSkip', albumListen.album.albumId, !albumListen.listenMetadata.noSkip)"
+        >
+          <UIcon name="i-lucide-skip-forward-circle" class="w-3.5 h-3.5" />
+          No Skip
+        </button>
+      </section>
     </section>
   </div>
 </template>
@@ -55,6 +69,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectTrack: [track: AlbumTrack, albumId: string];
+  toggleNoSkip: [spotifyAlbumId: string, noSkip: boolean];
 }>();
 
 const albumDetailsRef = ref<InstanceType<typeof AlbumDetails> | null>(null);

@@ -23,6 +23,7 @@
         :favorite-song="favoriteSong"
         :disabled="disabled"
         @select-track="(track, albumId) => $emit('selectTrack', track, albumId)"
+        @toggle-no-skip="(spotifyAlbumId, noSkip) => $emit('toggleNoSkip', spotifyAlbumId, noSkip)"
       />
     </template>
   </UCarousel>
@@ -41,6 +42,7 @@ const props = defineProps<{
 
 defineEmits<{
   selectTrack: [track: AlbumTrack, albumId: string];
+  toggleNoSkip: [spotifyAlbumId: string, noSkip: boolean];
 }>();
 
 const hasMultiple = computed(() => props.albums.length > 1);

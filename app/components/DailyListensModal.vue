@@ -23,6 +23,7 @@
         :favorite-song="favoriteSong"
         :disabled="saving"
         @select-track="handleSelectTrack"
+        @toggle-no-skip="handleToggleNoSkip"
       />
     </template>
   </UModal>
@@ -40,6 +41,11 @@ const props = defineProps<{
     date: string,
     favoriteSong: FavoriteSong | null,
   ) => void;
+  onNoSkipUpdate?: (
+    date: string,
+    spotifyAlbumId: string,
+    noSkip: boolean,
+  ) => void;
 }>();
 
 const emit = defineEmits<{
@@ -50,8 +56,13 @@ const { saving, updateFavoriteSong, clearFavoriteSong } = useFavoriteSong({
   onUpdate: props.onFavoriteSongUpdate,
 });
 
+const { toggleNoSkip } = useNoSkip();
+
 // Ref to carousel for programmatic control
 const carouselRef = ref<InstanceType<typeof AlbumCarousel>>();
+
+// Local state for albums (allows optimistic no-skip updates)
+const localAlbums = ref(props.dailyListens.albums);
 
 // Local state for favorite song (allows optimistic updates)
 const favoriteSong = ref<FavoriteSong | null>(props.dailyListens.favoriteSong);
@@ -68,18 +79,18 @@ const modalHeader = computed(() =>
   props.dailyListens ? formatDate(new Date(props.dailyListens.date)) : '',
 );
 
-const albumCount = computed(() => props.dailyListens.albums.length);
+const albumCount = computed(() => localAlbums.value.length);
 
 // Sort albums with favorite first for carousel display
 const sortedAlbums = computed(() =>
-  sortAlbumListensByFavorite(props.dailyListens.albums, favoriteSong.value),
+  sortAlbumListensByFavorite(localAlbums.value, favoriteSong.value),
 );
 
 // Find the album name for the favorite song
 const favoriteSongAlbumName = computed(() => {
   if (!favoriteSong.value || albumCount.value === 1) return '';
 
-  const album = props.dailyListens.albums.find(
+  const album = localAlbums.value.find(
     (a) => a.album.albumId === favoriteSong.value?.albumId,
   );
   return album?.album.albumName ?? '';
@@ -132,6 +143,24 @@ const handleClearSelection = async () => {
   } catch {
     // Revert on error
     favoriteSong.value = previousValue;
+  }
+};
+
+const handleToggleNoSkip = async (spotifyAlbumId: string, noSkip: boolean) => {
+  // Optimistic update
+  const previousAlbums = localAlbums.value;
+  localAlbums.value = localAlbums.value.map((a) =>
+    a.album.albumId === spotifyAlbumId
+      ? { ...a, listenMetadata: { ...a.listenMetadata, noSkip } }
+      : a,
+  );
+
+  try {
+    await toggleNoSkip(spotifyAlbumId, noSkip);
+    props.onNoSkipUpdate?.(props.dailyListens.date, spotifyAlbumId, noSkip);
+  } catch {
+    // Revert on error
+    localAlbums.value = previousAlbums;
   }
 };
 

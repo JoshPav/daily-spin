@@ -13,6 +13,15 @@
       :pending="!listens"
       @click="handleClick"
     >
+      <template #badge>
+        <div
+          v-if="hasNoSkip"
+          class="absolute bottom-1 right-1 bg-green-500/90 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase z-10 pointer-events-none"
+        >
+          No Skip
+        </div>
+      </template>
+
       <template #empty>
         <div
           class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
@@ -44,15 +53,21 @@ import {
   toAlbumCardInfo,
 } from '~/utils/albums.utils';
 
-const { date, listens, onFavoriteSongUpdate, onAlbumLogged } = defineProps<{
-  date: string;
-  listens?: DailyListens;
-  onFavoriteSongUpdate: (
-    date: string,
-    favoriteSong: FavoriteSong | null,
-  ) => void;
-  onAlbumLogged?: () => void;
-}>();
+const { date, listens, onFavoriteSongUpdate, onNoSkipUpdate, onAlbumLogged } =
+  defineProps<{
+    date: string;
+    listens?: DailyListens;
+    onFavoriteSongUpdate: (
+      date: string,
+      favoriteSong: FavoriteSong | null,
+    ) => void;
+    onNoSkipUpdate?: (
+      date: string,
+      spotifyAlbumId: string,
+      noSkip: boolean,
+    ) => void;
+    onAlbumLogged?: () => void;
+  }>();
 
 const overlay = useOverlay();
 const dailyListensModal = overlay.create(LazyDailyListensModal);
@@ -66,6 +81,9 @@ const {
 const hasAlbums = computed(() => (listens?.albums.length ?? 0) > 0);
 const needsFavoriteSong = computed(
   () => hasAlbums.value && !listens?.favoriteSong,
+);
+const hasNoSkip = computed(
+  () => listens?.albums.some((a) => a.listenMetadata.noSkip) ?? false,
 );
 
 const albumCardInfo = computed(() => {
@@ -87,6 +105,7 @@ const handleClick = () => {
   dailyListensModal.open({
     dailyListens: listens,
     onFavoriteSongUpdate,
+    onNoSkipUpdate,
   });
 };
 
