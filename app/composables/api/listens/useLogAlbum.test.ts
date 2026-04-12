@@ -120,6 +120,7 @@ describe('useLogAlbum', () => {
             listenOrder: 'ordered',
             listenMethod: 'spotify',
             listenTime: 'morning',
+            noSkip: false,
           },
         },
       });
