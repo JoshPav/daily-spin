@@ -16,6 +16,7 @@ export const useLogAlbum = ({
   const listenTime = ref<ListenTime>(
     getTrackListenTime(new Date().toISOString()),
   );
+  const noSkip = ref(false);
 
   const saving = ref(false);
 
@@ -24,6 +25,7 @@ export const useLogAlbum = ({
     listenOrder.value = 'ordered';
     listenMethod.value = 'spotify';
     listenTime.value = getTrackListenTime(new Date().toISOString());
+    noSkip.value = false;
   };
 
   const logAlbumListen = async () => {
@@ -50,6 +52,7 @@ export const useLogAlbum = ({
             listenOrder: listenOrder.value,
             listenMethod: listenMethod.value,
             listenTime: listenTime.value,
+            noSkip: noSkip.value,
           },
         },
       });
@@ -68,6 +71,7 @@ export const useLogAlbum = ({
     listenOrder,
     listenMethod,
     listenTime,
+    noSkip,
     saving,
     logAlbumListen,
   };
